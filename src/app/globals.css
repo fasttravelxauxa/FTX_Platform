@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', sans-serif;
+}
+
+body {
+  color: #092A09;
+  background-color: #F2FCF1;
+  font-family: var(--font-inter);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom Print Styles for Airport Sign */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area, .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #ffffff !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 2rem !important;
+    page-break-after: always;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Glassmorphism effects */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(196, 241, 193, 0.6);
+}
+
+.glass-panel-dark {
+  background: rgba(9, 42, 9, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(42, 149, 36, 0.3);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F2FCF1;
+}
+::-webkit-scrollbar-thumb {
+  background: #95E590;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #39B532;
+}
