@@ -122,11 +122,11 @@ CREATE TABLE IF NOT EXISTS public.tariff_rules (
 -- Sequence for Reservation Code
 CREATE SEQUENCE IF NOT EXISTS reservation_code_seq START WITH 1;
 
--- Function to generate code TFX-YYYYMMDD-NNNN
+-- Function to generate code FTX-YYYYMMDD-NNNN (Fast Travel Xauxa)
 CREATE OR REPLACE FUNCTION generate_reservation_code()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.code := 'TFX-' || TO_CHAR(NOW() AT TIME ZONE 'America/Lima', 'YYYYMMDD') || '-' || LPAD(NEXTVAL('reservation_code_seq')::TEXT, 4, '0');
+  NEW.code := 'FTX-' || TO_CHAR(NOW() AT TIME ZONE 'America/Lima', 'YYYYMMDD') || '-' || LPAD(NEXTVAL('reservation_code_seq')::TEXT, 4, '0');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

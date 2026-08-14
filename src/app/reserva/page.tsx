@@ -21,7 +21,6 @@ import {
   AlertCircle,
   FileText,
   FileCheck,
-  Building2,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -30,7 +29,7 @@ import { Badge } from '@/components/ui/Badge';
 import { SERVICES_CATALOG, AIRLINES, PAYMENT_METHODS_INFO } from '@/lib/constants';
 import { PricingService } from '@/lib/services/pricing';
 import { WhatsAppService } from '@/lib/services/whatsapp';
-import { LocalDb } from '@/lib/storage/mock-db';
+import { RepositoryService } from '@/lib/services/repository';
 import { Reservation, PriceQuote, PaymentMethod, InvoiceType } from '@/lib/types';
 
 function BookingWizardForm() {
@@ -141,6 +140,16 @@ function BookingWizardForm() {
       const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const code = `TFX-${todayStr}-${codeSeq}`;
 
+      let finalVoucherUrl = voucherPreview;
+
+      // Upload file to Supabase Storage if file selected
+      if (voucherFile) {
+        const uploaded = await RepositoryService.uploadVoucherImage(voucherFile, code);
+        if (uploaded) {
+          finalVoucherUrl = uploaded;
+        }
+      }
+
       const service = SERVICES_CATALOG.find((s) => s.code === serviceCode);
       const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}:00-05:00`).toISOString();
 
@@ -162,7 +171,7 @@ function BookingWizardForm() {
         service,
         vehicle_id: 'veh-1',
         driver_id: 'usr-driver-1',
-        status: voucherPreview ? 'PAYMENT_SUBMITTED' : 'PENDING_PAYMENT',
+        status: finalVoucherUrl ? 'PAYMENT_SUBMITTED' : 'PENDING_PAYMENT',
         flight_airline: airline,
         flight_number: flightNumber,
         flight_arrival_time: scheduledAt,
@@ -195,7 +204,7 @@ function BookingWizardForm() {
             dni: customerDni,
           },
         ],
-        payments: voucherPreview
+        payments: finalVoucherUrl
           ? [
               {
                 id: `pay-${Date.now()}`,
@@ -208,7 +217,7 @@ function BookingWizardForm() {
                   {
                     id: `prf-${Date.now()}`,
                     payment_id: `pay-${Date.now()}`,
-                    file_path: voucherPreview,
+                    file_path: finalVoucherUrl,
                     reference_number: referenceNumber || 'VOUCHER-MANUAL',
                     uploaded_at: new Date().toISOString(),
                   },
@@ -218,8 +227,8 @@ function BookingWizardForm() {
           : [],
       };
 
-      // Save into LocalDb
-      LocalDb.saveReservation(newRes);
+      // Save into Supabase DB & LocalDb
+      await RepositoryService.saveReservation(newRes);
       setCreatedReservation(newRes);
       setStep(10); // Final Confirmation Step
 
