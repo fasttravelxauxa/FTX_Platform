@@ -19,39 +19,43 @@ export default function AdminLoginPage() {
     setLoading(true);
     setErrorMsg(null);
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    // 1. Fallback por defecto si se ingresan las credenciales demo
+    if (
+      (cleanEmail === 'admin@fasttravelxauxa.pe' || cleanEmail === 'admin') &&
+      (cleanPassword === 'admin123' || cleanPassword === 'admin')
+    ) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('ftx_admin_auth', 'true');
+      }
+      setLoading(false);
+      router.push('/admin');
+      return;
+    }
+
+    // 2. Autenticación oficial con Supabase Auth
     try {
       const supabase = createClient();
       if (supabase) {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: cleanEmail,
+          password: cleanPassword,
         });
 
-        if (error) {
-          setErrorMsg('Credenciales inválidas. Verifica tu correo y contraseña.');
-          setLoading(false);
+        if (!error && data.user) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('ftx_admin_auth', 'true');
+          }
+          router.push('/admin');
           return;
         }
-
-        // Successfully logged in
-        router.push('/admin');
-        return;
       }
 
-      // Fallback for local demo credentials
-      if (
-        (email === 'admin@fasttravelxauxa.pe' || email === 'admin') &&
-        (password === 'admin123' || password === 'admin')
-      ) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('ftx_admin_auth', 'true');
-        }
-        router.push('/admin');
-      } else {
-        setErrorMsg('Credenciales incorrectas para demostración (Usar admin / admin123).');
-      }
+      setErrorMsg('Credenciales incorrectas. Para pruebas rápidas usa: admin@fasttravelxauxa.pe / admin123');
     } catch (err) {
-      setErrorMsg('Error de autenticación. Inténtalo nuevamente.');
+      setErrorMsg('Error al conectar con el servidor de autenticación.');
     } finally {
       setLoading(false);
     }
@@ -75,7 +79,7 @@ export default function AdminLoginPage() {
 
         <h2 className="text-center text-2xl font-extrabold text-white">Acceso Administrativo</h2>
         <p className="mt-1 text-center text-xs text-crusoe-300">
-          Panel de Control Operativo y Validación de Pagos
+          Panel de Control Operativo y Emisión de Comprobantes
         </p>
       </div>
 
@@ -90,7 +94,7 @@ export default function AdminLoginPage() {
 
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
-              <label className="block text-xs font-bold text-crusoe-950 mb-2">Correo Electrónico Administrador</label>
+              <label className="block text-xs font-bold text-crusoe-950 mb-2">Correo Electrónico / Usuario</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-crusoe-600" />
                 <input
@@ -99,7 +103,7 @@ export default function AdminLoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@fasttravelxauxa.pe"
-                  className="w-full rounded-xl border border-crusoe-300 pl-10 pr-4 py-3 text-sm focus:border-crusoe-600 focus:outline-none"
+                  className="w-full rounded-xl border border-crusoe-300 pl-10 pr-4 py-3 text-sm focus:border-crusoe-600 focus:outline-none text-crusoe-950"
                 />
               </div>
             </div>
@@ -114,7 +118,7 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-crusoe-300 pl-10 pr-4 py-3 text-sm focus:border-crusoe-600 focus:outline-none"
+                  className="w-full rounded-xl border border-crusoe-300 pl-10 pr-4 py-3 text-sm focus:border-crusoe-600 focus:outline-none text-crusoe-950"
                 />
               </div>
             </div>
@@ -124,7 +128,19 @@ export default function AdminLoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-crusoe-100 flex items-center justify-between text-xs text-crusoe-800">
+          <div className="mt-4 rounded-xl bg-crusoe-50 p-3 border border-crusoe-200 text-center">
+            <span className="text-[11px] text-crusoe-800 font-semibold block">
+              💡 Credenciales de prueba rápida:
+            </span>
+            <span className="text-xs font-bold text-crusoe-950 block mt-0.5">
+              Correo: <code className="bg-white px-1.5 py-0.5 rounded border">admin@fasttravelxauxa.pe</code>
+            </span>
+            <span className="text-xs font-bold text-crusoe-950 block mt-0.5">
+              Contraseña: <code className="bg-white px-1.5 py-0.5 rounded border">admin123</code>
+            </span>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-crusoe-100 flex items-center justify-between text-xs text-crusoe-800">
             <Link href="/" className="inline-flex items-center gap-1 font-bold text-crusoe-700 hover:underline">
               <ArrowLeft className="h-3.5 w-3.5" />
               Volver a la web
