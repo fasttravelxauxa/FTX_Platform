@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/Badge';
 import { SERVICES_CATALOG, AIRLINES, PAYMENT_METHODS_INFO, BUSINESS_CONFIG } from '@/lib/constants';
 import { PricingService } from '@/lib/services/pricing';
 import { WhatsAppService } from '@/lib/services/whatsapp';
-import { RepositoryService } from '@/lib/services/repository';
+import { RepositoryService, savePassengerIdentity } from '@/lib/services/repository';
 import { Reservation, PriceQuote, PaymentMethod, InvoiceType } from '@/lib/types';
 
 function BookingWizardForm() {
@@ -137,9 +137,30 @@ function BookingWizardForm() {
     setErrorMsg(null);
 
     try {
+      // ── LÍMITE DIARIO: Máximo 2 reservas por día por teléfono, de diferente tipo ──
+      const service = SERVICES_CATALOG.find((s) => s.code === serviceCode);
+      const limitCheck = await RepositoryService.checkDailyLimit(customerPhone, service?.id || serviceCode);
+      if (!limitCheck.allowed) {
+        if (limitCheck.reason === 'servicio_duplicado_hoy') {
+          setErrorMsg(
+            `Ya tienes una reserva del tipo "${service?.name}" para hoy. Puedes reservar un servicio diferente o hacerlo para otra fecha.`
+          );
+        } else {
+          setErrorMsg(
+            `Has alcanzado el límite de 2 reservas por día. Podrás hacer una nueva reserva mañana o contactarnos por WhatsApp para coordinar.`
+          );
+        }
+        setLoading(false);
+        return;
+      }
+
+      // ── Guardar identidad del pasajero en este dispositivo ──
+      savePassengerIdentity(customerPhone);
+
       const codeSeq = Math.floor(1000 + Math.random() * 9000);
       const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const code = `FTX-${todayStr}-${codeSeq}`;
+
 
       let finalVoucherUrl = voucherPreview;
 
@@ -151,7 +172,6 @@ function BookingWizardForm() {
         }
       }
 
-      const service = SERVICES_CATALOG.find((s) => s.code === serviceCode);
       const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}:00-05:00`).toISOString();
 
       const newRes: Reservation = {

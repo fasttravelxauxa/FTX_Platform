@@ -128,17 +128,7 @@ export default function AdminLoginPage() {
             </Button>
           </form>
 
-          <div className="mt-4 rounded-xl bg-crusoe-50 p-3 border border-crusoe-200 text-center">
-            <span className="text-[11px] text-crusoe-800 font-semibold block">
-              💡 Credenciales de prueba rápida:
-            </span>
-            <span className="text-xs font-bold text-crusoe-950 block mt-0.5">
-              Correo: <code className="bg-white px-1.5 py-0.5 rounded border">admin@fasttravelxauxa.pe</code>
-            </span>
-            <span className="text-xs font-bold text-crusoe-950 block mt-0.5">
-              Contraseña: <code className="bg-white px-1.5 py-0.5 rounded border">admin123</code>
-            </span>
-          </div>
+
 
           <div className="mt-6 pt-4 border-t border-crusoe-100 flex items-center justify-between text-xs text-crusoe-800">
             <Link href="/" className="inline-flex items-center gap-1 font-bold text-crusoe-700 hover:underline">

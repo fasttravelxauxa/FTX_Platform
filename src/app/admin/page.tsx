@@ -413,7 +413,24 @@ export default function AdminDashboardPage() {
                         >
                           <MessageSquare className="h-3.5 w-3.5" />
                         </a>
+
+                        {/* Delete button — solo para reservas canceladas o rechazadas */}
+                        {['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(res.status) && (
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            title="Eliminar reserva cancelada o rechazada"
+                            onClick={async () => {
+                              if (!window.confirm(`¿Eliminar definitivamente la reserva ${res.code}?`)) return;
+                              await RepositoryService.deleteReservation(res.id, res.code);
+                              await refreshData();
+                            }}
+                          >
+                            🗑️
+                          </Button>
+                        )}
                       </td>
+
                     </tr>
                   ))}
                 </tbody>

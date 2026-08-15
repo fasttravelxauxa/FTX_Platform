@@ -2,16 +2,32 @@ import { createClient } from '../supabase/client';
 import { LocalDb } from '../storage/mock-db';
 import { Reservation } from '../types';
 
+const FTX_PHONE_KEY = 'ftx_passenger_phone';
+
+/**
+ * Guardar el teléfono del pasajero en localStorage para identificación futura
+ */
+export function savePassengerIdentity(phone: string) {
+  if (typeof window !== 'undefined' && phone) {
+    localStorage.setItem(FTX_PHONE_KEY, phone.replace(/[^0-9]/g, ''));
+  }
+}
+
+/**
+ * Obtener el teléfono del pasajero guardado en este dispositivo
+ */
+export function getPassengerIdentity(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(FTX_PHONE_KEY);
+}
+
 export class RepositoryService {
   /**
-   * Obtener lista completa de reservas
+   * Obtener lista completa de reservas (Admin)
    */
   public static async getReservations(): Promise<Reservation[]> {
     const supabase = createClient();
-    if (!supabase) {
-      console.warn('[FTX] Supabase no configurado, usando LocalDb');
-      return LocalDb.getReservations();
-    }
+    if (!supabase) return LocalDb.getReservations();
 
     try {
       const { data, error } = await supabase
@@ -20,44 +36,64 @@ export class RepositoryService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.warn('[FTX] Error al leer reservas de Supabase:', error.message, '| Usando LocalDb');
+        console.warn('[FTX] Error Supabase getReservations:', error.message);
         return LocalDb.getReservations();
       }
 
-      if (!data || data.length === 0) {
-        // Supabase está vacío, mostrar LocalDb como fallback temporal
-        const local = LocalDb.getReservations();
-        return local.length > 0 ? local : [];
-      }
-
-      return data as Reservation[];
+      return (data ?? []) as Reservation[];
     } catch (err: any) {
-      console.error('[FTX] Excepción inesperada al leer de Supabase:', err?.message);
+      console.error('[FTX] Excepción getReservations:', err?.message);
       return LocalDb.getReservations();
     }
   }
 
   /**
-   * Buscar reserva por código FTX-YYYYMMDD-NNNN
+   * Obtener reservas filtradas por teléfono del pasajero (Vista del Pasajero)
+   */
+  public static async getReservationsByPhone(phone: string): Promise<Reservation[]> {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const supabase = createClient();
+
+    if (!supabase) {
+      const all = LocalDb.getReservations();
+      return all.filter((r) => r.customer?.phone?.replace(/[^0-9]/g, '') === cleanPhone);
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('reservations')
+        .select('*, customer:profiles!customer_id(*), service:services(*), payments(*, proofs:payment_proofs(*))')
+        .eq('customer:profiles!customer_id.phone', cleanPhone)
+        .order('created_at', { ascending: false });
+
+      if (error || !data) {
+        // Fallback: buscar en LocalDb
+        const all = LocalDb.getReservations();
+        return all.filter((r) => r.customer?.phone?.replace(/[^0-9]/g, '') === cleanPhone);
+      }
+
+      return data as Reservation[];
+    } catch {
+      const all = LocalDb.getReservations();
+      return all.filter((r) => r.customer?.phone?.replace(/[^0-9]/g, '') === cleanPhone);
+    }
+  }
+
+  /**
+   * Buscar reserva por código FTX-YYYYMMDD-NNNN o por teléfono/DNI
    */
   public static async getReservationByCode(code: string): Promise<Reservation | undefined> {
     const supabase = createClient();
-    if (!supabase) {
-      return LocalDb.getReservationByCode(code);
-    }
+    if (!supabase) return LocalDb.getReservationByCode(code);
 
     try {
       const { data, error } = await supabase
         .from('reservations')
         .select('*, customer:profiles!customer_id(*), service:services(*), vehicle:vehicles(*), payments(*, proofs:payment_proofs(*))')
         .ilike('code', code)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
-        console.warn('[FTX] Reserva no encontrada en Supabase, buscando en LocalDb:', code);
-        return LocalDb.getReservationByCode(code);
-      }
-
+      if (error || !data) return LocalDb.getReservationByCode(code);
       return data as Reservation;
     } catch {
       return LocalDb.getReservationByCode(code);
@@ -65,40 +101,109 @@ export class RepositoryService {
   }
 
   /**
-   * Guardar o actualizar reserva - primero Supabase, luego LocalDb como respaldo
+   * LÍMITE ANTI-ABUSO: Verificar si el pasajero ya tiene 2 reservas en el día de hoy
+   * Se compara por número de teléfono + fecha actual (hora Lima)
    */
-  public static async saveReservation(reservation: Reservation): Promise<{ savedToCloud: boolean }> {
-    // Siempre guardar en LocalDb para acceso inmediato offline
-    LocalDb.saveReservation(reservation);
+  public static async checkDailyLimit(phone: string, serviceCode: string): Promise<{
+    allowed: boolean;
+    reason?: string;
+    todayCount: number;
+  }> {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
 
     const supabase = createClient();
+
     if (!supabase) {
-      console.warn('[FTX] Sin conexión a Supabase, solo guardado en LocalDb');
-      return { savedToCloud: false };
+      // Sin Supabase, verificar en LocalDb
+      const all = LocalDb.getReservations();
+      const todayRes = all.filter((r) => {
+        const created = new Date(r.created_at);
+        return (
+          r.customer?.phone?.replace(/[^0-9]/g, '') === cleanPhone &&
+          created >= todayStart &&
+          created <= todayEnd &&
+          !['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(r.status)
+        );
+      });
+      if (todayRes.length >= 2) {
+        return { allowed: false, reason: 'límite_diario_alcanzado', todayCount: todayRes.length };
+      }
+      const sameType = todayRes.filter((r) => r.service_id === serviceCode || r.service?.code === serviceCode);
+      if (sameType.length >= 1) {
+        return { allowed: false, reason: 'servicio_duplicado_hoy', todayCount: todayRes.length };
+      }
+      return { allowed: true, todayCount: todayRes.length };
     }
 
     try {
-      // Paso 1: Insertar o actualizar perfil del cliente
-      const profilePayload = {
-        id: reservation.customer_id,
-        role: 'CUSTOMER' as const,
-        full_name: reservation.customer?.full_name || 'Pasajero',
-        phone: reservation.customer?.phone || '',
-        dni: reservation.customer?.dni,
-        title_degree: reservation.customer?.title_degree,
-        updated_at: new Date().toISOString(),
-      };
+      // Buscar reservas de hoy del mismo teléfono
+      const { data, error } = await supabase
+        .from('reservations')
+        .select('id, service_id, status, created_at, customer:profiles!customer_id(phone)')
+        .gte('created_at', todayStart.toISOString())
+        .lte('created_at', todayEnd.toISOString())
+        .not('status', 'in', '("CANCELLED","PAYMENT_REJECTED","EXPIRED")');
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert(profilePayload, { onConflict: 'id' });
-
-      if (profileError) {
-        console.error('[FTX] Error guardando perfil en Supabase:', profileError.message);
+      if (error || !data) {
+        return { allowed: true, todayCount: 0 };
       }
 
-      // Paso 2: Insertar o actualizar la reserva
-      const reservationPayload = {
+      const passengerReservations = (data as any[]).filter(
+        (r) => r.customer?.phone?.replace(/[^0-9]/g, '') === cleanPhone
+      );
+
+      if (passengerReservations.length >= 2) {
+        return {
+          allowed: false,
+          reason: 'límite_diario_alcanzado',
+          todayCount: passengerReservations.length,
+        };
+      }
+
+      // Verificar duplicado del mismo tipo de servicio en el día
+      const sameServiceToday = passengerReservations.filter((r) => r.service_id === serviceCode);
+      if (sameServiceToday.length >= 1) {
+        return {
+          allowed: false,
+          reason: 'servicio_duplicado_hoy',
+          todayCount: passengerReservations.length,
+        };
+      }
+
+      return { allowed: true, todayCount: passengerReservations.length };
+    } catch (err: any) {
+      console.warn('[FTX] Error en checkDailyLimit:', err?.message);
+      return { allowed: true, todayCount: 0 };
+    }
+  }
+
+  /**
+   * Guardar o actualizar reserva — guarda perfil + reserva en Supabase
+   */
+  public static async saveReservation(reservation: Reservation): Promise<{ savedToCloud: boolean }> {
+    LocalDb.saveReservation(reservation);
+
+    const supabase = createClient();
+    if (!supabase) return { savedToCloud: false };
+
+    try {
+      // Paso 1: Upsert perfil del cliente
+      await supabase.from('profiles').upsert({
+        id: reservation.customer_id,
+        role: 'CUSTOMER',
+        full_name: reservation.customer?.full_name || 'Pasajero',
+        phone: reservation.customer?.phone?.replace(/[^0-9]/g, '') || '',
+        dni: reservation.customer?.dni ?? null,
+        title_degree: reservation.customer?.title_degree ?? null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+
+      // Paso 2: Upsert reserva
+      const { error: reservationError } = await supabase.from('reservations').upsert({
         id: reservation.id,
         code: reservation.code,
         customer_id: reservation.customer_id,
@@ -128,22 +233,49 @@ export class RepositoryService {
         invoice_address: reservation.invoice_details?.fiscalAddress ?? null,
         cancellation_deadline: reservation.cancellation_deadline ?? null,
         updated_at: new Date().toISOString(),
-      };
-
-      const { error: reservationError } = await supabase
-        .from('reservations')
-        .upsert(reservationPayload, { onConflict: 'id' });
+      }, { onConflict: 'id' });
 
       if (reservationError) {
-        console.error('[FTX] Error guardando reserva en Supabase:', reservationError.message, reservationError.code);
+        console.error('[FTX] Error upsert reservación:', reservationError.message, reservationError.code);
         return { savedToCloud: false };
       }
 
-      console.log('[FTX] ✅ Reserva guardada en Supabase correctamente:', reservation.code);
+      console.log('[FTX] ✅ Guardada en Supabase:', reservation.code);
       return { savedToCloud: true };
     } catch (err: any) {
-      console.error('[FTX] Excepción al guardar reserva en Supabase:', err?.message);
+      console.error('[FTX] Excepción saveReservation:', err?.message);
       return { savedToCloud: false };
+    }
+  }
+
+  /**
+   * Eliminar reserva cancelada o rechazada
+   * Solo permitido si el estado es CANCELLED, PAYMENT_REJECTED o EXPIRED
+   */
+  public static async deleteReservation(reservationId: string, code: string): Promise<boolean> {
+    // Eliminar en LocalDb
+    LocalDb.deleteReservation(reservationId);
+
+    const supabase = createClient();
+    if (!supabase) return true;
+
+    try {
+      const { error } = await supabase
+        .from('reservations')
+        .delete()
+        .eq('id', reservationId)
+        .in('status', ['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED']);
+
+      if (error) {
+        console.error('[FTX] Error eliminando reserva:', error.message);
+        return false;
+      }
+
+      console.log('[FTX] 🗑️ Reserva eliminada:', code);
+      return true;
+    } catch (err: any) {
+      console.error('[FTX] Excepción deleteReservation:', err?.message);
+      return false;
     }
   }
 
@@ -152,9 +284,7 @@ export class RepositoryService {
    */
   public static async uploadVoucherImage(file: File, reservationCode: string): Promise<string | null> {
     const supabase = createClient();
-    if (!supabase) {
-      return URL.createObjectURL(file);
-    }
+    if (!supabase) return URL.createObjectURL(file);
 
     try {
       const fileExt = file.name.split('.').pop();
@@ -172,11 +302,11 @@ export class RepositoryService {
 
       const { data: signedUrlData } = await supabase.storage
         .from('vouchers')
-        .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 días
+        .createSignedUrl(filePath, 60 * 60 * 24 * 7);
 
       return signedUrlData?.signedUrl || URL.createObjectURL(file);
     } catch (err: any) {
-      console.error('[FTX] Excepción al subir voucher:', err?.message);
+      console.error('[FTX] Excepción uploadVoucher:', err?.message);
       return URL.createObjectURL(file);
     }
   }

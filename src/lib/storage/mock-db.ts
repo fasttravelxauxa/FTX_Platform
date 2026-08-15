@@ -243,6 +243,16 @@ export class LocalDb {
     this.addAuditLog('Guardo/Actualizó Reserva', 'Reservation', reservation.id, { code: reservation.code, status: reservation.status });
   }
 
+  public static deleteReservation(reservationId: string): void {
+    const list = this.getReservations();
+    const filtered = list.filter((r) => r.id !== reservationId);
+    if (this.isBrowser()) {
+      localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(filtered));
+    }
+    this.addAuditLog('Eliminó Reserva', 'Reservation', reservationId, {});
+  }
+
+
   public static getVehicles(): Vehicle[] {
     if (!this.isBrowser()) return INITIAL_VEHICLES;
     const data = localStorage.getItem(STORAGE_KEYS.VEHICLES);
