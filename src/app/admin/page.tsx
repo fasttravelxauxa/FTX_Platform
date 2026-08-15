@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Car,
   Users,
@@ -22,16 +23,21 @@ import {
   FileCheck,
   Building2,
   Copy,
+  LogOut,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { LocalDb } from '@/lib/storage/mock-db';
+import { RepositoryService } from '@/lib/services/repository';
 import { Reservation, ReservationStatus } from '@/lib/types';
 import { WhatsAppService } from '@/lib/services/whatsapp';
+import { createClient } from '@/lib/supabase/client';
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
+  const [authChecking, setAuthChecking] = useState<boolean>(true);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [activeTab, setActiveTab] = useState<'reservas' | 'calendario' | 'vehiculos' | 'auditoria'>('reservas');
   const [filterStatus, setFilterStatus] = useState<string>('TODOS');
@@ -43,11 +49,44 @@ export default function AdminDashboardPage() {
   const [showReviewModal, setShowReviewModal] = useState<boolean>(false);
 
   useEffect(() => {
-    refreshData();
+    checkAdminAuth();
   }, []);
 
-  const refreshData = () => {
-    const list = LocalDb.getReservations();
+  const checkAdminAuth = async () => {
+    const supabase = createClient();
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/admin/login');
+        return;
+      }
+    } else {
+      // Local demo auth check
+      if (typeof window !== 'undefined') {
+        const isAuth = localStorage.getItem('ftx_admin_auth');
+        if (!isAuth) {
+          router.push('/admin/login');
+          return;
+        }
+      }
+    }
+    setAuthChecking(false);
+    await refreshData();
+  };
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('ftx_admin_auth');
+    }
+    router.push('/admin/login');
+  };
+
+  const refreshData = async () => {
+    const list = await RepositoryService.getReservations();
     setReservations(list);
   };
 
@@ -73,7 +112,7 @@ export default function AdminDashboardPage() {
   });
 
   // Approve Payment Proof
-  const handleApprovePayment = (res: Reservation) => {
+  const handleApprovePayment = async (res: Reservation) => {
     const updated: Reservation = {
       ...res,
       status: 'CONFIRMED',
@@ -82,14 +121,14 @@ export default function AdminDashboardPage() {
     if (updated.payments?.[0]) {
       updated.payments[0].status = 'APPROVED';
     }
-    LocalDb.saveReservation(updated);
-    refreshData();
+    await RepositoryService.saveReservation(updated);
+    await refreshData();
     setShowReviewModal(false);
     alert(`Pago aprobado con éxito para la reserva ${res.code}. El estado cambió a CONFIRMED.`);
   };
 
   // Reject Payment Proof
-  const handleRejectPayment = (res: Reservation) => {
+  const handleRejectPayment = async (res: Reservation) => {
     if (!rejectionReason.trim()) {
       alert('Por favor ingresa el motivo del rechazo.');
       return;
@@ -103,8 +142,8 @@ export default function AdminDashboardPage() {
     if (updated.payments?.[0]) {
       updated.payments[0].status = 'REJECTED';
     }
-    LocalDb.saveReservation(updated);
-    refreshData();
+    await RepositoryService.saveReservation(updated);
+    await refreshData();
     setShowReviewModal(false);
     setRejectionReason('');
     alert(`Comprobante rechazado para ${res.code}.`);
@@ -119,6 +158,17 @@ export default function AdminDashboardPage() {
     navigator.clipboard.writeText(info);
     alert(`Datos tributarios copiados al portapapeles:\n${info}`);
   };
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-crusoe-950 flex flex-col items-center justify-center p-6 text-white font-sans">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-crusoe-500 text-crusoe-950 font-bold mb-4 animate-bounce">
+          <Car className="h-7 w-7" />
+        </div>
+        <p className="text-sm font-semibold text-crusoe-200">Verificando sesión administrativa de Fast Travel Xauxa...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-crusoe-50 flex flex-col font-sans">
@@ -135,7 +185,7 @@ export default function AdminDashboardPage() {
               Control de Reservas y Emisión de Comprobantes
             </h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" onClick={refreshData}>
               <RefreshCw className="h-4 w-4" />
               Actualizar
@@ -146,6 +196,10 @@ export default function AdminDashboardPage() {
                 Nueva Reserva
               </Button>
             </Link>
+            <Button size="sm" variant="danger" onClick={handleLogout} title="Cerrar sesión">
+              <LogOut className="h-4 w-4" />
+              Salir
+            </Button>
           </div>
         </div>
 
