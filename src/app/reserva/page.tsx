@@ -22,6 +22,11 @@ import {
   FileText,
   FileCheck,
   Bell,
+  Copy,
+  Info,
+  Phone,
+  User,
+  CreditCard,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -32,6 +37,19 @@ import { PricingService } from '@/lib/services/pricing';
 import { WhatsAppService } from '@/lib/services/whatsapp';
 import { RepositoryService, savePassengerIdentity, generateUUID } from '@/lib/services/repository';
 import { Reservation, PriceQuote, PaymentMethod, InvoiceType } from '@/lib/types';
+
+const STEP_TITLES: { [key: number]: string } = {
+  1: 'Tipo de Servicio',
+  2: 'Fecha y Hora',
+  3: 'Ruta y Destino',
+  4: 'Detalles de Vuelo',
+  5: 'Datos del Pasajero',
+  6: 'Equipaje y Notas',
+  7: 'Comprobante Fiscal',
+  8: 'Cotización y Términos',
+  9: 'Adelanto y Voucher',
+  10: 'Confirmación',
+};
 
 function BookingWizardForm() {
   const router = useRouter();
@@ -58,7 +76,7 @@ function BookingWizardForm() {
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [customerDni, setCustomerDni] = useState<string>('');
-  const [customerTitle, setCustomerTitle] = useState<string>('Sr./Sra.');
+  const [customerTitle, setCustomerTitle] = useState<string>('Sr.');
 
   // Flight Info
   const [airline, setAirline] = useState<string>('LATAM');
@@ -87,6 +105,12 @@ function BookingWizardForm() {
   const [quote, setQuote] = useState<PriceQuote | null>(null);
   const [createdReservation, setCreatedReservation] = useState<Reservation | null>(null);
 
+  // Scroll smoothly to top on every step change (Mobile UX fix)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setErrorMsg(null);
+  }, [step]);
+
   // Recalculate quote whenever relevant fields change
   useEffect(() => {
     try {
@@ -98,38 +122,39 @@ function BookingWizardForm() {
         hoursCount,
       });
       setQuote(q);
-    } catch (err: any) {
-      console.error('Error calculando cotización:', err);
+    } catch {
+      // Ignorar cálculo incompleto temporal
     }
   }, [serviceCode, origin, destination, passengersCount, hoursCount]);
 
-  // Handle Voucher file selection
-  const handleVoucherChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 2 * 1024 * 1024) {
-        setErrorMsg('El archivo del comprobante no debe superar los 2MB.');
+  const handleVoucherUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMsg('El comprobante no debe superar los 5MB.');
         return;
       }
-      setErrorMsg(null);
       setVoucherFile(file);
       setVoucherPreview(URL.createObjectURL(file));
+      setErrorMsg(null);
     }
   };
 
-  // Submit and create reservation
   const handleCreateReservation = async () => {
     if (!customerName || !customerPhone) {
-      setErrorMsg('Por favor ingresa tu Nombre completo y Teléfono.');
+      setErrorMsg('Por favor ingresa tu Nombre completo y Teléfono de WhatsApp.');
+      setStep(5);
       return;
     }
     if (!acceptedTerms) {
       setErrorMsg('Debes aceptar los Términos y Condiciones para continuar.');
+      setStep(8);
       return;
     }
 
     if (invoiceType === 'factura' && (!invoiceRuc || !invoiceCompanyName)) {
       setErrorMsg('Para Factura Electrónica debes ingresar el número de RUC y la Razón Social.');
+      setStep(7);
       return;
     }
 
@@ -143,28 +168,27 @@ function BookingWizardForm() {
       if (!limitCheck.allowed) {
         if (limitCheck.reason === 'servicio_duplicado_hoy') {
           setErrorMsg(
-            `Ya tienes una reserva del tipo "${service?.name}" para hoy. Puedes reservar un servicio diferente o hacerlo para otra fecha.`
+            `Ya tienes una reserva activa de "${service?.name}" para hoy. Puedes seleccionar otro servicio o reservar para una fecha distinta.`
           );
         } else {
           setErrorMsg(
-            `Has alcanzado el límite de 2 reservas por día. Podrás hacer una nueva reserva mañana o contactarnos por WhatsApp para coordinar.`
+            `Has alcanzado el límite de 2 reservas diarias para el número ${customerPhone}. Si requieres traslados adicionales, comunícate al WhatsApp de coordinación 929 667 586.`
           );
         }
         setLoading(false);
         return;
       }
 
-      // ── Guardar identidad del pasajero en este dispositivo ──
+      // Guardar identidad del pasajero en este dispositivo
       savePassengerIdentity(customerPhone);
 
       const codeSeq = Math.floor(1000 + Math.random() * 9000);
       const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const code = `FTX-${todayStr}-${codeSeq}`;
 
-
       let finalVoucherUrl = voucherPreview;
 
-      // Upload file to Supabase Storage if file selected
+      // Subir imagen a Supabase Storage
       if (voucherFile) {
         const uploaded = await RepositoryService.uploadVoucherImage(voucherFile, code);
         if (uploaded) {
@@ -254,7 +278,7 @@ function BookingWizardForm() {
           : [],
       };
 
-      // Save into Supabase DB directly in the cloud
+      // Guardar directamente en Supabase Cloud
       const saveResult = await RepositoryService.saveReservation(newRes);
       if (!saveResult.success) {
         setErrorMsg(saveResult.error || 'No se pudo registrar la reserva en la base de datos central. Inténtalo nuevamente.');
@@ -266,65 +290,92 @@ function BookingWizardForm() {
         newRes.code = saveResult.code;
       }
       setCreatedReservation(newRes);
-      setStep(10); // Final Confirmation Step
+      setStep(10); // Paso de Confirmación Final
 
-      // Trigger Confetti!
       confetti({
-        particleCount: 100,
-        spread: 70,
+        particleCount: 120,
+        spread: 80,
         origin: { y: 0.6 },
       });
     } catch (err: any) {
-      setErrorMsg('Ocurrió un error al procesar tu reserva. Inténtalo nuevamente.');
+      setErrorMsg('Ocurrió un error inesperado al procesar tu reserva. Inténtalo nuevamente.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="rounded-3xl border border-crusoe-200 bg-white p-6 sm:p-10 shadow-xl">
+    <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-xl">
+      {/* Progress Bar Header */}
+      {step < 10 && (
+        <div className="mb-6 border-b border-slate-100 pb-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-crusoe-800">
+              Paso {step} de 9
+            </span>
+            <span className="text-xs font-extrabold text-slate-900">
+              {STEP_TITLES[step]}
+            </span>
+          </div>
+
+          {/* Progress bar visual */}
+          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-crusoe-600 h-2 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${(step / 9) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
+
       {errorMsg && (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl bg-red-50 border border-red-200 p-4 text-xs font-medium text-red-800">
-          <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
-          <span>{errorMsg}</span>
+        <div className="mb-6 flex items-start gap-3 rounded-2xl bg-rose-50 border border-rose-200 p-4 text-xs font-semibold text-rose-900 shadow-sm">
+          <AlertCircle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+          <span className="leading-relaxed">{errorMsg}</span>
         </div>
       )}
 
       {/* STEP 1: Seleccionar Servicio */}
       {step === 1 && (
         <div className="space-y-6">
-          <h2 className="text-lg font-bold text-crusoe-950 flex items-center gap-2">
-            <Car className="h-5 w-5 text-crusoe-600" />
-            1. Selecciona el Tipo de Servicio
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <Car className="h-6 w-6 text-crusoe-600" />
+              1. Selecciona tu Servicio
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              Todos nuestros traslados se realizan en SUV Jetour último modelo con chofer ejecutivo.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
             {SERVICES_CATALOG.map((srv) => (
               <div
                 key={srv.code}
                 onClick={() => setServiceCode(srv.code)}
                 className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${
                   serviceCode === srv.code
-                    ? 'border-crusoe-600 bg-crusoe-50/80 shadow-md ring-2 ring-crusoe-600/20'
-                    : 'border-crusoe-200 hover:border-crusoe-400 bg-white'
+                    ? 'border-crusoe-600 bg-crusoe-50/90 shadow-md ring-2 ring-crusoe-600/30'
+                    : 'border-slate-200 hover:border-crusoe-300 bg-white hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-crusoe-950 text-base">{srv.name}</h3>
-                  <span className="text-sm font-extrabold text-crusoe-700">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-bold text-slate-950 text-base">{srv.name}</h3>
+                  <span className="text-xs font-extrabold text-crusoe-800 bg-crusoe-100/80 px-2.5 py-1 rounded-lg shrink-0">
                     {srv.code === 'compartido-aeropuerto'
                       ? 'S/ 20.00 /asiento'
                       : srv.price_unit === 'hourly'
-                      ? 'S/ 50.00 /h'
+                      ? 'S/ 50.00 /hora'
                       : 'S/ 80.00 base'}
                   </span>
                 </div>
-                <p className="text-xs text-crusoe-800 mt-2 leading-relaxed">{srv.description}</p>
+                <p className="text-xs text-slate-700 mt-2.5 leading-relaxed">{srv.description}</p>
               </div>
             ))}
           </div>
 
-          <div className="flex justify-end pt-4">
-            <Button onClick={() => setStep(2)}>
+          <div className="flex justify-end pt-4 border-t border-slate-100">
+            <Button size="lg" onClick={() => setStep(2)} className="w-full sm:w-auto">
               Siguiente: Fecha y Hora
               <ArrowRight className="h-4 w-4" />
             </Button>
@@ -335,662 +386,730 @@ function BookingWizardForm() {
       {/* STEP 2: Fecha y Hora */}
       {step === 2 && (
         <div className="space-y-6">
-          <h2 className="text-lg font-bold text-crusoe-950 flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5 text-crusoe-600" />
-            2. Fecha y Hora Programada del Servicio
-          </h2>
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <CalendarIcon className="h-6 w-6 text-crusoe-600" />
+              2. Fecha y Hora Programada
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              Monitoreamos los itinerarios de vuelo para garantizar que tu vehículo esté esperándote con 30 minutos de tolerancia tras el aterrizaje.
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Fecha del Traslado</label>
+              <label className="block text-xs font-bold text-slate-900 mb-2">Fecha del Traslado</label>
               <input
                 type="date"
                 value={scheduledDate}
+                min={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600 focus:ring-crusoe-500"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 focus:ring-1 focus:ring-crusoe-600 shadow-sm"
               />
             </div>
+
             <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Hora Programada / Aterrizaje</label>
+              <label className="block text-xs font-bold text-slate-900 mb-2">Hora Programada / Llegada</label>
               <input
                 type="time"
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600 focus:ring-crusoe-500"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 focus:ring-1 focus:ring-crusoe-600 shadow-sm"
               />
             </div>
           </div>
 
-          <div className="rounded-2xl bg-crusoe-50 p-4 border border-crusoe-200 text-xs text-crusoe-800 flex items-start gap-2">
-            <Clock className="h-4 w-4 text-crusoe-600 shrink-0 mt-0.5" />
-            <span>
-              <strong>Regla Operativa Aeroportuaria:</strong> Se otorga una tolerancia oficial de <strong>30 minutos</strong> posteriores al aterrizaje confirmado del vuelo.
-            </span>
-          </div>
-
-          <div className="flex justify-between pt-4">
+          <div className="flex justify-between pt-4 border-t border-slate-100">
             <Button variant="outline" onClick={() => setStep(1)}>
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
             <Button onClick={() => setStep(3)}>
-              Siguiente: Origen y Destino
+              Siguiente: Ruta
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 3: Origen y Destino */}
+      {/* STEP 3: Ruta y Destino */}
       {step === 3 && (
         <div className="space-y-6">
-          <h2 className="text-lg font-bold text-crusoe-950 flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-crusoe-600" />
-            3. Origen y Destino
-          </h2>
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <MapPin className="h-6 w-6 text-crusoe-600" />
+              3. Origen y Destino
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              Indica los puntos exactos de recogida y llegada para coordinar la mejor ruta de viaje.
+            </p>
+          </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Lugar de Origen</label>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">Punto de Origen / Recogida</label>
               <input
                 type="text"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
-                placeholder="Ej. Aeropuerto Francisco Carlé de Jauja"
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
+                placeholder="Ej. Aeropuerto de Jauja (JAU)"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
               />
             </div>
+
             <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Lugar de Destino / Dirección</label>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">Punto de Destino / Llegada</label>
               <input
                 type="text"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                placeholder="Ej. Hotel Turístico, Jr. Ancash 450, Huancayo (o Chilca)"
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
+                placeholder="Ej. Hotel Plaza Constitución, Huancayo"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">Cantidad de Pasajeros</label>
+              <select
+                value={passengersCount}
+                onChange={(e) => setPassengersCount(Number(e.target.value))}
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
+              >
+                <option value={1}>1 Pasajero</option>
+                <option value={2}>2 Pasajeros</option>
+                <option value={3}>3 Pasajeros</option>
+                <option value={4}>4 Pasajeros (Capacidad máxima SUV)</option>
+              </select>
             </div>
           </div>
 
-          <div className="flex justify-between pt-4">
+          <div className="flex justify-between pt-4 border-t border-slate-100">
             <Button variant="outline" onClick={() => setStep(2)}>
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
             <Button onClick={() => setStep(4)}>
-              Siguiente: Pasajeros
+              Siguiente: Vuelo
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 4: Pasajeros y Datos Personales */}
+      {/* STEP 4: Detalles de Vuelo */}
       {step === 4 && (
         <div className="space-y-6">
-          <h2 className="text-lg font-bold text-crusoe-950 flex items-center gap-2">
-            <Users className="h-5 w-5 text-crusoe-600" />
-            4. Pasajeros y Datos de Contacto
-          </h2>
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <Plane className="h-6 w-6 text-crusoe-600" />
+              4. Información de Vuelo (Opcional)
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              Si llegas en avión al Aeropuerto de Jauja, ingresa tu aerolínea y número de vuelo para monitorear retrasos en tiempo real.
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Nombre y Apellidos</label>
-              <input
-                type="text"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Ej. María Elena Ramos"
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Teléfono WhatsApp (Coordinación)</label>
-              <input
-                type="tel"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="Ej. 929667586"
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
-              />
-              <span className="text-[10px] text-crusoe-700 font-semibold block mt-1">
-                Coordinación únicamente por mensajes de WhatsApp (No llamadas)
-              </span>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Número de DNI</label>
-              <input
-                type="text"
-                value={customerDni}
-                onChange={(e) => setCustomerDni(e.target.value)}
-                placeholder="Ej. 45678912"
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Título o Grado para Cartel (Opcional)</label>
-              <input
-                type="text"
-                value={customerTitle}
-                onChange={(e) => setCustomerTitle(e.target.value)}
-                placeholder="Ej. Dra. / Ing. / Sr."
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Número de Pasajeros</label>
-              <select
-                value={passengersCount}
-                onChange={(e) => setPassengersCount(parseInt(e.target.value))}
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
-              >
-                <option value={1}>1 Pasajero</option>
-                <option value={2}>2 Pasajeros</option>
-                <option value={3}>3 Pasajeros</option>
-                <option value={4}>4 Pasajeros (Máximo SUV Jetour)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={() => setStep(3)}>
-              <ArrowLeft className="h-4 w-4" />
-              Atrás
-            </Button>
-            <Button onClick={() => setStep(5)}>
-              Siguiente: Información de Vuelo
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 5: Datos de Vuelo */}
-      {step === 5 && (
-        <div className="space-y-6">
-          <h2 className="text-lg font-bold text-crusoe-950 flex items-center gap-2">
-            <Plane className="h-5 w-5 text-crusoe-600" />
-            5. Información del Vuelo (Aeropuerto Jauja)
-          </h2>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Aerolínea</label>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">Aerolínea</label>
               <select
                 value={airline}
                 onChange={(e) => setAirline(e.target.value)}
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
               >
                 {AIRLINES.map((a) => (
-                  <option key={a.code} value={a.name}>
+                  <option key={a.code} value={a.code}>
                     {a.name}
                   </option>
                 ))}
               </select>
             </div>
+
             <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-2">Número de Vuelo</label>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">Número de Vuelo</label>
               <input
                 type="text"
                 value={flightNumber}
                 onChange={(e) => setFlightNumber(e.target.value)}
-                placeholder="Ej. LA 2145"
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
+                placeholder="Ej. LA 2145 / H2 5100"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-crusoe-900 mb-2">Notas sobre Equipaje (Opcional)</label>
-            <input
-              type="text"
-              value={luggageNotes}
-              onChange={(e) => setLuggageNotes(e.target.value)}
-              placeholder="Ej. 2 maletas grandes de 23kg y 1 maleta de mano"
-              className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
-            />
-          </div>
-
-          <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={() => setStep(4)}>
+          <div className="flex justify-between pt-4 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setStep(3)}>
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
-            <Button onClick={() => setStep(6)}>
-              Ver Cotización
+            <Button onClick={() => setStep(5)}>
+              Siguiente: Datos de Contacto
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 6: Cotización y Comprobante Fiscal (Boleta / Factura) */}
+      {/* STEP 5: Datos del Pasajero */}
+      {step === 5 && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <User className="h-6 w-6 text-crusoe-600" />
+              5. Datos del Pasajero Principal
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              Tu número de WhatsApp será el canal directo para enviarte la confirmación, el cartel del chofer y tus comprobantes electrónicos.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-900 mb-1.5">Trato / Título</label>
+                <select
+                  value={customerTitle}
+                  onChange={(e) => setCustomerTitle(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
+                >
+                  <option value="Sr.">Sr.</option>
+                  <option value="Sra.">Sra.</option>
+                  <option value="Srta.">Srta.</option>
+                  <option value="Ing.">Ing.</option>
+                  <option value="Lic.">Lic.</option>
+                  <option value="Dr.">Dr.</option>
+                  <option value="Dra.">Dra.</option>
+                  <option value="Mag.">Mag.</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-900 mb-1.5">Nombre Completo *</label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Ej. Carlos Mendoza Ramos"
+                  className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-900 mb-1.5">WhatsApp / Celular (9 dígitos) *</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-3.5 text-xs font-bold text-slate-500">+51</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={9}
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="929667586"
+                    className="w-full rounded-xl border border-slate-300 bg-white pl-12 pr-4 py-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-900 mb-1.5">DNI / Documento de Identidad</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={12}
+                  value={customerDni}
+                  onChange={(e) => setCustomerDni(e.target.value.replace(/[^0-9A-Za-z]/g, ''))}
+                  placeholder="Ej. 44556677"
+                  className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-4 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setStep(4)}>
+              <ArrowLeft className="h-4 w-4" />
+              Atrás
+            </Button>
+            <Button
+              onClick={() => {
+                if (!customerName.trim() || customerPhone.replace(/[^0-9]/g, '').length < 9) {
+                  setErrorMsg('Ingresa tu nombre y un número de WhatsApp válido de 9 dígitos.');
+                  return;
+                }
+                setStep(6);
+              }}
+            >
+              Siguiente: Equipaje
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 6: Equipaje y Notas */}
       {step === 6 && (
         <div className="space-y-6">
-          <h2 className="text-lg font-bold text-crusoe-950 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-crusoe-600" />
-            6. Cotización Formal y Solicitud de Comprobante Fiscal
-          </h2>
-
-          <div className="rounded-2xl border-2 border-crusoe-300 bg-crusoe-50/60 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-crusoe-200 pb-3">
-              <span className="font-bold text-crusoe-950">Resumen del Traslado:</span>
-              <span className="text-xs font-semibold text-crusoe-700">{serviceCode}</span>
-            </div>
-
-            {quote?.details.map((detail, idx) => (
-              <div key={idx} className="text-xs text-crusoe-900 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-crusoe-600 shrink-0" />
-                <span>{detail}</span>
-              </div>
-            ))}
-
-            <div className="border-t border-crusoe-200 pt-4 space-y-2 text-sm text-crusoe-950">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span className="font-semibold">S/ {quote?.subtotal.toFixed(2)}</span>
-              </div>
-              {quote?.surcharges! > 0 && (
-                <div className="flex justify-between text-crusoe-700">
-                  <span>Recargos Zona Periférica:</span>
-                  <span className="font-semibold">+S/ {quote?.surcharges.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-lg font-extrabold text-crusoe-950 border-t border-crusoe-300 pt-2">
-                <span>Monto Total:</span>
-                <span className="text-crusoe-700">S/ {quote?.total.toFixed(2)}</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-3">
-                <div className="rounded-xl bg-crusoe-100 p-3 border border-crusoe-300 text-center">
-                  <span className="block text-[11px] font-bold text-crusoe-800 uppercase">
-                    Adelanto Requerido (50%)
-                  </span>
-                  <span className="text-xl font-extrabold text-crusoe-900">
-                    S/ {quote?.depositRequired.toFixed(2)}
-                  </span>
-                </div>
-
-                <div className="rounded-xl bg-gray-100 p-3 border border-gray-300 text-center">
-                  <span className="block text-[11px] font-bold text-gray-700 uppercase">
-                    Saldo al Abordar (50%)
-                  </span>
-                  <span className="text-xl font-extrabold text-gray-900">
-                    S/ {quote?.balanceRemaining.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* BOLETA / FACTURA SECTION */}
-          <div className="rounded-2xl border border-crusoe-300 bg-white p-5 space-y-4">
-            <div className="flex items-center gap-2">
-              <FileCheck className="h-5 w-5 text-crusoe-600" />
-              <h3 className="font-bold text-sm text-crusoe-950">¿Requieres Comprobante Fiscal? (Boleta / Factura Electrónica)</h3>
-            </div>
-            <p className="text-xs text-crusoe-800">
-              Emitimos Boletas y Facturas Electrónicas. Ingresa tus datos tributarios aquí y la empresa emisora entregará tu comprobante fiscal directamente a tu celular vía WhatsApp.
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <Info className="h-6 w-6 text-crusoe-600" />
+              6. Equipaje e Instrucciones Especiales
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              La SUV Jetour cuenta con amplia maletera ejecutiva con capacidad para 4 maletas de cabina o 2 maletas grandes.
             </p>
-
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setInvoiceType('ninguno')}
-                className={`rounded-xl border-2 p-3 text-xs font-bold transition-all ${
-                  invoiceType === 'ninguno'
-                    ? 'border-crusoe-600 bg-crusoe-50 text-crusoe-950'
-                    : 'border-crusoe-200 bg-white text-gray-700'
-                }`}
-              >
-                Sin Comprobante
-              </button>
-              <button
-                type="button"
-                onClick={() => setInvoiceType('boleta')}
-                className={`rounded-xl border-2 p-3 text-xs font-bold transition-all ${
-                  invoiceType === 'boleta'
-                    ? 'border-crusoe-600 bg-crusoe-50 text-crusoe-950'
-                    : 'border-crusoe-200 bg-white text-gray-700'
-                }`}
-              >
-                Boleta de Venta
-              </button>
-              <button
-                type="button"
-                onClick={() => setInvoiceType('factura')}
-                className={`rounded-xl border-2 p-3 text-xs font-bold transition-all ${
-                  invoiceType === 'factura'
-                    ? 'border-crusoe-600 bg-crusoe-50 text-crusoe-950'
-                    : 'border-crusoe-200 bg-white text-gray-700'
-                }`}
-              >
-                Factura Electrónica
-              </button>
-            </div>
-
-            {invoiceType === 'boleta' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-crusoe-100">
-                <div>
-                  <label className="block text-xs font-bold text-crusoe-900 mb-1">DNI del Titular de la Boleta</label>
-                  <input
-                    type="text"
-                    value={invoiceDni || customerDni}
-                    onChange={(e) => setInvoiceDni(e.target.value)}
-                    placeholder="Ej. 45678912"
-                    className="w-full rounded-xl border border-crusoe-300 p-2.5 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-crusoe-900 mb-1">Nombre Completo</label>
-                  <input
-                    type="text"
-                    value={invoiceName || customerName}
-                    onChange={(e) => setInvoiceName(e.target.value)}
-                    placeholder="Ej. María Elena Ramos"
-                    className="w-full rounded-xl border border-crusoe-300 p-2.5 text-xs"
-                  />
-                </div>
-              </div>
-            )}
-
-            {invoiceType === 'factura' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-crusoe-100">
-                <div>
-                  <label className="block text-xs font-bold text-crusoe-900 mb-1">Número de RUC (11 dígitos)</label>
-                  <input
-                    type="text"
-                    value={invoiceRuc}
-                    onChange={(e) => setInvoiceRuc(e.target.value)}
-                    placeholder="Ej. 20601234567"
-                    className="w-full rounded-xl border border-crusoe-300 p-2.5 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-crusoe-900 mb-1">Razón Social de la Empresa</label>
-                  <input
-                    type="text"
-                    value={invoiceCompanyName}
-                    onChange={(e) => setInvoiceCompanyName(e.target.value)}
-                    placeholder="Ej. Corporación Andina S.A.C."
-                    className="w-full rounded-xl border border-crusoe-300 p-2.5 text-xs"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-crusoe-900 mb-1">Dirección Fiscal</label>
-                  <input
-                    type="text"
-                    value={invoiceAddress}
-                    onChange={(e) => setInvoiceAddress(e.target.value)}
-                    placeholder="Ej. Av. Real 1020, Huancayo, Junín"
-                    className="w-full rounded-xl border border-crusoe-300 p-2.5 text-xs"
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
-          <div className="flex justify-between pt-4">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">Detalles de Equipaje</label>
+              <input
+                type="text"
+                value={luggageNotes}
+                onChange={(e) => setLuggageNotes(e.target.value)}
+                placeholder="Ej. 2 maletas de 23kg y 1 mochila de mano"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">Notas adicionales para el conductor</label>
+              <textarea
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Ej. Viajo con un adulto mayor, requerimos asistencia al abordar."
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
+              ></textarea>
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-4 border-t border-slate-100">
             <Button variant="outline" onClick={() => setStep(5)}>
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
             <Button onClick={() => setStep(7)}>
-              Siguiente: Términos Legales
+              Siguiente: Comprobante
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 7: Términos Legal Versioning */}
+      {/* STEP 7: Comprobante Fiscal */}
       {step === 7 && (
         <div className="space-y-6">
-          <h2 className="text-lg font-bold text-crusoe-950 flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-crusoe-600" />
-            7. Términos y Políticas del Servicio (v1.0)
-          </h2>
-
-          <div className="h-48 overflow-y-auto rounded-2xl border border-crusoe-200 bg-crusoe-50/50 p-4 text-xs text-crusoe-900 space-y-3 leading-relaxed">
-            <p>
-              <strong>1. Reserva y Adelanto:</strong> Para confirmar el servicio se requiere el abono del 50% del costo total. El saldo restante (50%) se abonará en efectivo o transferencia al abordar el vehículo.
-            </p>
-            <p>
-              <strong>2. Política de Cancelación (60 min):</strong> El pasajero podrá cancelar la reserva y solicitar la devolución íntegra del adelanto dentro de los <strong>60 minutos</strong> posteriores a la creación de la reserva.
-            </p>
-            <p>
-              <strong>3. Espera en Aeropuerto:</strong> Se otorga un periodo de tolerancia gratuito de <strong>30 minutos</strong> contados a partir de la hora confirmada de aterrizaje del vuelo.
-            </p>
-            <p>
-              <strong>4. Emisión de Boletas y Facturas Electrónicas:</strong> La plataforma registra los datos fiscales ingresados por el usuario (DNI o RUC/Razón Social). La empresa emisora del servicio genera el comprobante tributario oficial y lo envía en formato PDF/XML directamente al WhatsApp registrado.
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <FileCheck className="h-6 w-6 text-crusoe-600" />
+              7. Tipo de Comprobante de Pago
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              Emitimos Boletas y Facturas Electrónicas autorizadas por SUNAT. El archivo PDF/XML se envía a tu WhatsApp.
             </p>
           </div>
 
-          <label className="flex items-center gap-3 cursor-pointer pt-2">
-            <input
-              type="checkbox"
-              checked={acceptedTerms}
-              onChange={(e) => setAcceptedTerms(e.target.checked)}
-              className="h-5 w-5 rounded border-crusoe-400 text-crusoe-600 focus:ring-crusoe-500"
-            />
-            <span className="text-xs font-semibold text-crusoe-950">
-              He leído y acepto los Términos v1.0, la Política de Privacidad v1.0 y la Condición de Adelanto del 50%.
-            </span>
-          </label>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { type: 'ninguno', label: 'Sin Comprobante' },
+              { type: 'boleta', label: 'Boleta Electrónica' },
+              { type: 'factura', label: 'Factura Electrónica' },
+            ].map((item) => (
+              <button
+                key={item.type}
+                type="button"
+                onClick={() => setInvoiceType(item.type as InvoiceType)}
+                className={`rounded-2xl border-2 p-3.5 text-center text-xs font-extrabold transition-all ${
+                  invoiceType === item.type
+                    ? 'border-crusoe-600 bg-crusoe-50/90 text-crusoe-950 shadow-sm ring-2 ring-crusoe-600/30'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
 
-          <div className="flex justify-between pt-4">
+          {invoiceType === 'boleta' && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+              <span className="text-xs font-bold text-slate-900 block">Datos para Boleta Electrónica</span>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">DNI del Titular</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={8}
+                    value={invoiceDni || customerDni}
+                    onChange={(e) => setInvoiceDni(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="8 dígitos"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-950 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Nombre Completo</label>
+                  <input
+                    type="text"
+                    value={invoiceName || customerName}
+                    onChange={(e) => setInvoiceName(e.target.value)}
+                    placeholder="Nombre en la boleta"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-950 font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {invoiceType === 'factura' && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+              <span className="text-xs font-bold text-slate-900 block">Datos para Factura Electrónica</span>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">RUC (11 dígitos) *</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={11}
+                    value={invoiceRuc}
+                    onChange={(e) => setInvoiceRuc(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="20601234567"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-950 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Razón Social *</label>
+                  <input
+                    type="text"
+                    value={invoiceCompanyName}
+                    onChange={(e) => setInvoiceCompanyName(e.target.value)}
+                    placeholder="Empresa S.A.C."
+                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-950 font-medium"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Dirección Fiscal</label>
+                  <input
+                    type="text"
+                    value={invoiceAddress}
+                    onChange={(e) => setInvoiceAddress(e.target.value)}
+                    placeholder="Av. Principal 123, Huancayo"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-950 font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-between pt-4 border-t border-slate-100">
             <Button variant="outline" onClick={() => setStep(6)}>
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
-            <Button disabled={!acceptedTerms} onClick={() => setStep(8)}>
-              Siguiente: Instrucciones de Pago
+            <Button onClick={() => setStep(8)}>
+              Siguiente: Cotización
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 8 & 9: Pago y Voucher Upload */}
-      {(step === 8 || step === 9) && (
+      {/* STEP 8: Cotización y Términos */}
+      {step === 8 && (
         <div className="space-y-6">
-          <h2 className="text-lg font-bold text-crusoe-950 flex items-center gap-2">
-            <Upload className="h-5 w-5 text-crusoe-600" />
-            8. Realiza el Pago del Adelanto (50% = S/ {quote?.depositRequired.toFixed(2)})
-          </h2>
-
-          {/* Selector Método */}
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              onClick={() => setPaymentMethod('yape')}
-              className={`rounded-2xl border-2 p-3 font-bold text-xs transition-all ${
-                paymentMethod === 'yape'
-                  ? 'border-purple-600 bg-purple-50 text-purple-900'
-                  : 'border-crusoe-200 bg-white text-crusoe-800'
-              }`}
-            >
-              Yape
-            </button>
-            <button
-              onClick={() => setPaymentMethod('plin')}
-              className={`rounded-2xl border-2 p-3 font-bold text-xs transition-all ${
-                paymentMethod === 'plin'
-                  ? 'border-cyan-600 bg-cyan-50 text-cyan-900'
-                  : 'border-crusoe-200 bg-white text-crusoe-800'
-              }`}
-            >
-              Plin
-            </button>
-            <button
-              onClick={() => setPaymentMethod('bcp')}
-              className={`rounded-2xl border-2 p-3 font-bold text-xs transition-all ${
-                paymentMethod === 'bcp'
-                  ? 'border-blue-600 bg-blue-50 text-blue-900'
-                  : 'border-crusoe-200 bg-white text-crusoe-800'
-              }`}
-            >
-              Transferencia BCP
-            </button>
-          </div>
-
-          {/* Instrucciones según Método */}
-          <div className="rounded-2xl bg-crusoe-50 border border-crusoe-200 p-5 text-xs text-crusoe-950 space-y-2">
-            {paymentMethod === 'bcp' ? (
-              <>
-                <p className="font-bold text-sm text-crusoe-900">Datos para Transferencia BCP:</p>
-                <p>
-                  <strong>Número de Cuenta:</strong> {PAYMENT_METHODS_INFO.bcp.accountNumber}
-                </p>
-                <p>
-                  <strong>CCI Interbancario:</strong> {PAYMENT_METHODS_INFO.bcp.cci}
-                </p>
-                <p>
-                  <strong>Titular:</strong> {PAYMENT_METHODS_INFO.bcp.owner}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="font-bold text-sm text-crusoe-900">
-                  Realiza tu pago vía {paymentMethod === 'yape' ? 'Yape' : 'Plin'} al número:
-                </p>
-                <p className="text-lg font-extrabold text-crusoe-700">
-                  {PAYMENT_METHODS_INFO.yape.phone}
-                </p>
-                <p className="text-crusoe-800">Titular: {PAYMENT_METHODS_INFO.yape.owner}</p>
-              </>
-            )}
-            <p className="text-[11px] text-crusoe-700 pt-1 font-semibold">
-              Monto Exacto Adelanto 50%: <strong>S/ {quote?.depositRequired.toFixed(2)}</strong>
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <CreditCard className="h-6 w-6 text-crusoe-600" />
+              8. Resumen de Cotización y Políticas
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              Tarifa transparente sin costos ocultos. Se abona el 50% de adelanto para reservar la SUV y el saldo se cancela al abordar.
             </p>
           </div>
 
-          {/* Adjuntar Comprobante */}
-          <div className="space-y-4 pt-2">
-            <label className="block text-xs font-bold text-crusoe-900">
-              Adjunta la Imagen del Comprobante / Voucher (Máx 2MB)
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 space-y-3">
+            <div className="flex justify-between text-xs text-slate-700">
+              <span>Tarifa Base del Servicio:</span>
+              <span className="font-bold text-slate-950">S/ {quote?.subtotal.toFixed(2) || '80.00'}</span>
+            </div>
+            {quote && quote.surcharges > 0 && (
+              <div className="flex justify-between text-xs text-slate-700">
+                <span>Recargo por Zona Periférica:</span>
+                <span className="font-bold text-slate-950">S/ {quote.surcharges.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm font-extrabold text-slate-950 border-t border-slate-200 pt-3">
+              <span>Monto Total del Viaje:</span>
+              <span className="text-base text-crusoe-800">S/ {quote?.total.toFixed(2) || '80.00'}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="rounded-xl border border-crusoe-200 bg-crusoe-50/80 p-3 text-center">
+                <span className="text-[10px] font-bold text-crusoe-800 uppercase block">Adelanto Requerido (50%)</span>
+                <span className="text-lg font-extrabold text-crusoe-950">S/ {quote?.depositRequired.toFixed(2) || '40.00'}</span>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3 text-center">
+                <span className="text-[10px] font-bold text-slate-600 uppercase block">Saldo al Abordar (50%)</span>
+                <span className="text-lg font-extrabold text-slate-950">S/ {quote?.balanceRemaining.toFixed(2) || '40.00'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Terms checkbox */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="h-5 w-5 rounded border-slate-300 text-crusoe-600 focus:ring-crusoe-500 mt-0.5"
+              />
+              <span className="text-xs text-slate-800 leading-relaxed">
+                He leído y acepto los{' '}
+                <Link href="/terminos" target="_blank" className="font-bold text-crusoe-700 underline">
+                  Términos y Condiciones
+                </Link>{' '}
+                y la{' '}
+                <Link href="/cancelaciones" target="_blank" className="font-bold text-crusoe-700 underline">
+                  Política de Cancelación
+                </Link>{' '}
+                (Cancelación gratuita dentro de los 60 minutos de realizada la reserva).
+              </span>
             </label>
-            <input
-              type="file"
-              accept="image/png, image/jpeg, image/webp"
-              onChange={handleVoucherChange}
-              className="w-full text-xs text-crusoe-900 file:mr-4 file:rounded-xl file:border-0 file:bg-crusoe-600 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-white hover:file:bg-crusoe-700"
-            />
+          </div>
+
+          <div className="flex justify-between pt-4 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setStep(7)}>
+              <ArrowLeft className="h-4 w-4" />
+              Atrás
+            </Button>
+            <Button
+              onClick={() => {
+                if (!acceptedTerms) {
+                  setErrorMsg('Debes aceptar los Términos y Condiciones para continuar.');
+                  return;
+                }
+                setStep(9);
+              }}
+            >
+              Siguiente: Realizar Pago
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 9: Adelanto y Voucher */}
+      {step === 9 && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <Upload className="h-6 w-6 text-crusoe-600" />
+              9. Pago del Adelanto (50%)
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              Transfiere el monto de <strong>S/ {quote?.depositRequired.toFixed(2) || '40.00'}</strong> mediante Yape, Plin o Transferencia BCP y adjunta tu comprobante.
+            </p>
+          </div>
+
+          {/* Method selector */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { code: 'yape', name: 'Yape' },
+              { code: 'plin', name: 'Plin' },
+              { code: 'bcp', name: 'BCP' },
+            ].map((m) => (
+              <button
+                key={m.code}
+                type="button"
+                onClick={() => setPaymentMethod(m.code as PaymentMethod)}
+                className={`rounded-2xl border-2 p-3 text-center text-xs font-extrabold transition-all ${
+                  paymentMethod === m.code
+                    ? 'border-crusoe-600 bg-crusoe-50/90 text-crusoe-950 shadow-sm ring-2 ring-crusoe-600/30'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                {m.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Payment method details box */}
+          <div className="rounded-2xl border border-crusoe-200 bg-crusoe-50/70 p-5 text-center space-y-3">
+            {paymentMethod === 'yape' && (
+              <div>
+                <span className="text-xs font-bold text-crusoe-900 block uppercase">Número Oficial de Yape</span>
+                <span className="text-2xl font-extrabold text-crusoe-950 block mt-1">929 667 586</span>
+                <span className="text-xs text-slate-700 block font-medium">Titular: Fast Travel Xauxa</span>
+              </div>
+            )}
+
+            {paymentMethod === 'plin' && (
+              <div>
+                <span className="text-xs font-bold text-crusoe-900 block uppercase">Número Oficial de Plin</span>
+                <span className="text-2xl font-extrabold text-crusoe-950 block mt-1">929 667 586</span>
+                <span className="text-xs text-slate-700 block font-medium">Titular: Fast Travel Xauxa</span>
+              </div>
+            )}
+
+            {paymentMethod === 'bcp' && (
+              <div className="space-y-2 text-xs text-slate-900 font-medium">
+                <div>
+                  <span className="font-bold block">Cuenta Corriente BCP:</span>
+                  <span className="font-mono text-sm font-bold text-crusoe-950">355-98765432-0-12</span>
+                </div>
+                <div>
+                  <span className="font-bold block">CCI Interbancario:</span>
+                  <span className="font-mono text-xs font-bold text-crusoe-950">002-355009876543201289</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Voucher upload */}
+          <div className="space-y-3">
+            <label className="block text-xs font-bold text-slate-900">Adjuntar Captura de Comprobante (Voucher)</label>
+            <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center hover:border-crusoe-500 transition-colors bg-slate-50">
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleVoucherUpload}
+                id="voucher-file-input"
+                className="hidden"
+              />
+              <label htmlFor="voucher-file-input" className="cursor-pointer space-y-2 block">
+                <Upload className="h-8 w-8 text-crusoe-600 mx-auto" />
+                <span className="text-xs font-bold text-crusoe-800 block">
+                  Toca aquí para seleccionar tu foto de comprobante
+                </span>
+                <span className="text-[11px] text-slate-500 block">Formatos: JPG, PNG o PDF (Máx. 5MB)</span>
+              </label>
+            </div>
 
             {voucherPreview && (
-              <div className="mt-3 flex items-center gap-4 rounded-2xl border border-crusoe-300 p-3 bg-crusoe-50">
-                <img src={voucherPreview} alt="Preview voucher" className="h-16 w-16 object-cover rounded-xl" />
-                <div className="text-xs text-crusoe-900">
-                  <span className="font-bold block text-crusoe-700">Comprobante Cargado</span>
-                  <span>Nombre: {voucherFile?.name}</span>
+              <div className="rounded-2xl border border-slate-200 bg-white p-3 flex items-center gap-3">
+                <img src={voucherPreview} alt="Vista previa del comprobante" className="h-12 w-12 rounded-lg object-cover border" />
+                <div className="flex-1 text-xs">
+                  <span className="font-bold text-slate-900 block">Comprobante seleccionado</span>
+                  <span className="text-slate-500 text-[11px]">{voucherFile?.name}</span>
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-crusoe-900 mb-1">
-                Número de Operación / Referencia (Opcional)
-              </label>
+              <label className="block text-xs font-bold text-slate-900 mb-1">Número de Operación / Referencia (Opcional)</label>
               <input
                 type="text"
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
-                placeholder="Ej. YAP-9812401"
-                className="w-full rounded-xl border border-crusoe-300 p-3 text-sm focus:border-crusoe-600"
+                placeholder="Ej. OP-12345678"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
               />
             </div>
           </div>
 
-          <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={() => setStep(7)}>
+          <div className="flex justify-between pt-4 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setStep(8)}>
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
-            <Button isLoading={loading} onClick={handleCreateReservation}>
-              Enviar Reserva y Voucher
+            <Button size="lg" isLoading={loading} onClick={handleCreateReservation}>
+              Confirmar y Enviar Reserva
               <CheckCircle2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 10: Confirmación Final y Alerta Instantánea al Teléfono del Admin */}
+      {/* STEP 10: Confirmación Final y Alerta Instantánea */}
       {step === 10 && createdReservation && (
         <div className="space-y-6 text-center py-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-crusoe-100 text-crusoe-600 mx-auto">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-crusoe-100 text-crusoe-700 mx-auto shadow-inner">
             <CheckCircle2 className="h-10 w-10" />
           </div>
 
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-crusoe-700">
-              Reserva Registrada Correctamente
+            <span className="text-xs font-bold uppercase tracking-wider text-crusoe-800">
+              ¡Reserva Registrada Exitosamente!
             </span>
-            <h2 className="text-3xl font-extrabold text-crusoe-950 mt-1">{createdReservation.code}</h2>
+            <h2 className="text-3xl font-extrabold text-slate-950 mt-1">{createdReservation.code}</h2>
             <div className="mt-2 flex justify-center">
               <Badge status={createdReservation.status} />
             </div>
           </div>
 
           {/* ALERTA INSTANTÁNEA AL ADMIN */}
-          <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-xs text-amber-950 space-y-2 max-w-lg mx-auto text-left">
+          <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 text-xs text-amber-950 space-y-3 max-w-lg mx-auto text-left shadow-sm">
             <div className="flex items-center gap-2 text-amber-900 font-extrabold text-sm">
               <Bell className="h-5 w-5 text-amber-600 animate-bounce shrink-0" />
-              <span>Notificación Instantánea de Reserva</span>
+              <span>Notificación Automática a Coordinación</span>
             </div>
-            <p className="text-[11px] text-amber-900 leading-relaxed">
-              Haz clic en el botón verde a continuación para enviar la alerta automática de tu reserva con tu código <strong>{createdReservation.code}</strong> al WhatsApp oficial de administración (<strong>929 667 586</strong>).
+            <p className="text-xs text-amber-950 leading-relaxed font-medium">
+              Haz clic en el botón verde para enviar el detalle de tu reserva <strong>{createdReservation.code}</strong> al WhatsApp oficial de administración (<strong>929 667 586</strong>) para asignación inmediata de vehículo.
             </p>
-            <div className="pt-2">
+            <div className="pt-1">
               <a
                 href={WhatsAppService.getAdminNewBookingAlertLink(createdReservation)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-crusoe-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-crusoe-600/30 hover:bg-crusoe-700 transition-colors"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-crusoe-600 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-crusoe-600/30 hover:bg-crusoe-700 transition-colors"
               >
-                <MessageSquare className="h-4 w-4" />
+                <MessageSquare className="h-5 w-5" />
                 Enviar Alerta al Administrador (WhatsApp 929 667 586)
               </a>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-crusoe-200 bg-crusoe-50/70 p-6 text-left text-xs text-crusoe-900 space-y-2 max-w-lg mx-auto">
+          {/* Resumen del viaje */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left text-xs text-slate-900 space-y-2.5 max-w-lg mx-auto">
             <div className="flex justify-between">
-              <span className="font-bold">Pasajero Principal:</span>
-              <span>{createdReservation.customer?.full_name}</span>
+              <span className="font-bold text-slate-600">Pasajero Principal:</span>
+              <span className="font-bold text-slate-950">{createdReservation.customer?.full_name}</span>
             </div>
             <div className="flex justify-between">
-              <span className="font-bold">Origen / Destino:</span>
-              <span>
+              <span className="font-bold text-slate-600">Origen / Destino:</span>
+              <span className="font-semibold text-slate-950">
                 {createdReservation.origin} ➔ {createdReservation.destination}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="font-bold">Fecha / Hora:</span>
-              <span>{new Date(createdReservation.scheduled_at).toLocaleString('es-PE')}</span>
+              <span className="font-bold text-slate-600">Fecha y Hora:</span>
+              <span className="font-semibold text-slate-950">{new Date(createdReservation.scheduled_at).toLocaleString('es-PE')}</span>
             </div>
 
             {createdReservation.invoice_details && createdReservation.invoice_details.type !== 'ninguno' && (
-              <div className="border-t border-crusoe-200 pt-2 text-crusoe-800">
-                <span className="font-bold text-crusoe-950 block">Comprobante Fiscal Solicitado:</span>
-                <span>
-                  {createdReservation.invoice_details.type.toUpperCase()} — {createdReservation.invoice_details.ruc ? `RUC ${createdReservation.invoice_details.ruc} (${createdReservation.invoice_details.companyName})` : `DNI ${createdReservation.invoice_details.dni}`}
+              <div className="border-t border-slate-200 pt-2 text-slate-800">
+                <span className="font-bold text-slate-950 block">Comprobante Fiscal:</span>
+                <span className="text-xs">
+                  {createdReservation.invoice_details.type.toUpperCase()} —{' '}
+                  {createdReservation.invoice_details.ruc
+                    ? `RUC ${createdReservation.invoice_details.ruc} (${createdReservation.invoice_details.companyName})`
+                    : `DNI ${createdReservation.invoice_details.dni}`}
                 </span>
-                <span className="text-[10px] text-crusoe-700 block italic">Se enviará el PDF/XML a tu WhatsApp.</span>
               </div>
             )}
 
-            <div className="flex justify-between border-t border-crusoe-200 pt-2 font-bold text-sm text-crusoe-950">
-              <span>Adelanto Enviado (50%):</span>
-              <span className="text-crusoe-700">S/ {createdReservation.deposit_amount.toFixed(2)}</span>
+            <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-sm text-slate-950">
+              <span>Adelanto (50%):</span>
+              <span className="text-crusoe-800 font-extrabold">S/ {createdReservation.deposit_amount.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-gray-700">
+            <div className="flex justify-between text-slate-700 text-xs">
               <span>Saldo a pagar al abordar:</span>
-              <span>S/ {createdReservation.balance_amount.toFixed(2)}</span>
+              <span className="font-bold text-slate-950">S/ {createdReservation.balance_amount.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="flex justify-center pt-2">
-            <Link href={`/reserva/${createdReservation.code}`}>
-              <Button variant="outline">Ver Estado de Mi Reserva</Button>
+          <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2 max-w-lg mx-auto">
+            <Link href={`/reserva/${createdReservation.code}`} className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full">
+                Ver Estado de Mi Reserva
+              </Button>
+            </Link>
+            <Link href="/mis-reservas" className="w-full sm:w-auto">
+              <Button className="w-full">
+                Ir a Mis Reservas
+              </Button>
             </Link>
           </div>
         </div>
@@ -1001,20 +1120,20 @@ function BookingWizardForm() {
 
 export default function BookingWizardPage() {
   return (
-    <div className="min-h-screen bg-crusoe-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <Navbar />
 
-      <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full">
-        <div className="mb-8 text-center">
-          <span className="text-xs font-bold uppercase tracking-widest text-crusoe-700">
-            Fast Travel Xauxa — Servicio Ejecutivo
+      <main className="flex-1 py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full">
+        <div className="mb-6 text-center">
+          <span className="text-xs font-extrabold uppercase tracking-widest text-crusoe-700">
+            Fast Travel Xauxa — Servicio Ejecutivo & Turístico
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-crusoe-950 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-1">
             Asistente de Reserva y Cotización
           </h1>
         </div>
 
-        <Suspense fallback={<div className="p-8 text-center text-xs text-crusoe-900 font-medium">Cargando formulario de reserva...</div>}>
+        <Suspense fallback={<div className="p-8 text-center text-xs text-slate-700 font-medium">Cargando asistente de reserva...</div>}>
           <BookingWizardForm />
         </Suspense>
       </main>
