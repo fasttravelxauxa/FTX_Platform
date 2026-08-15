@@ -53,35 +53,49 @@ export default function AdminDashboardPage() {
   }, []);
 
   const checkAdminAuth = async () => {
-    const supabase = createClient();
-    if (supabase) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/admin/login');
+    // 1. Check local session storage key
+    if (typeof window !== 'undefined') {
+      const isLocalAuth = localStorage.getItem('ftx_admin_auth');
+      if (isLocalAuth === 'true') {
+        setAuthChecking(false);
+        await refreshData();
         return;
       }
-    } else {
-      // Local demo auth check
-      if (typeof window !== 'undefined') {
-        const isAuth = localStorage.getItem('ftx_admin_auth');
-        if (!isAuth) {
-          router.push('/admin/login');
+    }
+
+    // 2. Check Supabase Auth session if local key is absent
+    try {
+      const supabase = createClient();
+      if (supabase) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setAuthChecking(false);
+          await refreshData();
           return;
         }
       }
+    } catch (err) {
+      console.warn('Error verificando usuario Supabase:', err);
     }
-    setAuthChecking(false);
-    await refreshData();
+
+    // 3. Unauthenticated -> redirect to login
+    router.push('/admin/login');
   };
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
     if (typeof window !== 'undefined') {
       localStorage.removeItem('ftx_admin_auth');
     }
+
+    try {
+      const supabase = createClient();
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+    } catch (err) {
+      console.warn('Error al cerrar sesión de Supabase:', err);
+    }
+
     router.push('/admin/login');
   };
 
