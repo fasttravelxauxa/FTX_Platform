@@ -50,6 +50,26 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     checkAdminAuth();
+
+    // Supabase Realtime para sincronizar PC y Celular al instante
+    const supabase = createClient();
+    if (supabase) {
+      const channel = supabase
+        .channel('admin_realtime_reservations')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'reservations' },
+          () => {
+            console.log('[FTX Realtime] Cambio detectado en reservas, actualizando...');
+            RepositoryService.getReservations().then(setReservations);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, []);
 
   const checkAdminAuth = async () => {

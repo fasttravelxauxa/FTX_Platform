@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/Badge';
 import { SERVICES_CATALOG, AIRLINES, PAYMENT_METHODS_INFO, BUSINESS_CONFIG } from '@/lib/constants';
 import { PricingService } from '@/lib/services/pricing';
 import { WhatsAppService } from '@/lib/services/whatsapp';
-import { RepositoryService, savePassengerIdentity } from '@/lib/services/repository';
+import { RepositoryService, savePassengerIdentity, generateUUID } from '@/lib/services/repository';
 import { Reservation, PriceQuote, PaymentMethod, InvoiceType } from '@/lib/types';
 
 function BookingWizardForm() {
@@ -173,13 +173,17 @@ function BookingWizardForm() {
       }
 
       const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}:00-05:00`).toISOString();
+      const customerId = generateUUID();
+      const reservationId = generateUUID();
+      const paymentId = generateUUID();
+      const proofId = generateUUID();
 
       const newRes: Reservation = {
-        id: `res-${Date.now()}`,
+        id: reservationId,
         code,
-        customer_id: `cust-${Date.now()}`,
+        customer_id: customerId,
         customer: {
-          id: `cust-${Date.now()}`,
+          id: customerId,
           role: 'CUSTOMER',
           full_name: customerName,
           phone: customerPhone,
@@ -188,10 +192,10 @@ function BookingWizardForm() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
-        service_id: service?.id || 'srv-1',
+        service_id: service?.id || 'a1111111-1111-1111-1111-111111111111',
         service,
-        vehicle_id: 'veh-1',
-        driver_id: 'usr-driver-1',
+        vehicle_id: 'b1111111-1111-1111-1111-111111111111',
+        driver_id: undefined,
         status: finalVoucherUrl ? 'PAYMENT_SUBMITTED' : 'PENDING_PAYMENT',
         flight_airline: airline,
         flight_number: flightNumber,
@@ -220,6 +224,8 @@ function BookingWizardForm() {
         updated_at: new Date().toISOString(),
         passengers: [
           {
+            id: generateUUID(),
+            reservation_id: reservationId,
             passenger_type: 'adulto',
             name: customerName,
             dni: customerDni,
@@ -228,16 +234,16 @@ function BookingWizardForm() {
         payments: finalVoucherUrl
           ? [
               {
-                id: `pay-${Date.now()}`,
-                reservation_id: code,
+                id: paymentId,
+                reservation_id: reservationId,
                 amount: quote?.depositRequired || 40,
                 payment_method: paymentMethod,
                 status: 'SUBMITTED',
                 created_at: new Date().toISOString(),
                 proofs: [
                   {
-                    id: `prf-${Date.now()}`,
-                    payment_id: `pay-${Date.now()}`,
+                    id: proofId,
+                    payment_id: paymentId,
                     file_path: finalVoucherUrl,
                     reference_number: referenceNumber || 'VOUCHER-MANUAL',
                     uploaded_at: new Date().toISOString(),
@@ -249,7 +255,10 @@ function BookingWizardForm() {
       };
 
       // Save into Supabase DB & LocalDb
-      await RepositoryService.saveReservation(newRes);
+      const saveResult = await RepositoryService.saveReservation(newRes);
+      if (saveResult.code) {
+        newRes.code = saveResult.code;
+      }
       setCreatedReservation(newRes);
       setStep(10); // Final Confirmation Step
 
