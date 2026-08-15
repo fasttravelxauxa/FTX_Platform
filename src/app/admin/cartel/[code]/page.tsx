@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Printer, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { LocalDb } from '@/lib/storage/mock-db';
+import { RepositoryService } from '@/lib/services/repository';
 import { Reservation } from '@/lib/types';
 
 export default function ReceptionPosterPage() {
@@ -17,10 +17,11 @@ export default function ReceptionPosterPage() {
 
   useEffect(() => {
     if (code) {
-      const res = LocalDb.getReservationByCode(code);
-      if (res) {
-        setReservation(res);
-      }
+      RepositoryService.getReservationByCode(code).then((res) => {
+        if (res) {
+          setReservation(res);
+        }
+      });
     }
   }, [code]);
 

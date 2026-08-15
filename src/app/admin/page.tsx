@@ -29,7 +29,6 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { LocalDb } from '@/lib/storage/mock-db';
 import { RepositoryService } from '@/lib/services/repository';
 import { Reservation, ReservationStatus } from '@/lib/types';
 import { WhatsAppService } from '@/lib/services/whatsapp';

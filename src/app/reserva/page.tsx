@@ -254,8 +254,14 @@ function BookingWizardForm() {
           : [],
       };
 
-      // Save into Supabase DB & LocalDb
+      // Save into Supabase DB directly in the cloud
       const saveResult = await RepositoryService.saveReservation(newRes);
+      if (!saveResult.success) {
+        setErrorMsg(saveResult.error || 'No se pudo registrar la reserva en la base de datos central. Inténtalo nuevamente.');
+        setLoading(false);
+        return;
+      }
+
       if (saveResult.code) {
         newRes.code = saveResult.code;
       }

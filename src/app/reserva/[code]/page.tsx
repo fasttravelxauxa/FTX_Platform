@@ -21,7 +21,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { LocalDb } from '@/lib/storage/mock-db';
+import { RepositoryService } from '@/lib/services/repository';
 import { Reservation } from '@/lib/types';
 import { ReservationStateMachine } from '@/lib/services/reservation-state';
 import { WhatsAppService } from '@/lib/services/whatsapp';
@@ -33,28 +33,32 @@ export default function ReservationDetailPage() {
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [canRefund, setCanRefund] = useState<boolean>(false);
+  const [cancelling, setCancelling] = useState<boolean>(false);
 
   useEffect(() => {
     if (code) {
-      const res = LocalDb.getReservationByCode(code);
-      if (res) {
-        setReservation(res);
-        setCanRefund(ReservationStateMachine.isEligibleForRefund(res.created_at));
-      }
-      setLoading(false);
+      RepositoryService.getReservationByCode(code).then((res) => {
+        if (res) {
+          setReservation(res);
+          setCanRefund(ReservationStateMachine.isEligibleForRefund(res.created_at));
+        }
+        setLoading(false);
+      });
     }
   }, [code]);
 
-  const handleCancelReservation = () => {
+  const handleCancelReservation = async () => {
     if (!reservation) return;
     if (confirm('¿Estás seguro de cancelar esta reserva?')) {
+      setCancelling(true);
       const updated: Reservation = {
         ...reservation,
         status: 'CANCELLED',
         updated_at: new Date().toISOString(),
       };
-      LocalDb.saveReservation(updated);
+      await RepositoryService.saveReservation(updated);
       setReservation(updated);
+      setCancelling(false);
     }
   };
 

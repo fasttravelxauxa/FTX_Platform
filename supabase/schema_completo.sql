@@ -1,12 +1,10 @@
 -- ==============================================================================
--- FAST TRAVEL XAUXA — ESQUEMA COMPLETO Y CONSOLIDADO DE BASE DE DATOS (SUPABASE)
--- Ejecutar TODO este script en Supabase > SQL Editor > New Query
+-- FAST TRAVEL XAUXA — SCRIPT DEFINITIVO DE INSTALACIÓN (SUPABASE)
+-- Copiar y pegar todo este script en Supabase > SQL Editor > New Query > Run
 -- ==============================================================================
 
--- 1. Habilitar extensión UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Tipos ENUM (si no existen)
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
@@ -36,7 +34,6 @@ BEGIN
   END IF;
 END $$;
 
--- 3. Tabla de Perfiles (profiles)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -49,11 +46,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Índices para búsqueda ultra rápida por teléfono y DNI
 CREATE INDEX IF NOT EXISTS idx_profiles_phone ON public.profiles(phone);
 CREATE INDEX IF NOT EXISTS idx_profiles_dni ON public.profiles(dni);
 
--- 4. Tabla de Servicios (services)
 CREATE TABLE IF NOT EXISTS public.services (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   code VARCHAR(50) UNIQUE NOT NULL,
@@ -65,7 +60,6 @@ CREATE TABLE IF NOT EXISTS public.services (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Tabla de Vehículos (vehicles)
 CREATE TABLE IF NOT EXISTS public.vehicles (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   brand VARCHAR(100) NOT NULL DEFAULT 'Jetour',
@@ -79,7 +73,6 @@ CREATE TABLE IF NOT EXISTS public.vehicles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. Secuencia y Función para Códigos FTX-YYYYMMDD-NNNN
 CREATE SEQUENCE IF NOT EXISTS reservation_code_seq START WITH 1;
 
 CREATE OR REPLACE FUNCTION generate_reservation_code()
@@ -92,7 +85,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 7. Tabla de Reservas (reservations)
 CREATE TABLE IF NOT EXISTS public.reservations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   code VARCHAR(50) UNIQUE NOT NULL,
@@ -126,21 +118,18 @@ CREATE TABLE IF NOT EXISTS public.reservations (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Trigger para código de reserva
 DROP TRIGGER IF EXISTS trigger_reservation_code ON public.reservations;
 CREATE TRIGGER trigger_reservation_code
   BEFORE INSERT ON public.reservations
   FOR EACH ROW
   EXECUTE FUNCTION generate_reservation_code();
 
--- Índices para reservas
 CREATE INDEX IF NOT EXISTS idx_reservations_customer_id ON public.reservations(customer_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_code ON public.reservations(code);
 CREATE INDEX IF NOT EXISTS idx_reservations_status ON public.reservations(status);
 CREATE INDEX IF NOT EXISTS idx_reservations_scheduled_at ON public.reservations(scheduled_at);
 CREATE INDEX IF NOT EXISTS idx_reservations_created_at ON public.reservations(created_at DESC);
 
--- 8. Tabla de Pasajeros de Reserva (reservation_passengers)
 CREATE TABLE IF NOT EXISTS public.reservation_passengers (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   reservation_id UUID REFERENCES public.reservations(id) ON DELETE CASCADE,
@@ -149,7 +138,6 @@ CREATE TABLE IF NOT EXISTS public.reservation_passengers (
   dni VARCHAR(20)
 );
 
--- 9. Tabla de Pagos (payments)
 CREATE TABLE IF NOT EXISTS public.payments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   reservation_id UUID REFERENCES public.reservations(id) ON DELETE CASCADE,
@@ -159,7 +147,6 @@ CREATE TABLE IF NOT EXISTS public.payments (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 10. Tabla de Comprobantes de Pago (payment_proofs)
 CREATE TABLE IF NOT EXISTS public.payment_proofs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   payment_id UUID REFERENCES public.payments(id) ON DELETE CASCADE,
@@ -168,10 +155,7 @@ CREATE TABLE IF NOT EXISTS public.payment_proofs (
   uploaded_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ==============================================================================
--- SEMILLA DE DATOS OFICIALES (SERVICIOS Y VEHÍCULO JETOUR)
--- ==============================================================================
-
+-- Seed oficial
 INSERT INTO public.services (id, code, name, description, base_price, price_unit, active)
 VALUES 
   ('a1111111-1111-1111-1111-111111111111', 'privado-aeropuerto', 'Aeropuerto Privado', 'Servicio exclusivo puerta a puerta desde/hacia el Aeropuerto de Jauja. Máximo confort, puntualidad y recepción personalizada.', 80.00, 'fixed', true),
@@ -188,25 +172,19 @@ VALUES
 ON CONFLICT (plate) DO UPDATE 
 SET model = EXCLUDED.model, brand = EXCLUDED.brand;
 
--- ==============================================================================
--- POLÍTICAS DE SEGURIDAD (ROW LEVEL SECURITY - RLS)
--- ==============================================================================
-
--- 1. Services
+-- RLS
 ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "services_select_public" ON public.services;
 CREATE POLICY "services_select_public" ON public.services FOR SELECT USING (true);
 DROP POLICY IF EXISTS "services_all_public" ON public.services;
 CREATE POLICY "services_all_public" ON public.services FOR ALL USING (true) WITH CHECK (true);
 
--- 2. Vehicles
 ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "vehicles_select_public" ON public.vehicles;
 CREATE POLICY "vehicles_select_public" ON public.vehicles FOR SELECT USING (true);
 DROP POLICY IF EXISTS "vehicles_all_public" ON public.vehicles;
 CREATE POLICY "vehicles_all_public" ON public.vehicles FOR ALL USING (true) WITH CHECK (true);
 
--- 3. Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "profiles_select_public" ON public.profiles;
 CREATE POLICY "profiles_select_public" ON public.profiles FOR SELECT USING (true);
@@ -215,7 +193,6 @@ CREATE POLICY "profiles_insert_public" ON public.profiles FOR INSERT WITH CHECK 
 DROP POLICY IF EXISTS "profiles_update_public" ON public.profiles;
 CREATE POLICY "profiles_update_public" ON public.profiles FOR UPDATE USING (true) WITH CHECK (true);
 
--- 4. Reservations
 ALTER TABLE public.reservations ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "reservations_select_public" ON public.reservations;
 CREATE POLICY "reservations_select_public" ON public.reservations FOR SELECT USING (true);
@@ -226,7 +203,6 @@ CREATE POLICY "reservations_update_public" ON public.reservations FOR UPDATE USI
 DROP POLICY IF EXISTS "reservations_delete_public" ON public.reservations;
 CREATE POLICY "reservations_delete_public" ON public.reservations FOR DELETE USING (true);
 
--- 5. Payments
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "payments_select_public" ON public.payments;
 CREATE POLICY "payments_select_public" ON public.payments FOR SELECT USING (true);
@@ -237,7 +213,6 @@ CREATE POLICY "payments_update_public" ON public.payments FOR UPDATE USING (true
 DROP POLICY IF EXISTS "payments_delete_public" ON public.payments;
 CREATE POLICY "payments_delete_public" ON public.payments FOR DELETE USING (true);
 
--- 6. Payment Proofs
 ALTER TABLE public.payment_proofs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "proofs_select_public" ON public.payment_proofs;
 CREATE POLICY "proofs_select_public" ON public.payment_proofs FOR SELECT USING (true);
@@ -248,7 +223,6 @@ CREATE POLICY "proofs_update_public" ON public.payment_proofs FOR UPDATE USING (
 DROP POLICY IF EXISTS "proofs_delete_public" ON public.payment_proofs;
 CREATE POLICY "proofs_delete_public" ON public.payment_proofs FOR DELETE USING (true);
 
--- 7. Reservation Passengers
 ALTER TABLE public.reservation_passengers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "passengers_select_public" ON public.reservation_passengers;
 CREATE POLICY "passengers_select_public" ON public.reservation_passengers FOR SELECT USING (true);
@@ -257,10 +231,7 @@ CREATE POLICY "passengers_insert_public" ON public.reservation_passengers FOR IN
 DROP POLICY IF EXISTS "passengers_update_public" ON public.reservation_passengers;
 CREATE POLICY "passengers_update_public" ON public.reservation_passengers FOR UPDATE USING (true) WITH CHECK (true);
 
--- ==============================================================================
--- STORAGE BUCKET PARA VOUCHERS
--- ==============================================================================
-
+-- Storage bucket
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('vouchers', 'vouchers', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
@@ -277,10 +248,7 @@ DROP POLICY IF EXISTS "storage_vouchers_update" ON storage.objects;
 CREATE POLICY "storage_vouchers_update" ON storage.objects
   FOR UPDATE USING (bucket_id = 'vouchers');
 
--- ==============================================================================
--- ACTIVACIÓN DE TIEMPO REAL (SUPABASE REALTIME)
--- ==============================================================================
-
+-- Realtime
 DO $$
 BEGIN
   BEGIN
