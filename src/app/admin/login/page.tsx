@@ -29,9 +29,9 @@ export default function AdminLoginPage() {
     ) {
       if (typeof window !== 'undefined') {
         localStorage.setItem('ftx_admin_auth', 'true');
+        // Hard redirect garantiza que localStorage esté disponible antes que el admin page cargue
+        window.location.href = '/admin';
       }
-      setLoading(false);
-      router.push('/admin');
       return;
     }
 
@@ -47,8 +47,8 @@ export default function AdminLoginPage() {
         if (!error && data.user) {
           if (typeof window !== 'undefined') {
             localStorage.setItem('ftx_admin_auth', 'true');
+            window.location.href = '/admin';
           }
-          router.push('/admin');
           return;
         }
       }
