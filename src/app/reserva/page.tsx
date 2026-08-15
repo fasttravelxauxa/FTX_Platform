@@ -21,12 +21,13 @@ import {
   AlertCircle,
   FileText,
   FileCheck,
+  Bell,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { SERVICES_CATALOG, AIRLINES, PAYMENT_METHODS_INFO } from '@/lib/constants';
+import { SERVICES_CATALOG, AIRLINES, PAYMENT_METHODS_INFO, BUSINESS_CONFIG } from '@/lib/constants';
 import { PricingService } from '@/lib/services/pricing';
 import { WhatsAppService } from '@/lib/services/whatsapp';
 import { RepositoryService } from '@/lib/services/repository';
@@ -138,7 +139,7 @@ function BookingWizardForm() {
     try {
       const codeSeq = Math.floor(1000 + Math.random() * 9000);
       const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const code = `TFX-${todayStr}-${codeSeq}`;
+      const code = `FTX-${todayStr}-${codeSeq}`;
 
       let finalVoucherUrl = voucherPreview;
 
@@ -877,7 +878,7 @@ function BookingWizardForm() {
         </div>
       )}
 
-      {/* STEP 10: Confirmación Final */}
+      {/* STEP 10: Confirmación Final y Alerta Instantánea al Teléfono del Admin */}
       {step === 10 && createdReservation && (
         <div className="space-y-6 text-center py-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-crusoe-100 text-crusoe-600 mx-auto">
@@ -891,6 +892,28 @@ function BookingWizardForm() {
             <h2 className="text-3xl font-extrabold text-crusoe-950 mt-1">{createdReservation.code}</h2>
             <div className="mt-2 flex justify-center">
               <Badge status={createdReservation.status} />
+            </div>
+          </div>
+
+          {/* ALERTA INSTANTÁNEA AL ADMIN */}
+          <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-xs text-amber-950 space-y-2 max-w-lg mx-auto text-left">
+            <div className="flex items-center gap-2 text-amber-900 font-extrabold text-sm">
+              <Bell className="h-5 w-5 text-amber-600 animate-bounce shrink-0" />
+              <span>Notificación Instantánea de Reserva</span>
+            </div>
+            <p className="text-[11px] text-amber-900 leading-relaxed">
+              Haz clic en el botón verde a continuación para enviar la alerta automática de tu reserva con tu código <strong>{createdReservation.code}</strong> al WhatsApp oficial de administración (<strong>929 667 586</strong>).
+            </p>
+            <div className="pt-2">
+              <a
+                href={WhatsAppService.getAdminNewBookingAlertLink(createdReservation)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-crusoe-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-crusoe-600/30 hover:bg-crusoe-700 transition-colors"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Enviar Alerta al Administrador (WhatsApp 929 667 586)
+              </a>
             </div>
           </div>
 
@@ -930,19 +953,7 @@ function BookingWizardForm() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <a
-              href={WhatsAppService.getAdminConfirmationLink(
-                createdReservation,
-                createdReservation.customer?.phone || PAYMENT_METHODS_INFO.yape.phone
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-crusoe-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-crusoe-600/30 hover:bg-crusoe-700 transition-colors"
-            >
-              <MessageSquare className="h-4 w-4" />
-              Notificar Reserva por WhatsApp
-            </a>
+          <div className="flex justify-center pt-2">
             <Link href={`/reserva/${createdReservation.code}`}>
               <Button variant="outline">Ver Estado de Mi Reserva</Button>
             </Link>

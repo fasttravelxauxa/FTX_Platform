@@ -17,7 +17,40 @@ export class WhatsAppService {
   }
 
   /**
-   * Genera enlace para que el administrador notifique la confirmación de viaje y comprobante fiscal
+   * ALERTA AUTOMÁTICA AL TELÉFONO DEL ADMINISTRADOR (929 667 586)
+   * Genera el mensaje de notificación instantánea cuando un cliente crea una nueva reserva.
+   */
+  public static getAdminNewBookingAlertLink(reservation: Reservation): string {
+    const adminPhone = BUSINESS_CONFIG.whatsappNumber.replace(/[^0-9]/g, '');
+    const dateFormatted = new Date(reservation.scheduled_at).toLocaleString('es-PE', {
+      dateStyle: 'full',
+      timeStyle: 'short',
+    });
+
+    let invoiceText = 'No solicitó comprobante fiscal';
+    if (reservation.invoice_details && reservation.invoice_details.type !== 'ninguno') {
+      invoiceText = `${reservation.invoice_details.type.toUpperCase()} ` +
+        (reservation.invoice_details.ruc ? `(RUC: ${reservation.invoice_details.ruc} - ${reservation.invoice_details.companyName})` : `(DNI: ${reservation.invoice_details.dni})`);
+    }
+
+    const text = `🚨 *¡NUEVA RESERVA RECIBIDA EN LA PLATAFORMA!* 🚨\n\n` +
+      `📋 *Código:* *${reservation.code}*\n` +
+      `👤 *Cliente:* ${reservation.customer?.full_name || 'Pasajero'} (${reservation.customer?.phone})\n` +
+      `🚗 *Servicio:* ${reservation.service?.name || reservation.origin}\n` +
+      `📍 *Ruta:* ${reservation.origin} ➔ ${reservation.destination}\n` +
+      `📅 *Fecha/Hora:* ${dateFormatted}\n` +
+      `✈️ *Vuelo:* ${reservation.flight_airline || 'N/A'} (${reservation.flight_number || 'N/A'})\n` +
+      `💵 *Monto Total:* S/ ${reservation.total_amount.toFixed(2)}\n` +
+      `💰 *Adelanto 50%:* S/ ${reservation.deposit_amount.toFixed(2)}\n` +
+      `📑 *Comprobante Fiscal:* ${invoiceText}\n` +
+      `📸 *Voucher:* Adjuntado en la plataforma\n\n` +
+      `👉 *Ingresa al Panel Admin:* https://ftx-platform.vercel.app/admin para revisar el voucher y confirmar.`;
+
+    return `https://wa.me/${adminPhone}?text=${encodeURIComponent(text)}`;
+  }
+
+  /**
+   * Genera enlace para que el administrador notifique la confirmación de viaje al cliente
    */
   public static getAdminConfirmationLink(reservation: Reservation, customerPhone: string): string {
     const cleanPhone = customerPhone.replace(/[^0-9]/g, '');
