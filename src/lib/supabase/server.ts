@@ -1,9 +1,13 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { cleanSupabaseUrl, cleanSupabaseKey } from './client';
 
 export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  const supabaseUrl = cleanSupabaseUrl(rawUrl);
+  const supabaseAnonKey = cleanSupabaseKey(rawKey);
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return null;
