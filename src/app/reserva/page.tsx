@@ -43,7 +43,7 @@ const STEP_TITLES: { [key: number]: string } = {
   1: 'Tipo de Servicio',
   2: 'Fecha y Hora',
   3: 'Ruta y Destino',
-  4: 'Aerolínea y Vuelo',
+  4: 'Aerolínea',
   5: 'Datos del Pasajero',
   6: 'Equipaje y Notas',
   7: 'Comprobante Fiscal',
@@ -84,7 +84,7 @@ function BookingWizardForm() {
   const [customerDni, setCustomerDni] = useState<string>('');
   const [customerTitle, setCustomerTitle] = useState<string>('Sr.');
 
-  // Flight Info (Solo Aerolínea, Número de Vuelo Eliminado a Solicitud del Cliente)
+  // Flight Info (Solo Aerolínea)
   const [airline, setAirline] = useState<string>('LATAM');
   const [notes, setNotes] = useState<string>('');
   const [luggageNotes, setLuggageNotes] = useState<string>('');
@@ -244,7 +244,7 @@ function BookingWizardForm() {
         driver_id: undefined,
         status: finalVoucherUrl ? 'PAYMENT_SUBMITTED' : 'PENDING_PAYMENT',
         flight_airline: airline,
-        flight_number: '', // Número de vuelo eliminado a solicitud
+        flight_number: '',
         flight_arrival_time: scheduledAt,
         origin,
         destination,
@@ -364,7 +364,7 @@ function BookingWizardForm() {
               1. Selecciona tu Tipo de Servicio
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Traslados ejecutivos en SUV Jetour último modelo desde/hacia el Aeropuerto de Jauja.
+              Elige entre nuestro Servicio Privado Exclusivo o Servicio Compartido por Asiento en SUV Jetour.
             </p>
           </div>
 
@@ -383,9 +383,9 @@ function BookingWizardForm() {
                   <h3 className="font-bold text-slate-950 text-base">{srv.name}</h3>
                   <span className="text-xs font-extrabold text-crusoe-800 bg-crusoe-100/80 px-2.5 py-1 rounded-lg shrink-0">
                     {srv.code === 'privado-aeropuerto'
-                      ? 'Desde S/ 80.00'
+                      ? 'Vehículo Completo (Desde S/ 80.00)'
                       : srv.code === 'compartido-aeropuerto'
-                      ? 'Desde S/ 20.00 /asiento'
+                      ? 'Por Asiento (Desde S/ 20.00 /asiento)'
                       : 'S/ 50.00 /hora'}
                   </span>
                 </div>
@@ -393,6 +393,29 @@ function BookingWizardForm() {
               </div>
             ))}
           </div>
+
+          {/* Banner informativo de reglas de servicio */}
+          {serviceCode === 'compartido-aeropuerto' ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-xs text-amber-950 space-y-1.5 shadow-sm">
+              <div className="flex items-center gap-2 font-bold text-amber-900">
+                <Info className="h-4 w-4 text-amber-600 shrink-0" />
+                <span>Regla de Confirmación del Servicio Compartido:</span>
+              </div>
+              <p className="text-[11px] text-amber-900 leading-relaxed font-medium">
+                {BUSINESS_CONFIG.sharedServiceNotice}
+              </p>
+            </div>
+          ) : serviceCode === 'privado-aeropuerto' ? (
+            <div className="rounded-2xl border border-crusoe-200 bg-crusoe-50/80 p-4 text-xs text-crusoe-950 space-y-1.5 shadow-sm">
+              <div className="flex items-center gap-2 font-bold text-crusoe-900">
+                <ShieldCheck className="h-4 w-4 text-crusoe-600 shrink-0" />
+                <span>Ventajas del Servicio Privado Exclusivo:</span>
+              </div>
+              <p className="text-[11px] text-crusoe-900 leading-relaxed font-medium">
+                Vehículo SUV Jetour reservado únicamente para ti y tus acompañantes (hasta 4 personas). Salida e itinerario 100% personalizados con recogida/entrega en la puerta exacta de tu hotel o domicilio.
+              </p>
+            </div>
+          ) : null}
 
           <div className="flex justify-end pt-4 border-t border-slate-100">
             <Button size="lg" onClick={() => setStep(2)} className="w-full sm:w-auto">
@@ -412,7 +435,7 @@ function BookingWizardForm() {
               2. Fecha y Hora Programada
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Ofrecemos 30 minutos de tolerancia tras el aterrizaje de tu vuelo.
+              Monitoreamos los itinerarios para garantizar tu transporte a tiempo.
             </p>
           </div>
 
@@ -452,16 +475,18 @@ function BookingWizardForm() {
         </div>
       )}
 
-      {/* STEP 3: Ruta y Destino con Tarifas Oficiales */}
+      {/* STEP 3: Ruta y Destino con Tarifas Claras Privado vs Compartido */}
       {step === 3 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
               <MapPin className="h-6 w-6 text-crusoe-600" />
-              3. Ciudad de Destino y Dirección Exacta
+              3. Ciudad de Destino {serviceCode === 'privado-aeropuerto' ? 'y Dirección Exacta' : 'y Asientos'}
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Las tarifas varían según la ciudad de destino. En servicio privado requerimos la dirección exacta de llegada.
+              {serviceCode === 'privado-aeropuerto'
+                ? 'Tarifa pactada por el vehículo SUV completo hacia tu ciudad de destino.'
+                : 'Tarifa oficial por asiento reservado según la ciudad de destino.'}
             </p>
           </div>
 
@@ -478,7 +503,9 @@ function BookingWizardForm() {
 
             {/* Selector de Ciudad Destino */}
             <div>
-              <label className="block text-xs font-bold text-slate-900 mb-1.5">Ciudad de Destino *</label>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                Ciudad de Destino ({serviceCode === 'privado-aeropuerto' ? 'Precio Vehículo SUV Completo' : 'Precio por Asiento'}) *
+              </label>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 {DESTINATIONS_CATALOG.map((dest) => (
                   <div
@@ -492,9 +519,9 @@ function BookingWizardForm() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-950 text-sm">{dest.name}</span>
-                      <span className="text-xs font-extrabold text-crusoe-800 bg-crusoe-100 px-2 py-0.5 rounded">
+                      <span className="text-xs font-extrabold text-crusoe-800 bg-crusoe-100 px-2.5 py-1 rounded-lg">
                         {serviceCode === 'privado-aeropuerto'
-                          ? `S/ ${dest.privatePriceSuv.toFixed(2)}`
+                          ? `S/ ${dest.privatePriceSuv.toFixed(2)} SUV`
                           : `S/ ${dest.sharedPricePerSeat.toFixed(2)} /asiento`}
                       </span>
                     </div>
@@ -505,11 +532,11 @@ function BookingWizardForm() {
             </div>
 
             {/* Dirección exacta para servicio privado */}
-            {serviceCode === 'privado-aeropuerto' && (
+            {serviceCode === 'privado-aeropuerto' ? (
               <div className="rounded-2xl border-2 border-crusoe-200 bg-crusoe-50/60 p-4 space-y-2">
                 <label className="block text-xs font-extrabold text-crusoe-950 flex items-center gap-1.5">
                   <Building className="h-4 w-4 text-crusoe-700" />
-                  Dirección Exacta de Destino (Obligatorio para Privado) *
+                  Dirección Exacta de Destino (Obligatorio para Servicio Privado) *
                 </label>
                 <input
                   type="text"
@@ -519,21 +546,33 @@ function BookingWizardForm() {
                   className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
                 />
                 <span className="text-[11px] text-crusoe-800 block font-medium">
-                  📌 Al ser servicio privado exclusivo, nuestro conductor te dejará exactamente en la puerta de tu hotel o domicilio.
+                  📌 Al ser servicio privado exclusivo, nuestro chofer te llevará directamente a la puerta de tu dirección indicada.
                 </span>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-950 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-amber-900">
+                  <Info className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span>Condición de Confirmación de Transporte (Compartido):</span>
+                </div>
+                <p className="text-[11px] text-amber-900 leading-relaxed font-medium">
+                  {BUSINESS_CONFIG.sharedServiceNotice}
+                </p>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-900 mb-1.5">Cantidad de Pasajeros</label>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                {serviceCode === 'privado-aeropuerto' ? 'Cantidad de Pasajeros en el Viaje Privado' : 'Asientos a Reservar'}
+              </label>
               <select
                 value={passengersCount}
                 onChange={(e) => setPassengersCount(Number(e.target.value))}
                 className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
               >
-                <option value={1}>1 Pasajero</option>
-                <option value={2}>2 Pasajeros</option>
-                <option value={3}>3 Pasajeros</option>
+                <option value={1}>1 Pasajero / Asiento</option>
+                <option value={2}>2 Pasajeros / Asientos</option>
+                <option value={3}>3 Pasajeros / Asientos</option>
                 <option value={4}>4 Pasajeros (Capacidad máxima SUV)</option>
               </select>
             </div>
@@ -560,7 +599,7 @@ function BookingWizardForm() {
         </div>
       )}
 
-      {/* STEP 4: Aerolínea (Número de vuelo eliminado a solicitud) */}
+      {/* STEP 4: Aerolínea */}
       {step === 4 && (
         <div className="space-y-6">
           <div>
@@ -569,7 +608,7 @@ function BookingWizardForm() {
               4. Aerolínea de Llegada (Opcional)
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Indica la aerolínea en la que arribas al Aeropuerto de Jauja para coordinar tu recepción con el chofer.
+              Indica la aerolínea en la que arribas al Aeropuerto de Jauja para coordinar tu recepción.
             </p>
           </div>
 
@@ -612,7 +651,7 @@ function BookingWizardForm() {
               5. Datos del Pasajero Principal
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Ingresa tus datos de contacto para la confirmación de la reserva.
+              Ingresa tu contacto para coordinar la confirmación y entrega de comprobantes.
             </p>
           </div>
 
@@ -877,13 +916,23 @@ function BookingWizardForm() {
               8. Resumen de Cotización Oficial
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Abono del 50% de adelanto para reservar la unidad SUV y saldo a pagar al abordar.
+              Abono del 50% de adelanto para garantizar tu reserva y saldo a pagar al abordar.
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 space-y-3">
             <div className="flex justify-between text-xs text-slate-700">
-              <span>Tarifa Base ({destination}):</span>
+              <span>Modalidad:</span>
+              <span className="font-bold text-slate-950">
+                {serviceCode === 'privado-aeropuerto' ? 'Servicio Privado Exclusivo SUV' : 'Servicio Compartido por Asiento'}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs text-slate-700">
+              <span>Destino:</span>
+              <span className="font-bold text-slate-950">{destination}</span>
+            </div>
+            <div className="flex justify-between text-xs text-slate-700">
+              <span>Monto Base del Servicio:</span>
               <span className="font-bold text-slate-950">S/ {quote?.subtotal.toFixed(2) || '80.00'}</span>
             </div>
             {quote && quote.surcharges > 0 && (
@@ -893,7 +942,7 @@ function BookingWizardForm() {
               </div>
             )}
             <div className="flex justify-between text-sm font-extrabold text-slate-950 border-t border-slate-200 pt-3">
-              <span>Monto Total del Traslado:</span>
+              <span>Monto Total a Pagar:</span>
               <span className="text-base text-crusoe-800">S/ {quote?.total.toFixed(2) || '80.00'}</span>
             </div>
 
@@ -908,6 +957,12 @@ function BookingWizardForm() {
               </div>
             </div>
           </div>
+
+          {serviceCode === 'compartido-aeropuerto' && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-[11px] text-amber-950 leading-relaxed font-medium">
+              ℹ️ <strong>Aviso del Servicio Compartido:</strong> Tu asiento queda 100% asegurado al abonar el adelanto. La salida del vehículo se confirma al completar mínimo 3 asientos para tu horario.
+            </div>
+          )}
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2">
             <label className="flex items-start gap-3 cursor-pointer">
@@ -1121,9 +1176,19 @@ function BookingWizardForm() {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="font-bold text-slate-600">Fecha y Hora:</span>
-              <span className="font-semibold text-slate-950">{new Date(createdReservation.scheduled_at).toLocaleString('es-PE')}</span>
+              <span className="font-bold text-slate-600">Modalidad:</span>
+              <span className="font-semibold text-slate-950">
+                {createdReservation.service_id === 'a1111111-1111-1111-1111-111111111111'
+                  ? 'Servicio Privado Exclusivo SUV'
+                  : 'Servicio Compartido por Asiento'}
+              </span>
             </div>
+
+            {createdReservation.service_id === 'a2222222-2222-2222-2222-222222222222' && (
+              <div className="bg-amber-50 rounded-xl p-2.5 border border-amber-200 text-[11px] text-amber-900 font-medium">
+                ℹ️ <strong>Asiento Reservado:</strong> Tu cobro y lugar quedan asegurados. La salida del transporte se activa con min. 3 asientos ocupados.
+              </div>
+            )}
 
             <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-sm text-slate-950">
               <span>Adelanto (50%):</span>

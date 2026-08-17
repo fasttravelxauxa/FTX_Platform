@@ -8,10 +8,12 @@ export const BUSINESS_CONFIG = {
   cancellationWindowMinutes: 60, // 60 minutos para reembolso total
   airportToleranceMinutes: 30, // 30 min de tolerancia tras aterrizaje
   maxSharedPassengers: 4, // Máximo 4 pasajeros en compartido
+  minSharedPassengersForDeparture: 3, // Mínimo 3 asientos para confirmar salida del transporte compartido
   whatsappNumber: '+51929667586', // Número de WhatsApp de coordinación (SOLO MENSAJES)
   whatsappFormatted: '+51 929 667 586',
   whatsappCallDisclaimer: 'Sólo mensajes de WhatsApp (No llamadas)',
   invoicingDisclaimer: 'Emitimos Boletas y Facturas Electrónicas. Ingresa tus datos tributarios en la reserva y te enviamos tu comprobante fiscal vía WhatsApp.',
+  sharedServiceNotice: 'Tu asiento queda 100% reservado y asegurado al realizar el pago del adelanto. La confirmación de la salida del vehículo se activa al completarse un mínimo de 3 asientos para tu horario programado. Si no se alcanza el cupo, coordinaremos la reprogramación o devolución completa sin penalización.',
   vehicleInitial: {
     id: 'b1111111-1111-1111-1111-111111111111',
     brand: 'Jetour',
@@ -56,35 +58,35 @@ export const DESTINATIONS_CATALOG: DestinationRoute[] = [
     name: 'Huancayo (Centro / El Tambo / Chilca)',
     sharedPricePerSeat: 20.00,
     privatePriceSuv: 80.00,
-    description: 'Ruta principal Aeropuerto Jauja ↔ Huancayo. En servicio privado incluye dirección exacta puerta a puerta.',
+    description: 'Ruta principal Aeropuerto Jauja ↔ Huancayo. Privado: S/ 80.00 vehículo completo puerta a puerta | Compartido: S/ 20.00 por asiento.',
   },
   {
     code: 'tarma',
     name: 'Tarma (La Perla de los Andes)',
     sharedPricePerSeat: 35.00,
     privatePriceSuv: 140.00,
-    description: 'Servicio directo Aeropuerto Jauja ↔ Tarma (S/ 35.00 por asiento / S/ 140.00 SUV privada exclusiva).',
+    description: 'Servicio directo Aeropuerto Jauja ↔ Tarma. Privado: S/ 140.00 vehículo completo | Compartido: S/ 35.00 por asiento.',
   },
   {
     code: 'la-oroya',
     name: 'La Oroya',
     sharedPricePerSeat: 40.00,
     privatePriceSuv: 160.00,
-    description: 'Servicio directo Aeropuerto Jauja ↔ La Oroya (S/ 40.00 por asiento / S/ 160.00 SUV privada exclusiva).',
+    description: 'Servicio directo Aeropuerto Jauja ↔ La Oroya. Privado: S/ 160.00 vehículo completo | Compartido: S/ 40.00 por asiento.',
   },
   {
     code: 'la-merced',
     name: 'La Merced (Chanchamayo - Selva Central)',
     sharedPricePerSeat: 60.00,
     privatePriceSuv: 240.00,
-    description: 'Servicio directo Aeropuerto Jauja ↔ La Merced (S/ 60.00 por asiento / S/ 240.00 SUV privada exclusiva).',
+    description: 'Servicio directo Aeropuerto Jauja ↔ La Merced. Privado: S/ 240.00 vehículo completo | Compartido: S/ 60.00 por asiento.',
   },
   {
     code: 'otro',
     name: 'Otro Destino / Excursión a Medida',
     sharedPricePerSeat: 50.00,
     privatePriceSuv: 180.00,
-    description: 'Rutas personalizadas o servicio por horas (S/ 50.00/h).',
+    description: 'Rutas personalizadas o servicio por horas (S/ 50.00/h con conductor).',
   },
 ];
 
@@ -92,8 +94,8 @@ export const SERVICES_CATALOG: Service[] = [
   {
     id: 'a1111111-1111-1111-1111-111111111111',
     code: 'privado-aeropuerto',
-    name: 'Aeropuerto Privado',
-    description: 'Servicio exclusivo puerta a puerta desde/hacia el Aeropuerto de Jauja en SUV completa (hasta 4 pasajeros). Se requiere dirección exacta.',
+    name: 'Servicio Privado Exclusivo',
+    description: 'Vehículo SUV Jetour a tu completa disposición (hasta 4 pasajeros). Tarifa fija por el vehículo completo. Incluye traslado directo a tu dirección exacta.',
     base_price: 80.00,
     price_unit: 'fixed',
     active: true,
@@ -102,8 +104,8 @@ export const SERVICES_CATALOG: Service[] = [
   {
     id: 'a2222222-2222-2222-2222-222222222222',
     code: 'compartido-aeropuerto',
-    name: 'Aeropuerto Compartido',
-    description: 'Viaje ejecutivo por asiento en SUV compartida (máximo 4 pasajeros). Tarifas según ciudad de destino.',
+    name: 'Servicio Compartido por Asiento',
+    description: 'Reserva y paga por asiento (máximo 4 pasajeros por unidad). Tu asiento queda asegurado al pagar. Salida del vehículo confirmada con mínimo 3 asientos ocupados.',
     base_price: 20.00,
     price_unit: 'fixed',
     active: true,
