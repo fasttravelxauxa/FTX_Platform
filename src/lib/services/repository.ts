@@ -1,5 +1,5 @@
 import { createClient } from '../supabase/client';
-import { Reservation, InvoiceDetails } from '../types';
+import { Reservation, InvoiceDetails, Profile, ReservationStatus } from '../types';
 
 const FTX_PHONE_KEY = 'ftx_passenger_phone';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -72,6 +72,68 @@ function mapRowToReservation(row: any): Reservation {
 }
 
 export class RepositoryService {
+  /**
+   * Obtener perfiles de pasajeros almacenados en Supabase
+   */
+  public static async getProfiles(): Promise<Profile[]> {
+    const supabase = createClient();
+    if (!supabase) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[FTX Repository] Error al consultar perfiles:', error.message);
+        return [];
+      }
+
+      return (data || []) as Profile[];
+    } catch (err: any) {
+      console.error('[FTX Repository] Excepción en getProfiles:', err?.message);
+      return [];
+    }
+  }
+
+  /**
+   * Actualizar estado de una reserva en Supabase
+   */
+  public static async updateReservationStatus(
+    reservationId: string,
+    status: ReservationStatus,
+    notes?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const supabase = createClient();
+    if (!supabase) return { success: false, error: 'Sin conexión a Supabase' };
+
+    try {
+      const payload: any = {
+        status,
+        updated_at: new Date().toISOString(),
+      };
+      if (notes !== undefined) {
+        payload.notes = notes;
+      }
+
+      const { error } = await supabase
+        .from('reservations')
+        .update(payload)
+        .eq('id', reservationId);
+
+      if (error) {
+        console.error('[FTX Repository] Error al actualizar estado de reserva:', error.message);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('[FTX Repository] Excepción al actualizar estado:', err?.message);
+      return { success: false, error: err?.message };
+    }
+  }
+
   /**
    * Obtener todas las reservas (Panel de Administración) directamente desde Supabase
    */

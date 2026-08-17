@@ -42,12 +42,58 @@ export const PAYMENT_METHODS_INFO = {
   },
 };
 
+export interface DestinationRoute {
+  code: string;
+  name: string;
+  sharedPricePerSeat: number;
+  privatePriceSuv: number;
+  description: string;
+}
+
+export const DESTINATIONS_CATALOG: DestinationRoute[] = [
+  {
+    code: 'huancayo',
+    name: 'Huancayo (Centro / El Tambo / Chilca)',
+    sharedPricePerSeat: 20.00,
+    privatePriceSuv: 80.00,
+    description: 'Ruta principal Aeropuerto Jauja ↔ Huancayo. En servicio privado incluye dirección exacta puerta a puerta.',
+  },
+  {
+    code: 'tarma',
+    name: 'Tarma (La Perla de los Andes)',
+    sharedPricePerSeat: 35.00,
+    privatePriceSuv: 140.00,
+    description: 'Servicio directo Aeropuerto Jauja ↔ Tarma (S/ 35.00 por asiento / S/ 140.00 SUV privada exclusiva).',
+  },
+  {
+    code: 'la-oroya',
+    name: 'La Oroya',
+    sharedPricePerSeat: 40.00,
+    privatePriceSuv: 160.00,
+    description: 'Servicio directo Aeropuerto Jauja ↔ La Oroya (S/ 40.00 por asiento / S/ 160.00 SUV privada exclusiva).',
+  },
+  {
+    code: 'la-merced',
+    name: 'La Merced (Chanchamayo - Selva Central)',
+    sharedPricePerSeat: 60.00,
+    privatePriceSuv: 240.00,
+    description: 'Servicio directo Aeropuerto Jauja ↔ La Merced (S/ 60.00 por asiento / S/ 240.00 SUV privada exclusiva).',
+  },
+  {
+    code: 'otro',
+    name: 'Otro Destino / Excursión a Medida',
+    sharedPricePerSeat: 50.00,
+    privatePriceSuv: 180.00,
+    description: 'Rutas personalizadas o servicio por horas (S/ 50.00/h).',
+  },
+];
+
 export const SERVICES_CATALOG: Service[] = [
   {
     id: 'a1111111-1111-1111-1111-111111111111',
     code: 'privado-aeropuerto',
     name: 'Aeropuerto Privado',
-    description: 'Servicio exclusivo puerta a puerta desde/hacia el Aeropuerto de Jauja. Máximo confort, puntualidad y recepción personalizada.',
+    description: 'Servicio exclusivo puerta a puerta desde/hacia el Aeropuerto de Jauja en SUV completa (hasta 4 pasajeros). Se requiere dirección exacta.',
     base_price: 80.00,
     price_unit: 'fixed',
     active: true,
@@ -57,7 +103,7 @@ export const SERVICES_CATALOG: Service[] = [
     id: 'a2222222-2222-2222-2222-222222222222',
     code: 'compartido-aeropuerto',
     name: 'Aeropuerto Compartido',
-    description: 'Viaje ejecutivo en SUV compartida (máximo 4 pasajeros). Ruta directa Aeropuerto Jauja ↔ Plaza Constitución (Huancayo).',
+    description: 'Viaje ejecutivo por asiento en SUV compartida (máximo 4 pasajeros). Tarifas según ciudad de destino.',
     base_price: 20.00,
     price_unit: 'fixed',
     active: true,

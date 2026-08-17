@@ -28,33 +28,23 @@ import {
   UserCheck,
   Trash2,
   ArrowRight,
+  ExternalLink,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { RepositoryService } from '@/lib/services/repository';
-import { Reservation, ReservationStatus } from '@/lib/types';
+import { Reservation, ReservationStatus, Profile } from '@/lib/types';
 import { WhatsAppService } from '@/lib/services/whatsapp';
 import { createClient } from '@/lib/supabase/client';
-
-interface PassengerSummary {
-  phone: string;
-  name: string;
-  dni?: string;
-  title?: string;
-  totalBookings: number;
-  confirmedBookings: number;
-  todayActiveBookings: number;
-  lastBookingDate: string;
-  latestCode: string;
-}
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [authChecking, setAuthChecking] = useState<boolean>(true);
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [activeTab, setActiveTab] = useState<'reservas' | 'calendario' | 'pasajeros' | 'vehiculos'>('reservas');
+  const [profilesList, setProfilesList] = useState<Profile[]>([]);
+  const [activeTab, setActiveTab] = useState<'reservas' | 'pasajeros' | 'calendario' | 'vehiculos'>('reservas');
   const [filterStatus, setFilterStatus] = useState<string>('TODOS');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -62,11 +52,12 @@ export default function AdminDashboardPage() {
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string>('');
   const [showReviewModal, setShowReviewModal] = useState<boolean>(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminAuth();
 
-    // Supabase Realtime para sincronizar PC y Celular al instante
+    // Supabase Realtime para sincronización en tiempo real
     const supabase = createClient();
     if (supabase) {
       const channel = supabase
@@ -76,7 +67,7 @@ export default function AdminDashboardPage() {
           { event: '*', schema: 'public', table: 'reservations' },
           () => {
             console.log('[FTX Realtime] Cambio detectado en reservas, actualizando...');
-            RepositoryService.getReservations().then(setReservations);
+            refreshData();
           }
         )
         .subscribe();
@@ -88,7 +79,6 @@ export default function AdminDashboardPage() {
   }, []);
 
   const checkAdminAuth = async () => {
-    // 1. Check local session storage key
     if (typeof window !== 'undefined') {
       const isLocalAuth = localStorage.getItem('ftx_admin_auth');
       if (isLocalAuth === 'true') {
@@ -98,7 +88,6 @@ export default function AdminDashboardPage() {
       }
     }
 
-    // 2. Check Supabase Auth session if local key is absent
     try {
       const supabase = createClient();
       if (supabase) {
@@ -113,7 +102,6 @@ export default function AdminDashboardPage() {
       console.warn('Error verificando usuario Supabase:', err);
     }
 
-    // 3. Unauthenticated -> redirect to login
     router.push('/admin/login');
   };
 
@@ -128,7 +116,7 @@ export default function AdminDashboardPage() {
         await supabase.auth.signOut();
       }
     } catch (err) {
-      console.warn('Error al cerrar sesión de Supabase:', err);
+      console.warn('Error al cerrar sesión:', err);
     }
 
     router.push('/admin/login');
@@ -136,7 +124,30 @@ export default function AdminDashboardPage() {
 
   const refreshData = async () => {
     const list = await RepositoryService.getReservations();
+    const profiles = await RepositoryService.getProfiles();
     setReservations(list);
+    setProfilesList(profiles);
+  };
+
+  // Cambiar estado directamente desde la fila o el modal
+  const handleStatusChange = async (reservationId: string, newStatus: ReservationStatus, notes?: string) => {
+    setUpdatingId(reservationId);
+    const result = await RepositoryService.updateReservationStatus(reservationId, newStatus, notes);
+
+    if (result.success) {
+      // Actualizar estado local al instante (Optimistic Update)
+      setReservations((prev) =>
+        prev.map((r) => (r.id === reservationId ? { ...r, status: newStatus, notes: notes || r.notes } : r))
+      );
+      if (selectedRes && selectedRes.id === reservationId) {
+        setSelectedRes((prev) => (prev ? { ...prev, status: newStatus } : null));
+      }
+      setShowReviewModal(false);
+      setRejectionReason('');
+    } else {
+      alert(`Error al actualizar estado en Supabase: ${result.error}`);
+    }
+    setUpdatingId(null);
   };
 
   // KPIs
@@ -160,94 +171,44 @@ export default function AdminDashboardPage() {
     return matchesStatus && matchesSearch;
   });
 
-  // Calculate Passenger Directory
-  const passengersMap = new Map<string, PassengerSummary>();
+  // Calculate Passenger Directory from Supabase profiles list (Persistent)
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  reservations.forEach((r) => {
-    const rawPhone = r.customer?.phone?.replace(/[^0-9]/g, '') || '';
-    if (!rawPhone) return;
+  const passengerSummaries = profilesList.map((prof) => {
+    const profPhone = prof.phone?.replace(/[^0-9]/g, '') || '';
+    const profReservations = reservations.filter((r) => r.customer_id === prof.id || r.customer?.phone?.replace(/[^0-9]/g, '') === profPhone);
 
-    const createdDate = new Date(r.created_at);
-    const isToday =
-      createdDate >= todayStart &&
-      createdDate <= todayEnd &&
-      !['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(r.status);
+    const totalBookings = profReservations.length;
+    const confirmedBookings = profReservations.filter((r) => ['CONFIRMED', 'COMPLETED', 'IN_PROGRESS'].includes(r.status)).length;
+    
+    const todayActiveBookings = profReservations.filter((r) => {
+      const createdDate = new Date(r.created_at);
+      return (
+        createdDate >= todayStart &&
+        createdDate <= todayEnd &&
+        !['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(r.status)
+      );
+    }).length;
 
-    if (!passengersMap.has(rawPhone)) {
-      passengersMap.set(rawPhone, {
-        phone: rawPhone,
-        name: r.customer?.full_name || 'Pasajero',
-        dni: r.customer?.dni || r.invoice_details?.dni,
-        title: r.customer?.title_degree || 'Sr.',
-        totalBookings: 1,
-        confirmedBookings: ['CONFIRMED', 'COMPLETED', 'IN_PROGRESS'].includes(r.status) ? 1 : 0,
-        todayActiveBookings: isToday ? 1 : 0,
-        lastBookingDate: r.created_at,
-        latestCode: r.code,
-      });
-    } else {
-      const existing = passengersMap.get(rawPhone)!;
-      existing.totalBookings += 1;
-      if (['CONFIRMED', 'COMPLETED', 'IN_PROGRESS'].includes(r.status)) {
-        existing.confirmedBookings += 1;
-      }
-      if (isToday) {
-        existing.todayActiveBookings += 1;
-      }
-      if (new Date(r.created_at) > new Date(existing.lastBookingDate)) {
-        existing.lastBookingDate = r.created_at;
-        existing.latestCode = r.code;
-      }
-    }
+    const latestRes = profReservations[0]; // La primera es la más reciente por ordenamiento
+
+    return {
+      id: prof.id,
+      phone: profPhone,
+      name: prof.full_name || 'Pasajero',
+      dni: prof.dni || undefined,
+      title: prof.title_degree || 'Sr.',
+      totalBookings,
+      confirmedBookings,
+      todayActiveBookings,
+      lastBookingDate: latestRes ? latestRes.created_at : prof.created_at,
+      latestCode: latestRes ? latestRes.code : 'Sin reserva activa',
+    };
   });
 
-  const passengerList = Array.from(passengersMap.values()).sort(
-    (a, b) => new Date(b.lastBookingDate).getTime() - new Date(a.lastBookingDate).getTime()
-  );
-
-  // Approve Payment Proof
-  const handleApprovePayment = async (res: Reservation) => {
-    const updated: Reservation = {
-      ...res,
-      status: 'CONFIRMED',
-      updated_at: new Date().toISOString(),
-    };
-    if (updated.payments?.[0]) {
-      updated.payments[0].status = 'APPROVED';
-    }
-    await RepositoryService.saveReservation(updated);
-    await refreshData();
-    setShowReviewModal(false);
-    alert(`Pago aprobado con éxito para la reserva ${res.code}. El estado cambió a CONFIRMED.`);
-  };
-
-  // Reject Payment Proof
-  const handleRejectPayment = async (res: Reservation) => {
-    if (!rejectionReason.trim()) {
-      alert('Por favor ingresa el motivo del rechazo.');
-      return;
-    }
-    const updated: Reservation = {
-      ...res,
-      status: 'PAYMENT_REJECTED',
-      notes: `Motivo de rechazo: ${rejectionReason}`,
-      updated_at: new Date().toISOString(),
-    };
-    if (updated.payments?.[0]) {
-      updated.payments[0].status = 'REJECTED';
-    }
-    await RepositoryService.saveReservation(updated);
-    await refreshData();
-    setShowReviewModal(false);
-    setRejectionReason('');
-    alert(`Comprobante rechazado para ${res.code}.`);
-  };
-
-  // Copy invoicing data helper
   const copyInvoiceInfo = (res: Reservation) => {
     if (!res.invoice_details || res.invoice_details.type === 'ninguno') return;
     const info = res.invoice_details.type === 'factura'
@@ -269,7 +230,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
       <Navbar />
 
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
@@ -316,9 +277,9 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Clientes Registrados</span>
-            <p className="text-3xl font-extrabold text-indigo-700 mt-1">{passengerList.length}</p>
-            <span className="text-[10px] text-slate-500 mt-1 block font-medium">En directorio Supabase</span>
+            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Clientes en Supabase</span>
+            <p className="text-3xl font-extrabold text-indigo-700 mt-1">{passengerSummaries.length}</p>
+            <span className="text-[10px] text-slate-500 mt-1 block font-medium">Perfiles registrados</span>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -344,7 +305,7 @@ export default function AdminDashboardPage() {
               activeTab === 'pasajeros' ? 'border-crusoe-600 text-crusoe-800' : 'border-transparent text-slate-600 hover:text-slate-950'
             }`}
           >
-            Directorio de Pasajeros ({passengerList.length})
+            Directorio de Pasajeros ({passengerSummaries.length})
           </button>
           <button
             onClick={() => setActiveTab('calendario')}
@@ -367,7 +328,6 @@ export default function AdminDashboardPage() {
         {/* TAB 1: RESERVAS */}
         {activeTab === 'reservas' && (
           <div className="space-y-6">
-            {/* Filter and Search Bar */}
             <div className="flex flex-col sm:flex-row gap-4 justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
@@ -399,7 +359,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Reservations Table */}
+            {/* Table */}
             <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-md">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100/90 text-slate-950 font-extrabold uppercase tracking-wider border-b border-slate-200">
@@ -408,7 +368,7 @@ export default function AdminDashboardPage() {
                     <th className="p-4">Servicio / Ruta</th>
                     <th className="p-4">Comprobante Fiscal</th>
                     <th className="p-4">Monto / Adelanto</th>
-                    <th className="p-4">Estado</th>
+                    <th className="p-4">Cambiar Estado</th>
                     <th className="p-4 text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -472,12 +432,33 @@ export default function AdminDashboardPage() {
                           </span>
                         </td>
 
+                        {/* SELECTOR DE ESTADO DIRECTO EN LA FILA */}
                         <td className="p-4">
-                          <Badge status={res.status} size="sm" />
+                          <div className="space-y-1.5">
+                            <Badge status={res.status} size="sm" />
+                            <select
+                              value={res.status}
+                              disabled={updatingId === res.id}
+                              onChange={(e) =>
+                                handleStatusChange(res.id, e.target.value as ReservationStatus)
+                              }
+                              className="w-full rounded-xl border border-slate-300 p-1.5 text-[11px] font-bold text-slate-900 bg-white focus:border-crusoe-600 shadow-sm"
+                            >
+                              <option value="PENDING_PAYMENT">Esperando Pago</option>
+                              <option value="PAYMENT_SUBMITTED">Comprobante Enviado</option>
+                              <option value="PAYMENT_REVIEW">En Revisión</option>
+                              <option value="CONFIRMED">✅ Confirmada</option>
+                              <option value="ASSIGNED">🚗 Chofer Asignado</option>
+                              <option value="IN_PROGRESS">🚀 En Curso</option>
+                              <option value="COMPLETED">🏁 Completada</option>
+                              <option value="PAYMENT_REJECTED">❌ Pago Rechazado</option>
+                              <option value="CANCELLED">🚫 Cancelada</option>
+                            </select>
+                          </div>
                         </td>
 
                         <td className="p-4 text-right space-x-2">
-                          {/* Review Voucher button */}
+                          {/* Review Voucher Button */}
                           {res.payments?.[0]?.proofs?.[0] && (
                             <Button
                               size="sm"
@@ -511,14 +492,14 @@ export default function AdminDashboardPage() {
                             <MessageSquare className="h-4 w-4" />
                           </a>
 
-                          {/* Delete button — solo para reservas canceladas o rechazadas */}
+                          {/* Delete button (Solo canceladas/rechazadas) */}
                           {['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(res.status) && (
                             <Button
                               size="sm"
                               variant="danger"
-                              title="Eliminar reserva cancelada o rechazada"
+                              title="Eliminar reserva cancelada de la lista"
                               onClick={async () => {
-                                if (!window.confirm(`¿Eliminar definitivamente la reserva ${res.code}?`)) return;
+                                if (!window.confirm(`¿Eliminar la reserva ${res.code}? (El usuario permanecerá en el Directorio de Supabase)`)) return;
                                 await RepositoryService.deleteReservation(res.id, res.code);
                                 await refreshData();
                               }}
@@ -536,18 +517,18 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 2: DIRECTORIO DE PASAJEROS */}
+        {/* TAB 2: DIRECTORIO DE PASAJEROS (Directo desde public.profiles de Supabase) */}
         {activeTab === 'pasajeros' && (
           <div className="space-y-6">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h2 className="text-xl font-extrabold text-slate-950">Directorio Oficial de Pasajeros</h2>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  Registro de clientes recurrentes y control de límites anti-abuso diarios (Máx 2 reservas/día).
+                  Perfiles persistentes en Supabase. Aunque se elimine una reserva cancelada, el perfil del pasajero se mantiene registrado.
                 </p>
               </div>
               <span className="text-xs font-extrabold text-crusoe-800 bg-crusoe-50 border border-crusoe-200 px-3 py-1.5 rounded-xl">
-                {passengerList.length} Clientes Totales
+                {passengerSummaries.length} Clientes Registrados
               </span>
             </div>
 
@@ -565,15 +546,15 @@ export default function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
-                  {passengerList.length === 0 ? (
+                  {passengerSummaries.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="p-8 text-center text-slate-500 font-bold text-sm">
-                        Aún no hay pasajeros registrados en la base de datos.
+                        Aún no hay perfiles registrados en la base de datos de Supabase.
                       </td>
                     </tr>
                   ) : (
-                    passengerList.map((pass) => (
-                      <tr key={pass.phone} className="hover:bg-slate-50 transition-colors">
+                    passengerSummaries.map((pass) => (
+                      <tr key={pass.id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-4">
                           <span className="text-xs font-bold text-slate-500 block">{pass.title || 'Sr.'}</span>
                           <span className="font-extrabold text-slate-950 text-sm block">{pass.name}</span>
@@ -588,7 +569,7 @@ export default function AdminDashboardPage() {
                         </td>
 
                         <td className="p-4">
-                          <span className="font-extrabold text-slate-950 block">{pass.totalBookings} reservas totales</span>
+                          <span className="font-extrabold text-slate-950 block">{pass.totalBookings} reservas registradas</span>
                           <span className="text-xs text-crusoe-700 font-semibold block">{pass.confirmedBookings} completadas</span>
                         </td>
 
@@ -711,25 +692,26 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
 
-                {selectedRes.invoice_details && selectedRes.invoice_details.type !== 'ninguno' && (
-                  <div className="border-t border-slate-100 pt-2 text-slate-800">
-                    <span className="font-bold text-slate-950 block">Comprobante Fiscal:</span>
-                    <span>
-                      {selectedRes.invoice_details.type.toUpperCase()} — {selectedRes.invoice_details.ruc || selectedRes.invoice_details.dni} ({selectedRes.invoice_details.companyName || selectedRes.invoice_details.name})
-                    </span>
-                  </div>
-                )}
-
-                {/* Voucher Image */}
-                <div className="border rounded-2xl overflow-hidden bg-slate-100 p-2 text-center">
+                {/* Voucher Image preview and full link */}
+                <div className="border rounded-2xl overflow-hidden bg-slate-100 p-2 text-center space-y-2">
                   <img
                     src={selectedRes.payments?.[0]?.proofs?.[0]?.file_path}
                     alt="Voucher de pago"
                     className="max-h-72 w-auto mx-auto rounded-xl object-contain"
                   />
+                  {selectedRes.payments?.[0]?.proofs?.[0]?.file_path && (
+                    <a
+                      href={selectedRes.payments[0].proofs[0].file_path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-crusoe-700 hover:underline"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Abrir imagen completa en Supabase Storage
+                    </a>
+                  )}
                 </div>
 
-                {/* Reject Reason input */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">
                     Motivo de rechazo (solo si no es válido):
@@ -748,7 +730,8 @@ export default function AdminDashboardPage() {
                 <Button
                   size="sm"
                   variant="danger"
-                  onClick={() => handleRejectPayment(selectedRes)}
+                  isLoading={updatingId === selectedRes.id}
+                  onClick={() => handleStatusChange(selectedRes.id, 'PAYMENT_REJECTED', `Motivo: ${rejectionReason}`)}
                 >
                   <XCircle className="h-4 w-4" />
                   Rechazar Pago
@@ -756,7 +739,8 @@ export default function AdminDashboardPage() {
 
                 <Button
                   size="sm"
-                  onClick={() => handleApprovePayment(selectedRes)}
+                  isLoading={updatingId === selectedRes.id}
+                  onClick={() => handleStatusChange(selectedRes.id, 'CONFIRMED')}
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   Aprobar Pago y Confirmar

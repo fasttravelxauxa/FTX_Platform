@@ -27,12 +27,13 @@ import {
   Phone,
   User,
   CreditCard,
+  Building,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { SERVICES_CATALOG, AIRLINES, PAYMENT_METHODS_INFO, BUSINESS_CONFIG } from '@/lib/constants';
+import { SERVICES_CATALOG, AIRLINES, DESTINATIONS_CATALOG, PAYMENT_METHODS_INFO, BUSINESS_CONFIG } from '@/lib/constants';
 import { PricingService } from '@/lib/services/pricing';
 import { WhatsAppService } from '@/lib/services/whatsapp';
 import { RepositoryService, savePassengerIdentity, generateUUID } from '@/lib/services/repository';
@@ -42,7 +43,7 @@ const STEP_TITLES: { [key: number]: string } = {
   1: 'Tipo de Servicio',
   2: 'Fecha y Hora',
   3: 'Ruta y Destino',
-  4: 'Detalles de Vuelo',
+  4: 'Aerolínea y Vuelo',
   5: 'Datos del Pasajero',
   6: 'Equipaje y Notas',
   7: 'Comprobante Fiscal',
@@ -68,7 +69,12 @@ function BookingWizardForm() {
   );
   const [scheduledTime, setScheduledTime] = useState<string>('09:30');
   const [origin, setOrigin] = useState<string>('Aeropuerto de Jauja (JAU)');
-  const [destination, setDestination] = useState<string>('Hotel Turístico, Plaza Constitución, Huancayo');
+
+  // Destination City Code & Exact Address
+  const [destinationCityCode, setDestinationCityCode] = useState<string>('huancayo');
+  const [exactAddress, setExactAddress] = useState<string>('');
+  const [destination, setDestination] = useState<string>('Huancayo (Centro / El Tambo / Chilca)');
+
   const [passengersCount, setPassengersCount] = useState<number>(1);
   const [hoursCount, setHoursCount] = useState<number>(2);
 
@@ -78,9 +84,8 @@ function BookingWizardForm() {
   const [customerDni, setCustomerDni] = useState<string>('');
   const [customerTitle, setCustomerTitle] = useState<string>('Sr.');
 
-  // Flight Info
+  // Flight Info (Solo Aerolínea, Número de Vuelo Eliminado a Solicitud del Cliente)
   const [airline, setAirline] = useState<string>('LATAM');
-  const [flightNumber, setFlightNumber] = useState<string>('LA 2145');
   const [notes, setNotes] = useState<string>('');
   const [luggageNotes, setLuggageNotes] = useState<string>('');
 
@@ -105,11 +110,22 @@ function BookingWizardForm() {
   const [quote, setQuote] = useState<PriceQuote | null>(null);
   const [createdReservation, setCreatedReservation] = useState<Reservation | null>(null);
 
-  // Scroll smoothly to top on every step change (Mobile UX fix)
+  // Scroll smoothly to top on step change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setErrorMsg(null);
   }, [step]);
+
+  // Update full destination string whenever destination city or exact address changes
+  useEffect(() => {
+    const destRoute = DESTINATIONS_CATALOG.find((d) => d.code === destinationCityCode);
+    const destName = destRoute ? destRoute.name : 'Huancayo';
+    if (exactAddress.trim()) {
+      setDestination(`${destName} — ${exactAddress.trim()}`);
+    } else {
+      setDestination(destName);
+    }
+  }, [destinationCityCode, exactAddress]);
 
   // Recalculate quote whenever relevant fields change
   useEffect(() => {
@@ -118,14 +134,15 @@ function BookingWizardForm() {
         serviceCode,
         origin,
         destination,
+        destinationCode: destinationCityCode,
         passengersCount,
         hoursCount,
       });
       setQuote(q);
     } catch {
-      // Ignorar cálculo incompleto temporal
+      // Ignorar cálculo incompleto
     }
-  }, [serviceCode, origin, destination, passengersCount, hoursCount]);
+  }, [serviceCode, origin, destination, destinationCityCode, passengersCount, hoursCount]);
 
   const handleVoucherUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -146,6 +163,13 @@ function BookingWizardForm() {
       setStep(5);
       return;
     }
+
+    if (serviceCode === 'privado-aeropuerto' && !exactAddress.trim()) {
+      setErrorMsg('Para el servicio privado debes ingresar la dirección exacta de destino (ej. Hotel Plaza Constitución, Av. Giráldez 123).');
+      setStep(3);
+      return;
+    }
+
     if (!acceptedTerms) {
       setErrorMsg('Debes aceptar los Términos y Condiciones para continuar.');
       setStep(8);
@@ -153,7 +177,7 @@ function BookingWizardForm() {
     }
 
     if (invoiceType === 'factura' && (!invoiceRuc || !invoiceCompanyName)) {
-      setErrorMsg('Para Factura Electrónica debes ingresar el número de RUC y la Razón Social.');
+      setErrorMsg('Para Factura Electrónica debes ingresar el RUC y la Razón Social.');
       setStep(7);
       return;
     }
@@ -162,7 +186,7 @@ function BookingWizardForm() {
     setErrorMsg(null);
 
     try {
-      // ── LÍMITE DIARIO: Máximo 2 reservas por día por teléfono, de diferente tipo ──
+      // LÍMITE DIARIO: Máximo 2 reservas por día por teléfono
       const service = SERVICES_CATALOG.find((s) => s.code === serviceCode);
       const limitCheck = await RepositoryService.checkDailyLimit(customerPhone, service?.id || serviceCode);
       if (!limitCheck.allowed) {
@@ -172,14 +196,13 @@ function BookingWizardForm() {
           );
         } else {
           setErrorMsg(
-            `Has alcanzado el límite de 2 reservas diarias para el número ${customerPhone}. Si requieres traslados adicionales, comunícate al WhatsApp de coordinación 929 667 586.`
+            `Has alcanzado el límite de 2 reservas diarias para el número ${customerPhone}. Comunícate al WhatsApp 929 667 586 si requieres traslados adicionales.`
           );
         }
         setLoading(false);
         return;
       }
 
-      // Guardar identidad del pasajero en este dispositivo
       savePassengerIdentity(customerPhone);
 
       const codeSeq = Math.floor(1000 + Math.random() * 9000);
@@ -188,7 +211,6 @@ function BookingWizardForm() {
 
       let finalVoucherUrl = voucherPreview;
 
-      // Subir imagen a Supabase Storage
       if (voucherFile) {
         const uploaded = await RepositoryService.uploadVoucherImage(voucherFile, code);
         if (uploaded) {
@@ -222,7 +244,7 @@ function BookingWizardForm() {
         driver_id: undefined,
         status: finalVoucherUrl ? 'PAYMENT_SUBMITTED' : 'PENDING_PAYMENT',
         flight_airline: airline,
-        flight_number: flightNumber,
+        flight_number: '', // Número de vuelo eliminado a solicitud
         flight_arrival_time: scheduledAt,
         origin,
         destination,
@@ -278,10 +300,9 @@ function BookingWizardForm() {
           : [],
       };
 
-      // Guardar directamente en Supabase Cloud
       const saveResult = await RepositoryService.saveReservation(newRes);
       if (!saveResult.success) {
-        setErrorMsg(saveResult.error || 'No se pudo registrar la reserva en la base de datos central. Inténtalo nuevamente.');
+        setErrorMsg(saveResult.error || 'No se pudo guardar la reserva en Supabase. Inténtalo nuevamente.');
         setLoading(false);
         return;
       }
@@ -290,7 +311,7 @@ function BookingWizardForm() {
         newRes.code = saveResult.code;
       }
       setCreatedReservation(newRes);
-      setStep(10); // Paso de Confirmación Final
+      setStep(10);
 
       confetti({
         particleCount: 120,
@@ -298,19 +319,19 @@ function BookingWizardForm() {
         origin: { y: 0.6 },
       });
     } catch (err: any) {
-      setErrorMsg('Ocurrió un error inesperado al procesar tu reserva. Inténtalo nuevamente.');
+      setErrorMsg('Ocurrió un error inesperado al procesar tu reserva.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-xl">
+    <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-xl text-slate-900">
       {/* Progress Bar Header */}
       {step < 10 && (
         <div className="mb-6 border-b border-slate-100 pb-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-crusoe-800">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-crusoe-800">
               Paso {step} de 9
             </span>
             <span className="text-xs font-extrabold text-slate-900">
@@ -318,7 +339,6 @@ function BookingWizardForm() {
             </span>
           </div>
 
-          {/* Progress bar visual */}
           <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
             <div
               className="bg-crusoe-600 h-2 rounded-full transition-all duration-300 ease-out"
@@ -341,10 +361,10 @@ function BookingWizardForm() {
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
               <Car className="h-6 w-6 text-crusoe-600" />
-              1. Selecciona tu Servicio
+              1. Selecciona tu Tipo de Servicio
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Todos nuestros traslados se realizan en SUV Jetour último modelo con chofer ejecutivo.
+              Traslados ejecutivos en SUV Jetour último modelo desde/hacia el Aeropuerto de Jauja.
             </p>
           </div>
 
@@ -362,11 +382,11 @@ function BookingWizardForm() {
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-bold text-slate-950 text-base">{srv.name}</h3>
                   <span className="text-xs font-extrabold text-crusoe-800 bg-crusoe-100/80 px-2.5 py-1 rounded-lg shrink-0">
-                    {srv.code === 'compartido-aeropuerto'
-                      ? 'S/ 20.00 /asiento'
-                      : srv.price_unit === 'hourly'
-                      ? 'S/ 50.00 /hora'
-                      : 'S/ 80.00 base'}
+                    {srv.code === 'privado-aeropuerto'
+                      ? 'Desde S/ 80.00'
+                      : srv.code === 'compartido-aeropuerto'
+                      ? 'Desde S/ 20.00 /asiento'
+                      : 'S/ 50.00 /hora'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-700 mt-2.5 leading-relaxed">{srv.description}</p>
@@ -392,7 +412,7 @@ function BookingWizardForm() {
               2. Fecha y Hora Programada
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Monitoreamos los itinerarios de vuelo para garantizar que tu vehículo esté esperándote con 30 minutos de tolerancia tras el aterrizaje.
+              Ofrecemos 30 minutos de tolerancia tras el aterrizaje de tu vuelo.
             </p>
           </div>
 
@@ -404,7 +424,7 @@ function BookingWizardForm() {
                 value={scheduledDate}
                 min={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 focus:ring-1 focus:ring-crusoe-600 shadow-sm"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
               />
             </div>
 
@@ -414,7 +434,7 @@ function BookingWizardForm() {
                 type="time"
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 focus:ring-1 focus:ring-crusoe-600 shadow-sm"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
               />
             </div>
           </div>
@@ -425,48 +445,84 @@ function BookingWizardForm() {
               Atrás
             </Button>
             <Button onClick={() => setStep(3)}>
-              Siguiente: Ruta
+              Siguiente: Ruta y Tarifas
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 3: Ruta y Destino */}
+      {/* STEP 3: Ruta y Destino con Tarifas Oficiales */}
       {step === 3 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
               <MapPin className="h-6 w-6 text-crusoe-600" />
-              3. Origen y Destino
+              3. Ciudad de Destino y Dirección Exacta
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Indica los puntos exactos de recogida y llegada para coordinar la mejor ruta de viaje.
+              Las tarifas varían según la ciudad de destino. En servicio privado requerimos la dirección exacta de llegada.
             </p>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-900 mb-1.5">Punto de Origen / Recogida</label>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">Punto de Origen</label>
               <input
                 type="text"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
-                placeholder="Ej. Aeropuerto de Jauja (JAU)"
-                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3.5 text-sm text-slate-950 font-medium"
               />
             </div>
 
+            {/* Selector de Ciudad Destino */}
             <div>
-              <label className="block text-xs font-bold text-slate-900 mb-1.5">Punto de Destino / Llegada</label>
-              <input
-                type="text"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                placeholder="Ej. Hotel Plaza Constitución, Huancayo"
-                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
-              />
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">Ciudad de Destino *</label>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {DESTINATIONS_CATALOG.map((dest) => (
+                  <div
+                    key={dest.code}
+                    onClick={() => setDestinationCityCode(dest.code)}
+                    className={`cursor-pointer rounded-2xl border-2 p-4 transition-all ${
+                      destinationCityCode === dest.code
+                        ? 'border-crusoe-600 bg-crusoe-50/90 shadow-sm ring-2 ring-crusoe-600/20'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-950 text-sm">{dest.name}</span>
+                      <span className="text-xs font-extrabold text-crusoe-800 bg-crusoe-100 px-2 py-0.5 rounded">
+                        {serviceCode === 'privado-aeropuerto'
+                          ? `S/ ${dest.privatePriceSuv.toFixed(2)}`
+                          : `S/ ${dest.sharedPricePerSeat.toFixed(2)} /asiento`}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-1.5">{dest.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* Dirección exacta para servicio privado */}
+            {serviceCode === 'privado-aeropuerto' && (
+              <div className="rounded-2xl border-2 border-crusoe-200 bg-crusoe-50/60 p-4 space-y-2">
+                <label className="block text-xs font-extrabold text-crusoe-950 flex items-center gap-1.5">
+                  <Building className="h-4 w-4 text-crusoe-700" />
+                  Dirección Exacta de Destino (Obligatorio para Privado) *
+                </label>
+                <input
+                  type="text"
+                  value={exactAddress}
+                  onChange={(e) => setExactAddress(e.target.value)}
+                  placeholder="Ej. Hotel Plaza Constitución, Av. Giráldez N° 123 (Ref. Frente a la Catedral)"
+                  className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
+                />
+                <span className="text-[11px] text-crusoe-800 block font-medium">
+                  📌 Al ser servicio privado exclusivo, nuestro conductor te dejará exactamente en la puerta de tu hotel o domicilio.
+                </span>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-bold text-slate-900 mb-1.5">Cantidad de Pasajeros</label>
@@ -488,30 +544,38 @@ function BookingWizardForm() {
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
-            <Button onClick={() => setStep(4)}>
-              Siguiente: Vuelo
+            <Button
+              onClick={() => {
+                if (serviceCode === 'privado-aeropuerto' && !exactAddress.trim()) {
+                  setErrorMsg('Ingresa la dirección exacta de destino para tu servicio privado.');
+                  return;
+                }
+                setStep(4);
+              }}
+            >
+              Siguiente: Aerolínea
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 4: Detalles de Vuelo */}
+      {/* STEP 4: Aerolínea (Número de vuelo eliminado a solicitud) */}
       {step === 4 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
               <Plane className="h-6 w-6 text-crusoe-600" />
-              4. Información de Vuelo (Opcional)
+              4. Aerolínea de Llegada (Opcional)
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Si llegas en avión al Aeropuerto de Jauja, ingresa tu aerolínea y número de vuelo para monitorear retrasos en tiempo real.
+              Indica la aerolínea en la que arribas al Aeropuerto de Jauja para coordinar tu recepción con el chofer.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-4 max-w-md mx-auto">
             <div>
-              <label className="block text-xs font-bold text-slate-900 mb-1.5">Aerolínea</label>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">Aerolínea Comercial</label>
               <select
                 value={airline}
                 onChange={(e) => setAirline(e.target.value)}
@@ -524,17 +588,6 @@ function BookingWizardForm() {
                 ))}
               </select>
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-900 mb-1.5">Número de Vuelo</label>
-              <input
-                type="text"
-                value={flightNumber}
-                onChange={(e) => setFlightNumber(e.target.value)}
-                placeholder="Ej. LA 2145 / H2 5100"
-                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
-              />
-            </div>
           </div>
 
           <div className="flex justify-between pt-4 border-t border-slate-100">
@@ -543,7 +596,7 @@ function BookingWizardForm() {
               Atrás
             </Button>
             <Button onClick={() => setStep(5)}>
-              Siguiente: Datos de Contacto
+              Siguiente: Pasajero
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -559,7 +612,7 @@ function BookingWizardForm() {
               5. Datos del Pasajero Principal
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Tu número de WhatsApp será el canal directo para enviarte la confirmación, el cartel del chofer y tus comprobantes electrónicos.
+              Ingresa tus datos de contacto para la confirmación de la reserva.
             </p>
           </div>
 
@@ -657,7 +710,7 @@ function BookingWizardForm() {
               6. Equipaje e Instrucciones Especiales
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              La SUV Jetour cuenta con amplia maletera ejecutiva con capacidad para 4 maletas de cabina o 2 maletas grandes.
+              Maletera ejecutiva con capacidad para 4 maletas en la SUV Jetour.
             </p>
           </div>
 
@@ -668,7 +721,7 @@ function BookingWizardForm() {
                 type="text"
                 value={luggageNotes}
                 onChange={(e) => setLuggageNotes(e.target.value)}
-                placeholder="Ej. 2 maletas de 23kg y 1 mochila de mano"
+                placeholder="Ej. 2 maletas de 23kg y 1 equipaje de mano"
                 className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
               />
             </div>
@@ -679,7 +732,7 @@ function BookingWizardForm() {
                 rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ej. Viajo con un adulto mayor, requerimos asistencia al abordar."
+                placeholder="Ej. Viajo con un adulto mayor, requerimos asistencia."
                 className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm text-slate-950 font-medium focus:border-crusoe-600 shadow-sm"
               ></textarea>
             </div>
@@ -704,10 +757,10 @@ function BookingWizardForm() {
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
               <FileCheck className="h-6 w-6 text-crusoe-600" />
-              7. Tipo de Comprobante de Pago
+              7. Comprobante de Pago (Boleta / Factura)
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Emitimos Boletas y Facturas Electrónicas autorizadas por SUNAT. El archivo PDF/XML se envía a tu WhatsApp.
+              Emitimos comprobantes electrónicos autorizados por SUNAT.
             </p>
           </div>
 
@@ -821,26 +874,26 @@ function BookingWizardForm() {
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
               <CreditCard className="h-6 w-6 text-crusoe-600" />
-              8. Resumen de Cotización y Políticas
+              8. Resumen de Cotización Oficial
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Tarifa transparente sin costos ocultos. Se abona el 50% de adelanto para reservar la SUV y el saldo se cancela al abordar.
+              Abono del 50% de adelanto para reservar la unidad SUV y saldo a pagar al abordar.
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 space-y-3">
             <div className="flex justify-between text-xs text-slate-700">
-              <span>Tarifa Base del Servicio:</span>
+              <span>Tarifa Base ({destination}):</span>
               <span className="font-bold text-slate-950">S/ {quote?.subtotal.toFixed(2) || '80.00'}</span>
             </div>
             {quote && quote.surcharges > 0 && (
               <div className="flex justify-between text-xs text-slate-700">
-                <span>Recargo por Zona Periférica:</span>
+                <span>Recargo por Cobertura Periférica:</span>
                 <span className="font-bold text-slate-950">S/ {quote.surcharges.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between text-sm font-extrabold text-slate-950 border-t border-slate-200 pt-3">
-              <span>Monto Total del Viaje:</span>
+              <span>Monto Total del Traslado:</span>
               <span className="text-base text-crusoe-800">S/ {quote?.total.toFixed(2) || '80.00'}</span>
             </div>
 
@@ -856,7 +909,6 @@ function BookingWizardForm() {
             </div>
           </div>
 
-          {/* Terms checkbox */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
@@ -866,7 +918,7 @@ function BookingWizardForm() {
                 className="h-5 w-5 rounded border-slate-300 text-crusoe-600 focus:ring-crusoe-500 mt-0.5"
               />
               <span className="text-xs text-slate-800 leading-relaxed">
-                He leído y acepto los{' '}
+                Acepto los{' '}
                 <Link href="/terminos" target="_blank" className="font-bold text-crusoe-700 underline">
                   Términos y Condiciones
                 </Link>{' '}
@@ -874,7 +926,7 @@ function BookingWizardForm() {
                 <Link href="/cancelaciones" target="_blank" className="font-bold text-crusoe-700 underline">
                   Política de Cancelación
                 </Link>{' '}
-                (Cancelación gratuita dentro de los 60 minutos de realizada la reserva).
+                (Cancelación gratuita dentro de los 60 min).
               </span>
             </label>
           </div>
@@ -893,7 +945,7 @@ function BookingWizardForm() {
                 setStep(9);
               }}
             >
-              Siguiente: Realizar Pago
+              Siguiente: Pago del Adelanto
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -909,11 +961,10 @@ function BookingWizardForm() {
               9. Pago del Adelanto (50%)
             </h2>
             <p className="text-xs text-slate-600 mt-1">
-              Transfiere el monto de <strong>S/ {quote?.depositRequired.toFixed(2) || '40.00'}</strong> mediante Yape, Plin o Transferencia BCP y adjunta tu comprobante.
+              Abona <strong>S/ {quote?.depositRequired.toFixed(2) || '40.00'}</strong> vía Yape, Plin o BCP y adjunta la captura del comprobante.
             </p>
           </div>
 
-          {/* Method selector */}
           <div className="grid grid-cols-3 gap-3">
             {[
               { code: 'yape', name: 'Yape' },
@@ -935,7 +986,6 @@ function BookingWizardForm() {
             ))}
           </div>
 
-          {/* Payment method details box */}
           <div className="rounded-2xl border border-crusoe-200 bg-crusoe-50/70 p-5 text-center space-y-3">
             {paymentMethod === 'yape' && (
               <div>
@@ -967,7 +1017,6 @@ function BookingWizardForm() {
             )}
           </div>
 
-          {/* Voucher upload */}
           <div className="space-y-3">
             <label className="block text-xs font-bold text-slate-900">Adjuntar Captura de Comprobante (Voucher)</label>
             <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center hover:border-crusoe-500 transition-colors bg-slate-50">
@@ -1022,7 +1071,7 @@ function BookingWizardForm() {
         </div>
       )}
 
-      {/* STEP 10: Confirmación Final y Alerta Instantánea */}
+      {/* STEP 10: Confirmación Final */}
       {step === 10 && createdReservation && (
         <div className="space-y-6 text-center py-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-crusoe-100 text-crusoe-700 mx-auto shadow-inner">
@@ -1039,14 +1088,13 @@ function BookingWizardForm() {
             </div>
           </div>
 
-          {/* ALERTA INSTANTÁNEA AL ADMIN */}
           <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 text-xs text-amber-950 space-y-3 max-w-lg mx-auto text-left shadow-sm">
             <div className="flex items-center gap-2 text-amber-900 font-extrabold text-sm">
               <Bell className="h-5 w-5 text-amber-600 animate-bounce shrink-0" />
               <span>Notificación Automática a Coordinación</span>
             </div>
             <p className="text-xs text-amber-950 leading-relaxed font-medium">
-              Haz clic en el botón verde para enviar el detalle de tu reserva <strong>{createdReservation.code}</strong> al WhatsApp oficial de administración (<strong>929 667 586</strong>) para asignación inmediata de vehículo.
+              Haz clic en el botón verde a continuación para enviar la alerta de tu reserva <strong>{createdReservation.code}</strong> al WhatsApp oficial (<strong>929 667 586</strong>).
             </p>
             <div className="pt-1">
               <a
@@ -1061,7 +1109,6 @@ function BookingWizardForm() {
             </div>
           </div>
 
-          {/* Resumen del viaje */}
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left text-xs text-slate-900 space-y-2.5 max-w-lg mx-auto">
             <div className="flex justify-between">
               <span className="font-bold text-slate-600">Pasajero Principal:</span>
@@ -1077,18 +1124,6 @@ function BookingWizardForm() {
               <span className="font-bold text-slate-600">Fecha y Hora:</span>
               <span className="font-semibold text-slate-950">{new Date(createdReservation.scheduled_at).toLocaleString('es-PE')}</span>
             </div>
-
-            {createdReservation.invoice_details && createdReservation.invoice_details.type !== 'ninguno' && (
-              <div className="border-t border-slate-200 pt-2 text-slate-800">
-                <span className="font-bold text-slate-950 block">Comprobante Fiscal:</span>
-                <span className="text-xs">
-                  {createdReservation.invoice_details.type.toUpperCase()} —{' '}
-                  {createdReservation.invoice_details.ruc
-                    ? `RUC ${createdReservation.invoice_details.ruc} (${createdReservation.invoice_details.companyName})`
-                    : `DNI ${createdReservation.invoice_details.dni}`}
-                </span>
-              </div>
-            )}
 
             <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-sm text-slate-950">
               <span>Adelanto (50%):</span>
