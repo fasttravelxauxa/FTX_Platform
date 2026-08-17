@@ -6,11 +6,37 @@
   --font-inter: 'Inter', sans-serif;
 }
 
+/* Modo Claro por defecto */
 body {
-  color: #092A09;
-  background-color: #F2FCF1;
+  color: #0f172a;
+  background-color: #f8fafc;
   font-family: var(--font-inter);
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Modo Oscuro Ejecutivo (Jetour Dark Theme) */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  color: #f8fafc;
+  background-color: #070d19;
+}
+
+/* Sobrescribir elementos globales en modo oscuro */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94a3b8 !important;
 }
 
 /* Custom Print Styles for Airport Sign */
@@ -28,6 +54,7 @@ body {
     width: 100vw;
     height: 100vh;
     background: #ffffff !important;
+    color: #000000 !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
@@ -45,14 +72,14 @@ body {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(196, 241, 193, 0.6);
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
-.glass-panel-dark {
-  background: rgba(9, 42, 9, 0.88);
+html.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(42, 149, 36, 0.3);
+  border: 1px solid rgba(51, 65, 85, 0.8);
 }
 
 /* Custom scrollbars */
@@ -61,12 +88,19 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #F2FCF1;
+  background: #f1f5f9;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #95E590;
+  background: #94a3b8;
+  border-radius: 4px;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #39B532;
+  background: #23761f;
 }

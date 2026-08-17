@@ -5,102 +5,95 @@ import Link from 'next/link';
 import { Car, Menu, X, MessageSquare, ShieldCheck, UserCheck, Calendar } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { ThemeToggle } from '../ui/ThemeToggle';
-import { BUSINESS_CONFIG } from '@/lib/constants';
 import { WhatsAppService } from '@/lib/services/whatsapp';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-crusoe-200/80 bg-white/95 backdrop-blur-md transition-all">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md transition-colors overflow-x-hidden">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
+        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-crusoe-600 text-white shadow-md shadow-crusoe-600/30 group-hover:scale-105 transition-transform">
             <Car className="h-6 w-6" />
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-extrabold tracking-tight text-crusoe-950 font-sans">
-              Fast Travel <span className="text-crusoe-600">Xauxa</span>
+            <span className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-950 dark:text-white font-sans">
+              Fast Travel <span className="text-crusoe-600 dark:text-crusoe-400">Xauxa</span>
             </span>
-            <span className="text-[10px] font-semibold text-crusoe-700 tracking-wider uppercase -mt-1">
+            <span className="text-[9px] sm:text-[10px] font-semibold text-slate-600 dark:text-slate-400 tracking-wider uppercase -mt-1">
               Jauja ↔ Huancayo Ejecutivo
             </span>
           </div>
         </Link>
 
         {/* Desktop Links */}
-        <nav className="hidden items-center gap-7 md:flex">
+        <nav className="hidden items-center gap-6 lg:flex">
           <Link
             href="/#servicios"
-            className="text-sm font-medium text-crusoe-900 hover:text-crusoe-600 transition-colors"
+            className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-crusoe-600 dark:hover:text-crusoe-400 transition-colors whitespace-nowrap"
           >
             Servicios
           </Link>
           <Link
             href="/#como-funciona"
-            className="text-sm font-medium text-crusoe-900 hover:text-crusoe-600 transition-colors"
+            className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-crusoe-600 dark:hover:text-crusoe-400 transition-colors whitespace-nowrap"
           >
             ¿Cómo funciona?
           </Link>
           <Link
             href="/#vehiculo"
-            className="text-sm font-medium text-crusoe-900 hover:text-crusoe-600 transition-colors"
+            className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-crusoe-600 dark:hover:text-crusoe-400 transition-colors whitespace-nowrap"
           >
             SUV Jetour
           </Link>
           <Link
-            href="/#comprobantes"
-            className="text-sm font-medium text-crusoe-900 hover:text-crusoe-600 transition-colors"
-          >
-            Boletas y Facturas
-          </Link>
-          <Link
             href="/mis-reservas"
-            className="flex items-center gap-1.5 text-sm font-medium text-crusoe-900 hover:text-crusoe-600 transition-colors"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-crusoe-600 dark:hover:text-crusoe-400 transition-colors whitespace-nowrap"
           >
-            <Calendar className="h-4 w-4 text-crusoe-600" />
+            <Calendar className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400" />
             Mis Reservas
           </Link>
         </nav>
 
-        {/* Actions */}
-        <div className="hidden items-center gap-3 md:flex">
+        {/* Desktop Actions */}
+        <div className="hidden items-center gap-2.5 lg:flex shrink-0">
           <ThemeToggle />
-          <Link href="/admin" className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:underline px-2 py-1">
-            Panel Admin
+          <Link
+            href="/admin"
+            className="text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-crusoe-600 dark:hover:text-crusoe-400 px-2 py-1.5 transition-colors whitespace-nowrap"
+          >
+            Admin
           </Link>
           <a
             href={WhatsAppService.getCustomerSupportLink()}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-col items-start rounded-xl border border-crusoe-300 bg-crusoe-50 dark:bg-slate-800 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-crusoe-900 dark:text-slate-100 hover:bg-crusoe-100 transition-colors"
-            title="Coordinación únicamente por mensajes de WhatsApp (No llamadas)"
+            className="flex items-center gap-1.5 rounded-xl border border-crusoe-300 dark:border-slate-700 bg-crusoe-50 dark:bg-slate-900 px-3 py-2 text-xs font-bold text-crusoe-900 dark:text-crusoe-300 hover:bg-crusoe-100 transition-colors shrink-0"
+            title="Coordinación únicamente por mensajes de WhatsApp"
           >
-            <div className="flex items-center gap-1.5 font-bold text-crusoe-800 dark:text-crusoe-400">
-              <MessageSquare className="h-3.5 w-3.5 text-crusoe-600" />
-              <span>WhatsApp 929 667 586</span>
-            </div>
-            <span className="text-[9px] text-crusoe-700 dark:text-crusoe-300 font-semibold pl-5">Solo Mensajes</span>
+            <MessageSquare className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400 shrink-0" />
+            <span className="whitespace-nowrap">929 667 586</span>
           </a>
           <Link href="/reserva">
-            <Button size="sm" className="shadow-lg shadow-crusoe-600/20">
+            <Button size="sm" className="shadow-md shadow-crusoe-600/20 whitespace-nowrap">
               Reservar Viaje
             </Button>
           </Link>
         </div>
 
-        {/* Mobile Menu Button */}
-        <div className="flex items-center gap-2 md:hidden">
+        {/* Mobile Navigation Header Controls */}
+        <div className="flex items-center gap-2 lg:hidden">
           <ThemeToggle />
           <Link href="/reserva">
-            <Button size="sm" className="text-xs px-2.5 py-1.5">
+            <Button size="sm" className="text-xs px-2.5 py-1.5 font-bold">
               Reservar
             </Button>
           </Link>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="rounded-lg p-2 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none"
+            className="rounded-xl p-2 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none"
             aria-label="Abrir menú"
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -108,66 +101,56 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer Navigation */}
+      {/* Mobile Drawer */}
       {isOpen && (
-        <div className="border-b border-crusoe-200 bg-white px-4 pb-6 pt-3 md:hidden">
-          <div className="flex flex-col gap-3">
+        <div className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 pb-6 pt-3 lg:hidden">
+          <div className="flex flex-col gap-2.5 text-slate-900 dark:text-slate-100">
             <Link
               href="/#servicios"
               onClick={() => setIsOpen(false)}
-              className="rounded-lg px-3 py-2 text-base font-medium text-crusoe-900 hover:bg-crusoe-50"
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900"
             >
-              Servicios
+              Servicios Ejecutivos
             </Link>
             <Link
               href="/#como-funciona"
               onClick={() => setIsOpen(false)}
-              className="rounded-lg px-3 py-2 text-base font-medium text-crusoe-900 hover:bg-crusoe-50"
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900"
             >
-              ¿Cómo funciona?
+              ¿Cómo Funciona?
             </Link>
             <Link
               href="/#vehiculo"
               onClick={() => setIsOpen(false)}
-              className="rounded-lg px-3 py-2 text-base font-medium text-crusoe-900 hover:bg-crusoe-50"
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900"
             >
-              Nuestra SUV Jetour
-            </Link>
-            <Link
-              href="/#comprobantes"
-              onClick={() => setIsOpen(false)}
-              className="rounded-lg px-3 py-2 text-base font-medium text-crusoe-900 hover:bg-crusoe-50"
-            >
-              Boletas y Facturas Electrónicas
+              SUV Jetour Deluxe
             </Link>
             <Link
               href="/mis-reservas"
               onClick={() => setIsOpen(false)}
-              className="rounded-lg px-3 py-2 text-base font-medium text-crusoe-900 hover:bg-crusoe-50 flex items-center gap-2"
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900 flex items-center gap-2"
             >
-              <Calendar className="h-4 w-4 text-crusoe-600" />
+              <Calendar className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400" />
               Consultar Mi Reserva
             </Link>
             <Link
               href="/admin"
               onClick={() => setIsOpen(false)}
-              className="rounded-lg px-3 py-2 text-base font-medium text-crusoe-700 hover:bg-crusoe-50 flex items-center gap-2"
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900 flex items-center gap-2"
             >
-              <UserCheck className="h-4 w-4 text-crusoe-600" />
-              Acceso Administrativo
+              <UserCheck className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400" />
+              Acceso Panel Admin
             </Link>
             <div className="pt-2">
               <a
                 href={WhatsAppService.getCustomerSupportLink()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-col items-center justify-center gap-1 rounded-xl border border-crusoe-300 bg-crusoe-50 py-2.5 font-medium text-crusoe-900"
+                className="flex items-center justify-center gap-2 rounded-xl border border-crusoe-300 dark:border-slate-700 bg-crusoe-50 dark:bg-slate-900 py-3 text-xs font-bold text-crusoe-900 dark:text-crusoe-300"
               >
-                <div className="flex items-center gap-2 font-bold">
-                  <MessageSquare className="h-4 w-4 text-crusoe-600" />
-                  <span>WhatsApp 929 667 586</span>
-                </div>
-                <span className="text-[10px] text-crusoe-700 font-semibold">(Coordinación por mensajes — Solo WhatsApp)</span>
+                <MessageSquare className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400" />
+                <span>WhatsApp Coordinación: 929 667 586 (Solo Mensajes)</span>
               </a>
             </div>
           </div>

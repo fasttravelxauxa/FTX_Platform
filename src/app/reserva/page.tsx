@@ -40,16 +40,12 @@ import { RepositoryService, savePassengerIdentity, generateUUID } from '@/lib/se
 import { Reservation, PriceQuote, PaymentMethod, InvoiceType } from '@/lib/types';
 
 const STEP_TITLES: { [key: number]: string } = {
-  1: 'Tipo de Servicio',
-  2: 'Fecha y Hora',
-  3: 'Ruta y Destino',
-  4: 'Aerolínea',
-  5: 'Datos del Pasajero',
-  6: 'Equipaje y Notas',
-  7: 'Comprobante Fiscal',
-  8: 'Cotización y Términos',
-  9: 'Adelanto y Voucher',
-  10: 'Confirmación',
+  1: 'Servicio y Destino',
+  2: 'Fecha y Aerolínea',
+  3: 'Pasajero y Equipaje',
+  4: 'Comprobante Fiscal',
+  5: 'Cotización y Pago',
+  6: 'Confirmación',
 };
 
 function BookingWizardForm() {
@@ -57,7 +53,7 @@ function BookingWizardForm() {
   const searchParams = useSearchParams();
   const initialService = searchParams.get('servicio') || 'privado-aeropuerto';
 
-  // Wizard state (Steps 1 to 10)
+  // Wizard state (Fluid 6 steps)
   const [step, setStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -173,25 +169,25 @@ function BookingWizardForm() {
   const handleCreateReservation = async () => {
     if (!customerName || !customerPhone) {
       setErrorMsg('Por favor ingresa tu Nombre completo y Teléfono de WhatsApp.');
-      setStep(5);
+      setStep(3);
       return;
     }
 
     if (serviceCode === 'privado-aeropuerto' && !exactAddress.trim()) {
       setErrorMsg('Para el servicio privado debes ingresar la dirección exacta de destino (ej. Hotel Plaza Constitución, Av. Giráldez 123).');
-      setStep(3);
+      setStep(1);
       return;
     }
 
     if (!acceptedTerms) {
       setErrorMsg('Debes aceptar los Términos y Condiciones para continuar.');
-      setStep(8);
+      setStep(5);
       return;
     }
 
     if (invoiceType === 'factura' && (!invoiceRuc || !invoiceCompanyName)) {
       setErrorMsg('Para Factura Electrónica debes ingresar el RUC y la Razón Social.');
-      setStep(7);
+      setStep(4);
       return;
     }
 
@@ -324,7 +320,7 @@ function BookingWizardForm() {
         newRes.code = saveResult.code;
       }
       setCreatedReservation(newRes);
-      setStep(10);
+      setStep(6); // Paso de confirmación final
 
       confetti({
         particleCount: 120,
@@ -340,12 +336,12 @@ function BookingWizardForm() {
 
   return (
     <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8 shadow-xl text-slate-900 dark:text-slate-100 transition-colors">
-      {/* Progress Bar Header */}
-      {step < 10 && (
+      {/* Progress Bar Header (6 pasos fluidos) */}
+      {step < 6 && (
         <div className="mb-6 border-b border-slate-100 dark:border-slate-800 pb-5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-extrabold uppercase tracking-wider text-crusoe-700 dark:text-crusoe-400">
-              Paso {step} de 9
+              Paso {step} de 5
             </span>
             <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
               {STEP_TITLES[step]}
@@ -355,7 +351,7 @@ function BookingWizardForm() {
           <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
             <div
               className="bg-crusoe-600 h-2 rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${(step / 9) * 100}%` }}
+              style={{ width: `${(step / 5) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -368,19 +364,20 @@ function BookingWizardForm() {
         </div>
       )}
 
-      {/* STEP 1: Seleccionar Servicio */}
+      {/* STEP 1: Servicio, Ciudad Destino y Dirección Exacta */}
       {step === 1 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <Car className="h-6 w-6 text-crusoe-600" />
-              1. Selecciona tu Tipo de Servicio
+              1. Selecciona Servicio y Ciudad de Destino
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Elige entre nuestro Servicio Privado Exclusivo o Servicio Compartido por Asiento en SUV Jetour.
+              Elige entre Servicio Privado SUV Completo o Servicio Compartido por Asiento.
             </p>
           </div>
 
+          {/* Selector de Modalidad */}
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
             {SERVICES_CATALOG.map((srv) => (
               <div
@@ -396,9 +393,9 @@ function BookingWizardForm() {
                   <h3 className="font-bold text-slate-950 dark:text-white text-base">{srv.name}</h3>
                   <span className="text-xs font-extrabold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100/80 dark:bg-crusoe-900/60 px-2.5 py-1 rounded-lg shrink-0">
                     {srv.code === 'privado-aeropuerto'
-                      ? 'Vehículo Completo (Desde S/ 80.00)'
+                      ? 'Vehículo SUV Completo'
                       : srv.code === 'compartido-aeropuerto'
-                      ? 'Por Asiento (Desde S/ 20.00 /asiento)'
+                      ? 'Precio por Asiento'
                       : 'S/ 50.00 /hora'}
                   </span>
                 </div>
@@ -407,15 +404,60 @@ function BookingWizardForm() {
             ))}
           </div>
 
-          {/* Banner informativo de reglas de servicio */}
-          {serviceCode === 'compartido-aeropuerto' ? (
-            <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/50 p-4 text-xs text-amber-950 dark:text-amber-200 space-y-2 shadow-sm">
+          {/* Selector de Ciudad Destino */}
+          <div className="space-y-3 pt-2">
+            <label className="block text-xs font-extrabold text-slate-900 dark:text-slate-100">
+              Ciudad de Destino ({serviceCode === 'privado-aeropuerto' ? 'Tarifa SUV Completa' : 'Tarifa por Asiento'}) *
+            </label>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {DESTINATIONS_CATALOG.map((dest) => (
+                <div
+                  key={dest.code}
+                  onClick={() => setDestinationCityCode(dest.code)}
+                  className={`cursor-pointer rounded-2xl border-2 p-4 transition-all ${
+                    destinationCityCode === dest.code
+                      ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950/80 dark:border-crusoe-500 shadow-sm ring-2 ring-crusoe-600/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-950 dark:text-white text-sm">{dest.name}</span>
+                    <span className="text-xs font-extrabold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100 dark:bg-crusoe-900/80 px-2.5 py-1 rounded-lg">
+                      {serviceCode === 'privado-aeropuerto'
+                        ? `S/ ${dest.privatePriceSuv.toFixed(2)} total`
+                        : `S/ ${dest.sharedPricePerSeat.toFixed(2)} /asiento`}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1.5">{dest.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Campo de dirección exacta si es privado */}
+          {serviceCode === 'privado-aeropuerto' ? (
+            <div className="rounded-2xl border-2 border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/60 dark:bg-crusoe-950/40 p-4 space-y-2">
+              <label className="block text-xs font-extrabold text-crusoe-950 dark:text-crusoe-200 flex items-center gap-1.5">
+                <Building className="h-4 w-4 text-crusoe-700 dark:text-crusoe-400" />
+                Dirección Exacta de Destino (Obligatorio para Servicio Privado) *
+              </label>
+              <input
+                type="text"
+                value={exactAddress}
+                onChange={(e) => setExactAddress(e.target.value)}
+                placeholder="Ej. Hotel Plaza Constitución, Av. Giráldez N° 123 (Ref. Frente a la Catedral)"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
+              />
+              <span className="text-[11px] text-crusoe-800 dark:text-crusoe-300 block font-medium">
+                📌 En servicio privado exclusivo nuestro chofer te llevará directamente a la puerta de tu dirección.
+              </span>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 p-4 text-xs text-amber-950 dark:text-amber-200 space-y-2 shadow-sm">
               <div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-300">
                 <Info className="h-4 w-4 text-amber-600 shrink-0" />
                 <span>Estado de Confirmación de Transporte (Servicio Compartido):</span>
               </div>
-
-              {/* Indicador en tiempo real de asientos ocupados */}
               <div className="rounded-xl bg-white/80 dark:bg-slate-900/80 border border-amber-300 dark:border-amber-700 p-3 space-y-1">
                 {sharedSeatsInfo.isDepartureConfirmed ? (
                   <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400 font-extrabold text-xs">
@@ -431,48 +473,43 @@ function BookingWizardForm() {
                   </div>
                 )}
               </div>
-
               <p className="text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed font-medium">
                 {BUSINESS_CONFIG.sharedServiceNotice}
               </p>
             </div>
-          ) : serviceCode === 'privado-aeropuerto' ? (
-            <div className="rounded-2xl border border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/80 dark:bg-crusoe-950/50 p-4 text-xs text-crusoe-950 dark:text-crusoe-200 space-y-1.5 shadow-sm">
-              <div className="flex items-center gap-2 font-bold text-crusoe-900 dark:text-crusoe-300">
-                <ShieldCheck className="h-4 w-4 text-crusoe-600 shrink-0" />
-                <span>Ventajas del Servicio Privado Exclusivo:</span>
-              </div>
-              <p className="text-[11px] text-crusoe-900 dark:text-crusoe-300 leading-relaxed font-medium">
-                Vehículo SUV Jetour reservado únicamente para ti y tus acompañantes (hasta 4 personas). Salida e itinerario 100% personalizados con recogida/entrega en la puerta exacta de tu hotel o domicilio.
-              </p>
-            </div>
-          ) : null}
+          )}
 
           <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button size="lg" onClick={() => setStep(2)} className="w-full sm:w-auto">
-              Siguiente: Fecha y Hora
+            <Button size="lg" onClick={() => {
+              if (serviceCode === 'privado-aeropuerto' && !exactAddress.trim()) {
+                setErrorMsg('Ingresa la dirección exacta de destino para tu servicio privado.');
+                return;
+              }
+              setStep(2);
+            }} className="w-full sm:w-auto">
+              Siguiente: Fecha y Aerolínea
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 2: Fecha y Hora */}
+      {/* STEP 2: Fecha, Hora y Aerolínea */}
       {step === 2 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <CalendarIcon className="h-6 w-6 text-crusoe-600" />
-              2. Fecha y Hora Programada
+              2. Fecha, Hora y Aerolínea
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Monitoreamos los itinerarios para garantizar tu transporte a tiempo.
+              Monitoreamos los itinerarios de vuelo para esperarte a tiempo en el aeropuerto.
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-2">Fecha del Traslado</label>
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-2">Fecha del Traslado *</label>
               <input
                 type="date"
                 value={scheduledDate}
@@ -483,7 +520,7 @@ function BookingWizardForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-2">Hora Programada / Llegada</label>
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-2">Hora Programada / Llegada *</label>
               <input
                 type="time"
                 value={scheduledTime}
@@ -491,161 +528,9 @@ function BookingWizardForm() {
                 className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
               />
             </div>
-          </div>
 
-          <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(1)}>
-              <ArrowLeft className="h-4 w-4" />
-              Atrás
-            </Button>
-            <Button onClick={() => setStep(3)}>
-              Siguiente: Ruta y Tarifas
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 3: Ruta y Destino */}
-      {step === 3 && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <MapPin className="h-6 w-6 text-crusoe-600" />
-              3. Ciudad de Destino {serviceCode === 'privado-aeropuerto' ? 'y Dirección Exacta' : 'y Asientos'}
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              {serviceCode === 'privado-aeropuerto'
-                ? 'Tarifa pactada por el vehículo SUV completo hacia tu ciudad de destino.'
-                : 'Tarifa oficial por asiento reservado según la ciudad de destino.'}
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">Punto de Origen</label>
-              <input
-                type="text"
-                value={origin}
-                onChange={(e) => setOrigin(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium"
-              />
-            </div>
-
-            {/* Selector de Ciudad Destino */}
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">
-                Ciudad de Destino ({serviceCode === 'privado-aeropuerto' ? 'Precio Vehículo SUV Completo' : 'Precio por Asiento'}) *
-              </label>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                {DESTINATIONS_CATALOG.map((dest) => (
-                  <div
-                    key={dest.code}
-                    onClick={() => setDestinationCityCode(dest.code)}
-                    className={`cursor-pointer rounded-2xl border-2 p-4 transition-all ${
-                      destinationCityCode === dest.code
-                        ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950/80 dark:border-crusoe-500 shadow-sm ring-2 ring-crusoe-600/20'
-                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-950 dark:text-white text-sm">{dest.name}</span>
-                      <span className="text-xs font-extrabold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100 dark:bg-crusoe-900/80 px-2.5 py-1 rounded-lg">
-                        {serviceCode === 'privado-aeropuerto'
-                          ? `S/ ${dest.privatePriceSuv.toFixed(2)} SUV`
-                          : `S/ ${dest.sharedPricePerSeat.toFixed(2)} /asiento`}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1.5">{dest.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Dirección exacta para servicio privado */}
-            {serviceCode === 'privado-aeropuerto' ? (
-              <div className="rounded-2xl border-2 border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/60 dark:bg-crusoe-950/40 p-4 space-y-2">
-                <label className="block text-xs font-extrabold text-crusoe-950 dark:text-crusoe-200 flex items-center gap-1.5">
-                  <Building className="h-4 w-4 text-crusoe-700 dark:text-crusoe-400" />
-                  Dirección Exacta de Destino (Obligatorio para Servicio Privado) *
-                </label>
-                <input
-                  type="text"
-                  value={exactAddress}
-                  onChange={(e) => setExactAddress(e.target.value)}
-                  placeholder="Ej. Hotel Plaza Constitución, Av. Giráldez N° 123 (Ref. Frente a la Catedral)"
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
-                />
-                <span className="text-[11px] text-crusoe-800 dark:text-crusoe-300 block font-medium">
-                  📌 Al ser servicio privado exclusivo, nuestro chofer te llevará directamente a la puerta de tu dirección indicada.
-                </span>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/40 p-4 text-xs text-amber-950 dark:text-amber-200 space-y-1.5">
-                <div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-300">
-                  <Info className="h-4 w-4 text-amber-600 shrink-0" />
-                  <span>Condición de Confirmación de Transporte (Compartido):</span>
-                </div>
-                <p className="text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed font-medium">
-                  {BUSINESS_CONFIG.sharedServiceNotice}
-                </p>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">
-                {serviceCode === 'privado-aeropuerto' ? 'Cantidad de Pasajeros en el Viaje Privado' : 'Asientos a Reservar'}
-              </label>
-              <select
-                value={passengersCount}
-                onChange={(e) => setPassengersCount(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
-              >
-                <option value={1}>1 Pasajero / Asiento</option>
-                <option value={2}>2 Pasajeros / Asientos</option>
-                <option value={3}>3 Pasajeros / Asientos</option>
-                <option value={4}>4 Pasajeros (Capacidad máxima SUV)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(2)}>
-              <ArrowLeft className="h-4 w-4" />
-              Atrás
-            </Button>
-            <Button
-              onClick={() => {
-                if (serviceCode === 'privado-aeropuerto' && !exactAddress.trim()) {
-                  setErrorMsg('Ingresa la dirección exacta de destino para tu servicio privado.');
-                  return;
-                }
-                setStep(4);
-              }}
-            >
-              Siguiente: Aerolínea
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 4: Aerolínea */}
-      {step === 4 && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <Plane className="h-6 w-6 text-crusoe-600" />
-              4. Aerolínea de Llegada (Opcional)
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Indica la aerolínea en la que arribas al Aeropuerto de Jauja para coordinar tu recepción.
-            </p>
-          </div>
-
-          <div className="space-y-4 max-w-md mx-auto">
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">Aerolínea Comercial</label>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-2">Aerolínea Comercial (Opcional)</label>
               <select
                 value={airline}
                 onChange={(e) => setAirline(e.target.value)}
@@ -661,28 +546,28 @@ function BookingWizardForm() {
           </div>
 
           <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(3)}>
+            <Button variant="outline" onClick={() => setStep(1)}>
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
-            <Button onClick={() => setStep(5)}>
-              Siguiente: Pasajero
+            <Button onClick={() => setStep(3)}>
+              Siguiente: Datos del Pasajero
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 5: Datos del Pasajero */}
-      {step === 5 && (
+      {/* STEP 3: Pasajero, Contacto y Equipaje */}
+      {step === 3 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <User className="h-6 w-6 text-crusoe-600" />
-              5. Datos del Pasajero Principal
+              3. Datos del Pasajero y Equipaje
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Ingresa tu contacto para coordinar la confirmación y entrega de comprobantes.
+              Tu número de WhatsApp será el canal directo para la confirmación de tu viaje.
             </p>
           </div>
 
@@ -748,10 +633,37 @@ function BookingWizardForm() {
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">Detalles de Equipaje</label>
+                <input
+                  type="text"
+                  value={luggageNotes}
+                  onChange={(e) => setLuggageNotes(e.target.value)}
+                  placeholder="Ej. 2 maletas de 23kg"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">Cantidad de Pasajeros</label>
+                <select
+                  value={passengersCount}
+                  onChange={(e) => setPassengersCount(Number(e.target.value))}
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
+                >
+                  <option value={1}>1 Pasajero / Asiento</option>
+                  <option value={2}>2 Pasajeros / Asientos</option>
+                  <option value={3}>3 Pasajeros / Asientos</option>
+                  <option value={4}>4 Pasajeros (Máximo SUV)</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(4)}>
+            <Button variant="outline" onClick={() => setStep(2)}>
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
@@ -761,73 +673,23 @@ function BookingWizardForm() {
                   setErrorMsg('Ingresa tu nombre y un número de WhatsApp válido de 9 dígitos.');
                   return;
                 }
-                setStep(6);
+                setStep(4);
               }}
             >
-              Siguiente: Equipaje
+              Siguiente: Comprobante Fiscal
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 6: Equipaje y Notas */}
-      {step === 6 && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <Info className="h-6 w-6 text-crusoe-600" />
-              6. Equipaje e Instrucciones Especiales
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Maletera ejecutiva con capacidad para 4 maletas en la SUV Jetour.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">Detalles de Equipaje</label>
-              <input
-                type="text"
-                value={luggageNotes}
-                onChange={(e) => setLuggageNotes(e.target.value)}
-                placeholder="Ej. 2 maletas de 23kg y 1 equipaje de mano"
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">Notas adicionales para el conductor</label>
-              <textarea
-                rows={3}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ej. Viajo con un adulto mayor, requerimos asistencia."
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
-              ></textarea>
-            </div>
-          </div>
-
-          <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(5)}>
-              <ArrowLeft className="h-4 w-4" />
-              Atrás
-            </Button>
-            <Button onClick={() => setStep(7)}>
-              Siguiente: Comprobante
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 7: Comprobante Fiscal */}
-      {step === 7 && (
+      {/* STEP 4: Comprobante Fiscal */}
+      {step === 4 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <FileCheck className="h-6 w-6 text-crusoe-600" />
-              7. Comprobante de Pago (Boleta / Factura)
+              4. Comprobante de Pago (Boleta / Factura)
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
               Emitimos comprobantes electrónicos autorizados por SUNAT.
@@ -926,31 +788,32 @@ function BookingWizardForm() {
           )}
 
           <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(6)}>
+            <Button variant="outline" onClick={() => setStep(3)}>
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
-            <Button onClick={() => setStep(8)}>
-              Siguiente: Cotización
+            <Button onClick={() => setStep(5)}>
+              Siguiente: Cotización y Pago
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 8: Cotización y Términos */}
-      {step === 8 && (
+      {/* STEP 5: Cotización, Términos y Pago del Adelanto */}
+      {step === 5 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <CreditCard className="h-6 w-6 text-crusoe-600" />
-              8. Resumen de Cotización Oficial
+              5. Resumen de Cotización y Pago del Adelanto (50%)
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Abono del 50% de adelanto para garantizar tu reserva y saldo a pagar al abordar.
+              Abona el 50% de adelanto mediante Yape, Plin o BCP para asegurar tu reserva.
             </p>
           </div>
 
+          {/* Resumen */}
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 p-5 space-y-3">
             <div className="flex justify-between text-xs text-slate-700 dark:text-slate-300">
               <span>Modalidad:</span>
@@ -966,14 +829,8 @@ function BookingWizardForm() {
               <span>Monto Base del Servicio:</span>
               <span className="font-bold text-slate-950 dark:text-white">S/ {quote?.subtotal.toFixed(2) || '80.00'}</span>
             </div>
-            {quote && quote.surcharges > 0 && (
-              <div className="flex justify-between text-xs text-slate-700 dark:text-slate-300">
-                <span>Recargo por Cobertura Periférica:</span>
-                <span className="font-bold text-slate-950 dark:text-white">S/ {quote.surcharges.toFixed(2)}</span>
-              </div>
-            )}
             <div className="flex justify-between text-sm font-extrabold text-slate-950 dark:text-white border-t border-slate-200 dark:border-slate-700 pt-3">
-              <span>Monto Total a Pagar:</span>
+              <span>Monto Total del Viaje:</span>
               <span className="text-base text-crusoe-800 dark:text-crusoe-400 font-extrabold">S/ {quote?.total.toFixed(2) || '80.00'}</span>
             </div>
 
@@ -989,11 +846,87 @@ function BookingWizardForm() {
             </div>
           </div>
 
-          {serviceCode === 'compartido-aeropuerto' && (
-            <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 p-3.5 text-[11px] text-amber-950 dark:text-amber-200 leading-relaxed font-medium">
-              ℹ️ <strong>Aviso del Servicio Compartido:</strong> Tu asiento queda 100% asegurado al abonar el adelanto. La salida del vehículo se confirma al completar mínimo 3 asientos para tu horario.
+          {/* Selector de Método de Pago */}
+          <div className="space-y-3">
+            <label className="block text-xs font-bold text-slate-900 dark:text-slate-200">Método de Pago para el Adelanto</label>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { code: 'yape', name: 'Yape' },
+                { code: 'plin', name: 'Plin' },
+                { code: 'bcp', name: 'BCP' },
+              ].map((m) => (
+                <button
+                  key={m.code}
+                  type="button"
+                  onClick={() => setPaymentMethod(m.code as PaymentMethod)}
+                  className={`rounded-2xl border-2 p-3 text-center text-xs font-extrabold transition-all ${
+                    paymentMethod === m.code
+                      ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950 text-crusoe-950 dark:text-crusoe-200 shadow-sm ring-2 ring-crusoe-600/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                  }`}
+                >
+                  {m.name}
+                </button>
+              ))}
             </div>
-          )}
+
+            <div className="rounded-2xl border border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/70 dark:bg-crusoe-950/60 p-4 text-center space-y-2">
+              {paymentMethod === 'yape' && (
+                <div>
+                  <span className="text-xs font-bold text-crusoe-900 dark:text-crusoe-300 block uppercase">Número Oficial de Yape</span>
+                  <span className="text-2xl font-extrabold text-crusoe-950 dark:text-crusoe-100 block mt-0.5">929 667 586</span>
+                  <span className="text-xs text-slate-700 dark:text-slate-300 block font-medium">Titular: Fast Travel Xauxa</span>
+                </div>
+              )}
+              {paymentMethod === 'plin' && (
+                <div>
+                  <span className="text-xs font-bold text-crusoe-900 dark:text-crusoe-300 block uppercase">Número Oficial de Plin</span>
+                  <span className="text-2xl font-extrabold text-crusoe-950 dark:text-crusoe-100 block mt-0.5">929 667 586</span>
+                  <span className="text-xs text-slate-700 dark:text-slate-300 block font-medium">Titular: Fast Travel Xauxa</span>
+                </div>
+              )}
+              {paymentMethod === 'bcp' && (
+                <div className="space-y-1 text-xs text-slate-900 dark:text-slate-100 font-medium">
+                  <div>
+                    <span className="font-bold block">Cuenta Corriente BCP:</span>
+                    <span className="font-mono text-sm font-bold text-crusoe-950 dark:text-crusoe-300">355-98765432-0-12</span>
+                  </div>
+                  <div>
+                    <span className="font-bold block">CCI Interbancario:</span>
+                    <span className="font-mono text-xs font-bold text-crusoe-950 dark:text-crusoe-300">002-355009876543201289</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Subir Voucher */}
+            <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-5 text-center bg-slate-50 dark:bg-slate-800/40">
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleVoucherUpload}
+                id="voucher-file-input"
+                className="hidden"
+              />
+              <label htmlFor="voucher-file-input" className="cursor-pointer space-y-2 block">
+                <Upload className="h-7 w-7 text-crusoe-600 mx-auto" />
+                <span className="text-xs font-bold text-crusoe-800 dark:text-crusoe-300 block">
+                  Toca aquí para adjuntar foto de comprobante de pago
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">JPG, PNG o PDF (Máx. 5MB)</span>
+              </label>
+            </div>
+
+            {voucherPreview && (
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 flex items-center gap-3">
+                <img src={voucherPreview} alt="Vista previa del comprobante" className="h-12 w-12 rounded-lg object-cover border" />
+                <div className="flex-1 text-xs">
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block">Comprobante seleccionado</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-[11px]">{voucherFile?.name}</span>
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 p-4 space-y-2">
             <label className="flex items-start gap-3 cursor-pointer">
@@ -1012,140 +945,13 @@ function BookingWizardForm() {
                 <Link href="/cancelaciones" target="_blank" className="font-bold text-crusoe-700 dark:text-crusoe-400 underline">
                   Política de Cancelación
                 </Link>{' '}
-                (Cancelación gratuita dentro de los 60 min).
+                (Cancelación gratuita en los primeros 60 min).
               </span>
             </label>
           </div>
 
           <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(7)}>
-              <ArrowLeft className="h-4 w-4" />
-              Atrás
-            </Button>
-            <Button
-              onClick={() => {
-                if (!acceptedTerms) {
-                  setErrorMsg('Debes aceptar los Términos y Condiciones para continuar.');
-                  return;
-                }
-                setStep(9);
-              }}
-            >
-              Siguiente: Pago del Adelanto
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 9: Adelanto y Voucher */}
-      {step === 9 && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <Upload className="h-6 w-6 text-crusoe-600" />
-              9. Pago del Adelanto (50%)
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Abona <strong>S/ {quote?.depositRequired.toFixed(2) || '40.00'}</strong> vía Yape, Plin o BCP y adjunta la captura del comprobante.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { code: 'yape', name: 'Yape' },
-              { code: 'plin', name: 'Plin' },
-              { code: 'bcp', name: 'BCP' },
-            ].map((m) => (
-              <button
-                key={m.code}
-                type="button"
-                onClick={() => setPaymentMethod(m.code as PaymentMethod)}
-                className={`rounded-2xl border-2 p-3 text-center text-xs font-extrabold transition-all ${
-                  paymentMethod === m.code
-                    ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950 text-crusoe-950 dark:text-crusoe-200 shadow-sm ring-2 ring-crusoe-600/30'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-                }`}
-              >
-                {m.name}
-              </button>
-            ))}
-          </div>
-
-          <div className="rounded-2xl border border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/70 dark:bg-crusoe-950/60 p-5 text-center space-y-3">
-            {paymentMethod === 'yape' && (
-              <div>
-                <span className="text-xs font-bold text-crusoe-900 dark:text-crusoe-300 block uppercase">Número Oficial de Yape</span>
-                <span className="text-2xl font-extrabold text-crusoe-950 dark:text-crusoe-100 block mt-1">929 667 586</span>
-                <span className="text-xs text-slate-700 dark:text-slate-300 block font-medium">Titular: Fast Travel Xauxa</span>
-              </div>
-            )}
-
-            {paymentMethod === 'plin' && (
-              <div>
-                <span className="text-xs font-bold text-crusoe-900 dark:text-crusoe-300 block uppercase">Número Oficial de Plin</span>
-                <span className="text-2xl font-extrabold text-crusoe-950 dark:text-crusoe-100 block mt-1">929 667 586</span>
-                <span className="text-xs text-slate-700 dark:text-slate-300 block font-medium">Titular: Fast Travel Xauxa</span>
-              </div>
-            )}
-
-            {paymentMethod === 'bcp' && (
-              <div className="space-y-2 text-xs text-slate-900 dark:text-slate-100 font-medium">
-                <div>
-                  <span className="font-bold block">Cuenta Corriente BCP:</span>
-                  <span className="font-mono text-sm font-bold text-crusoe-950 dark:text-crusoe-300">355-98765432-0-12</span>
-                </div>
-                <div>
-                  <span className="font-bold block">CCI Interbancario:</span>
-                  <span className="font-mono text-xs font-bold text-crusoe-950 dark:text-crusoe-300">002-355009876543201289</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <label className="block text-xs font-bold text-slate-900 dark:text-slate-200">Adjuntar Captura de Comprobante (Voucher)</label>
-            <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-crusoe-500 transition-colors bg-slate-50 dark:bg-slate-800/40">
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleVoucherUpload}
-                id="voucher-file-input"
-                className="hidden"
-              />
-              <label htmlFor="voucher-file-input" className="cursor-pointer space-y-2 block">
-                <Upload className="h-8 w-8 text-crusoe-600 mx-auto" />
-                <span className="text-xs font-bold text-crusoe-800 dark:text-crusoe-300 block">
-                  Toca aquí para seleccionar tu foto de comprobante
-                </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Formatos: JPG, PNG o PDF (Máx. 5MB)</span>
-              </label>
-            </div>
-
-            {voucherPreview && (
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 flex items-center gap-3">
-                <img src={voucherPreview} alt="Vista previa del comprobante" className="h-12 w-12 rounded-lg object-cover border" />
-                <div className="flex-1 text-xs">
-                  <span className="font-bold text-slate-900 dark:text-slate-100 block">Comprobante seleccionado</span>
-                  <span className="text-slate-500 dark:text-slate-400 text-[11px]">{voucherFile?.name}</span>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1">Número de Operación / Referencia (Opcional)</label>
-              <input
-                type="text"
-                value={referenceNumber}
-                onChange={(e) => setReferenceNumber(e.target.value)}
-                placeholder="Ej. OP-12345678"
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(8)}>
+            <Button variant="outline" onClick={() => setStep(4)}>
               <ArrowLeft className="h-4 w-4" />
               Atrás
             </Button>
@@ -1157,8 +963,8 @@ function BookingWizardForm() {
         </div>
       )}
 
-      {/* STEP 10: Confirmación Final */}
-      {step === 10 && createdReservation && (
+      {/* STEP 6: Confirmación Final */}
+      {step === 6 && createdReservation && (
         <div className="space-y-6 text-center py-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-crusoe-100 dark:bg-crusoe-900/60 text-crusoe-700 dark:text-crusoe-300 mx-auto shadow-inner">
             <CheckCircle2 className="h-10 w-10" />
