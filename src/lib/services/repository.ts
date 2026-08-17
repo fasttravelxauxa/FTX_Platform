@@ -237,6 +237,43 @@ export class RepositoryService {
   }
 
   /**
+   * Consultar cuántos asientos del servicio compartido están reservados para una fecha y hora específica
+   */
+  public static async getSharedOccupiedSeatsCount(
+    scheduledDate: string,
+    scheduledTime: string
+  ): Promise<{ occupiedSeats: number; isDepartureConfirmed: boolean }> {
+    const supabase = createClient();
+    if (!supabase) return { occupiedSeats: 0, isDepartureConfirmed: false };
+
+    try {
+      const dayStart = new Date(`${scheduledDate}T00:00:00-05:00`).toISOString();
+      const dayEnd = new Date(`${scheduledDate}T23:59:59-05:00`).toISOString();
+
+      const { data, error } = await supabase
+        .from('reservations')
+        .select('passengers_count, status')
+        .eq('service_id', 'a2222222-2222-2222-2222-222222222222')
+        .gte('scheduled_at', dayStart)
+        .lte('scheduled_at', dayEnd)
+        .not('status', 'in', '("CANCELLED","PAYMENT_REJECTED","EXPIRED")');
+
+      if (error || !data) {
+        return { occupiedSeats: 0, isDepartureConfirmed: false };
+      }
+
+      const totalSeats = data.reduce((sum, r) => sum + (Number(r.passengers_count) || 1), 0);
+      return {
+        occupiedSeats: totalSeats,
+        isDepartureConfirmed: totalSeats >= 3,
+      };
+    } catch (err) {
+      console.warn('[FTX Repository] Error al calcular asientos ocupados:', err);
+      return { occupiedSeats: 0, isDepartureConfirmed: false };
+    }
+  }
+
+  /**
    * LÍMITE ANTI-ABUSO: Validar máximo 2 reservas por día y evitar duplicados del mismo tipo
    */
   public static async checkDailyLimit(phone: string, serviceIdOrCode: string): Promise<{

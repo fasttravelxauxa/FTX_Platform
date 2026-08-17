@@ -129,13 +129,11 @@ export default function AdminDashboardPage() {
     setProfilesList(profiles);
   };
 
-  // Cambiar estado directamente desde la fila o el modal
   const handleStatusChange = async (reservationId: string, newStatus: ReservationStatus, notes?: string) => {
     setUpdatingId(reservationId);
     const result = await RepositoryService.updateReservationStatus(reservationId, newStatus, notes);
 
     if (result.success) {
-      // Actualizar estado local al instante (Optimistic Update)
       setReservations((prev) =>
         prev.map((r) => (r.id === reservationId ? { ...r, status: newStatus, notes: notes || r.notes } : r))
       );
@@ -193,7 +191,7 @@ export default function AdminDashboardPage() {
       );
     }).length;
 
-    const latestRes = profReservations[0]; // La primera es la más reciente por ordenamiento
+    const latestRes = profReservations[0];
 
     return {
       id: prof.id,
@@ -230,17 +228,17 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans text-slate-900 dark:text-slate-100 transition-colors">
       <Navbar />
 
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         {/* Admin Header */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div>
-            <span className="text-xs font-extrabold uppercase tracking-widest text-crusoe-700">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-crusoe-700 dark:text-crusoe-400">
               Panel de Control — Fast Travel Xauxa
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
               Operaciones, Reservas y Clientes
             </h1>
           </div>
@@ -264,37 +262,37 @@ export default function AdminDashboardPage() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-8">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Pagos en Revisión</span>
-            <p className="text-3xl font-extrabold text-amber-700 mt-1">{pendingReviewCount}</p>
-            <span className="text-[10px] text-slate-500 mt-1 block font-medium">Requieren validación</span>
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Pagos en Revisión</span>
+            <p className="text-3xl font-extrabold text-amber-700 dark:text-amber-400 mt-1">{pendingReviewCount}</p>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Requieren validación</span>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Viajes Confirmados</span>
-            <p className="text-3xl font-extrabold text-crusoe-800 mt-1">{confirmedCount}</p>
-            <span className="text-[10px] text-slate-500 mt-1 block font-medium">SUV Jetour programada</span>
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Viajes Confirmados</span>
+            <p className="text-3xl font-extrabold text-crusoe-800 dark:text-crusoe-400 mt-1">{confirmedCount}</p>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">SUV Jetour programada</span>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Clientes en Supabase</span>
-            <p className="text-3xl font-extrabold text-indigo-700 mt-1">{passengerSummaries.length}</p>
-            <span className="text-[10px] text-slate-500 mt-1 block font-medium">Perfiles registrados</span>
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Clientes en Supabase</span>
+            <p className="text-3xl font-extrabold text-indigo-700 dark:text-indigo-400 mt-1">{passengerSummaries.length}</p>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Perfiles registrados</span>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ingresos por Adelantos</span>
-            <p className="text-3xl font-extrabold text-slate-950 mt-1">S/ {totalIncome.toFixed(2)}</p>
-            <span className="text-[10px] text-slate-500 mt-1 block font-medium">Adelantos verificados (50%)</span>
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ingresos por Adelantos</span>
+            <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">S/ {totalIncome.toFixed(2)}</p>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Adelantos verificados (50%)</span>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="mb-6 flex border-b border-slate-200 gap-6 text-sm font-extrabold text-slate-700 overflow-x-auto">
+        <div className="mb-6 flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-extrabold text-slate-700 dark:text-slate-300 overflow-x-auto">
           <button
             onClick={() => setActiveTab('reservas')}
             className={`pb-3 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'reservas' ? 'border-crusoe-600 text-crusoe-800' : 'border-transparent text-slate-600 hover:text-slate-950'
+              activeTab === 'reservas' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
             Gestión de Reservas ({reservations.length})
@@ -302,7 +300,7 @@ export default function AdminDashboardPage() {
           <button
             onClick={() => setActiveTab('pasajeros')}
             className={`pb-3 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'pasajeros' ? 'border-crusoe-600 text-crusoe-800' : 'border-transparent text-slate-600 hover:text-slate-950'
+              activeTab === 'pasajeros' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
             Directorio de Pasajeros ({passengerSummaries.length})
@@ -310,7 +308,7 @@ export default function AdminDashboardPage() {
           <button
             onClick={() => setActiveTab('calendario')}
             className={`pb-3 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'calendario' ? 'border-crusoe-600 text-crusoe-800' : 'border-transparent text-slate-600 hover:text-slate-950'
+              activeTab === 'calendario' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
             Calendario Operativo
@@ -318,7 +316,7 @@ export default function AdminDashboardPage() {
           <button
             onClick={() => setActiveTab('vehiculos')}
             className={`pb-3 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'vehiculos' ? 'border-crusoe-600 text-crusoe-800' : 'border-transparent text-slate-600 hover:text-slate-950'
+              activeTab === 'vehiculos' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
             Flota SUV Jetour
@@ -328,7 +326,7 @@ export default function AdminDashboardPage() {
         {/* TAB 1: RESERVAS */}
         {activeTab === 'reservas' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                 <input
@@ -336,7 +334,7 @@ export default function AdminDashboardPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Buscar por código, cliente, teléfono, RUC o Razón Social..."
-                  className="w-full rounded-xl border border-slate-300 pl-10 pr-4 py-2.5 text-xs text-slate-950 font-medium focus:border-crusoe-600"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-4 py-2.5 text-xs text-slate-950 dark:text-white font-medium focus:border-crusoe-600"
                 />
               </div>
 
@@ -345,7 +343,7 @@ export default function AdminDashboardPage() {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="rounded-xl border border-slate-300 p-2.5 text-xs font-bold text-slate-800 focus:border-crusoe-600"
+                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:border-crusoe-600"
                 >
                   <option value="TODOS">Todos los Estados</option>
                   <option value="PAYMENT_REVIEW">En Revisión de Pago</option>
@@ -360,9 +358,9 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-md">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/90 text-slate-950 font-extrabold uppercase tracking-wider border-b border-slate-200">
+                <thead className="bg-slate-100/90 dark:bg-slate-800/80 text-slate-950 dark:text-white font-extrabold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
                   <tr>
                     <th className="p-4">Código / Pasajero</th>
                     <th className="p-4">Servicio / Ruta</th>
@@ -372,7 +370,7 @@ export default function AdminDashboardPage() {
                     <th className="p-4 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200 font-medium">
                   {filteredList.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-slate-500 font-bold text-sm">
@@ -381,19 +379,19 @@ export default function AdminDashboardPage() {
                     </tr>
                   ) : (
                     filteredList.map((res) => (
-                      <tr key={res.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4">
-                          <span className="font-extrabold block text-slate-950 text-sm">{res.code}</span>
-                          <span className="font-bold text-slate-900 block">{res.customer?.full_name}</span>
-                          <span className="text-slate-600 block text-[11px]">{res.customer?.phone}</span>
+                          <span className="font-extrabold block text-slate-950 dark:text-white text-sm">{res.code}</span>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block">{res.customer?.full_name}</span>
+                          <span className="text-slate-600 dark:text-slate-400 block text-[11px]">{res.customer?.phone}</span>
                         </td>
 
                         <td className="p-4">
-                          <span className="font-bold text-slate-950 block">{res.service?.name || 'Traslado'}</span>
-                          <span className="text-slate-600 block text-[11px]">
+                          <span className="font-bold text-slate-950 dark:text-white block">{res.service?.name || 'Traslado'}</span>
+                          <span className="text-slate-600 dark:text-slate-400 block text-[11px]">
                             {res.origin} ➔ {res.destination}
                           </span>
-                          <span className="text-slate-500 block text-[10px]">
+                          <span className="text-slate-500 dark:text-slate-400 block text-[10px]">
                             {new Date(res.scheduled_at).toLocaleString('es-PE')}
                           </span>
                         </td>
@@ -401,38 +399,37 @@ export default function AdminDashboardPage() {
                         <td className="p-4">
                           {res.invoice_details && res.invoice_details.type !== 'ninguno' ? (
                             <div className="space-y-1">
-                              <span className="font-extrabold text-crusoe-800 uppercase block">
+                              <span className="font-extrabold text-crusoe-800 dark:text-crusoe-400 uppercase block">
                                 {res.invoice_details.type}
                               </span>
-                              <span className="text-slate-700 block text-[11px]">
+                              <span className="text-slate-700 dark:text-slate-300 block text-[11px]">
                                 {res.invoice_details.ruc ? `RUC: ${res.invoice_details.ruc}` : `DNI: ${res.invoice_details.dni}`}
                               </span>
                               <button
                                 onClick={() => copyInvoiceInfo(res)}
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-crusoe-700 hover:underline"
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-crusoe-700 dark:text-crusoe-400 hover:underline"
                               >
                                 <Copy className="h-3 w-3" />
                                 Copiar Datos
                               </button>
                             </div>
                           ) : (
-                            <span className="text-slate-400 italic">No solicitado</span>
+                            <span className="text-slate-400 dark:text-slate-500 italic">No solicitado</span>
                           )}
                         </td>
 
                         <td className="p-4">
-                          <span className="font-extrabold text-slate-950 block text-sm">
+                          <span className="font-extrabold text-slate-950 dark:text-white block text-sm">
                             S/ {res.total_amount.toFixed(2)}
                           </span>
-                          <span className="text-xs font-bold text-crusoe-700 block">
+                          <span className="text-xs font-bold text-crusoe-700 dark:text-crusoe-400 block">
                             Adelanto: S/ {res.deposit_amount.toFixed(2)}
                           </span>
-                          <span className="text-[10px] text-slate-500 block">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
                             Saldo: S/ {res.balance_amount.toFixed(2)}
                           </span>
                         </td>
 
-                        {/* SELECTOR DE ESTADO DIRECTO EN LA FILA */}
                         <td className="p-4">
                           <div className="space-y-1.5">
                             <Badge status={res.status} size="sm" />
@@ -442,7 +439,7 @@ export default function AdminDashboardPage() {
                               onChange={(e) =>
                                 handleStatusChange(res.id, e.target.value as ReservationStatus)
                               }
-                              className="w-full rounded-xl border border-slate-300 p-1.5 text-[11px] font-bold text-slate-900 bg-white focus:border-crusoe-600 shadow-sm"
+                              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 p-1.5 text-[11px] font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-800 focus:border-crusoe-600 shadow-sm"
                             >
                               <option value="PENDING_PAYMENT">Esperando Pago</option>
                               <option value="PAYMENT_SUBMITTED">Comprobante Enviado</option>
@@ -458,7 +455,6 @@ export default function AdminDashboardPage() {
                         </td>
 
                         <td className="p-4 text-right space-x-2">
-                          {/* Review Voucher Button */}
                           {res.payments?.[0]?.proofs?.[0] && (
                             <Button
                               size="sm"
@@ -473,7 +469,6 @@ export default function AdminDashboardPage() {
                             </Button>
                           )}
 
-                          {/* Reception Poster Button */}
                           <Link href={`/admin/cartel/${res.code}`}>
                             <Button size="sm" variant="outline" title="Generar Cartel para Aeropuerto">
                               <Printer className="h-3.5 w-3.5" />
@@ -481,25 +476,23 @@ export default function AdminDashboardPage() {
                             </Button>
                           </Link>
 
-                          {/* WhatsApp Link */}
                           <a
                             href={WhatsAppService.getAdminConfirmationLink(res, res.customer?.phone || '')}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-xl bg-crusoe-100 p-2 text-xs font-bold text-crusoe-900 hover:bg-crusoe-200 transition-colors"
+                            className="inline-flex items-center gap-1 rounded-xl bg-crusoe-100 dark:bg-crusoe-950 p-2 text-xs font-bold text-crusoe-900 dark:text-crusoe-200 hover:bg-crusoe-200 transition-colors"
                             title="Enviar confirmación por WhatsApp"
                           >
                             <MessageSquare className="h-4 w-4" />
                           </a>
 
-                          {/* Delete button (Solo canceladas/rechazadas) */}
                           {['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(res.status) && (
                             <Button
                               size="sm"
                               variant="danger"
-                              title="Eliminar reserva cancelada de la lista"
+                              title="Eliminar reserva cancelada"
                               onClick={async () => {
-                                if (!window.confirm(`¿Eliminar la reserva ${res.code}? (El usuario permanecerá en el Directorio de Supabase)`)) return;
+                                if (!window.confirm(`¿Eliminar la reserva ${res.code}? (El perfil del usuario permanecerá en el Directorio de Supabase)`)) return;
                                 await RepositoryService.deleteReservation(res.id, res.code);
                                 await refreshData();
                               }}
@@ -517,24 +510,24 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 2: DIRECTORIO DE PASAJEROS (Directo desde public.profiles de Supabase) */}
+        {/* TAB 2: DIRECTORIO DE PASAJEROS */}
         {activeTab === 'pasajeros' && (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h2 className="text-xl font-extrabold text-slate-950">Directorio Oficial de Pasajeros</h2>
-                <p className="text-xs text-slate-600 mt-0.5">
+                <h2 className="text-xl font-extrabold text-slate-950 dark:text-white">Directorio Oficial de Pasajeros</h2>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                   Perfiles persistentes en Supabase. Aunque se elimine una reserva cancelada, el perfil del pasajero se mantiene registrado.
                 </p>
               </div>
-              <span className="text-xs font-extrabold text-crusoe-800 bg-crusoe-50 border border-crusoe-200 px-3 py-1.5 rounded-xl">
+              <span className="text-xs font-extrabold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-50 dark:bg-crusoe-950 border border-crusoe-200 dark:border-crusoe-800 px-3 py-1.5 rounded-xl">
                 {passengerSummaries.length} Clientes Registrados
               </span>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-md">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/90 text-slate-950 font-extrabold uppercase tracking-wider border-b border-slate-200">
+                <thead className="bg-slate-100/90 dark:bg-slate-800/80 text-slate-950 dark:text-white font-extrabold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
                   <tr>
                     <th className="p-4">Pasajero / Trato</th>
                     <th className="p-4">WhatsApp / Teléfono</th>
@@ -545,7 +538,7 @@ export default function AdminDashboardPage() {
                     <th className="p-4 text-right">Contacto</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200 font-medium">
                   {passengerSummaries.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="p-8 text-center text-slate-500 font-bold text-sm">
@@ -554,46 +547,46 @@ export default function AdminDashboardPage() {
                     </tr>
                   ) : (
                     passengerSummaries.map((pass) => (
-                      <tr key={pass.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={pass.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4">
-                          <span className="text-xs font-bold text-slate-500 block">{pass.title || 'Sr.'}</span>
-                          <span className="font-extrabold text-slate-950 text-sm block">{pass.name}</span>
+                          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block">{pass.title || 'Sr.'}</span>
+                          <span className="font-extrabold text-slate-950 dark:text-white text-sm block">{pass.name}</span>
                         </td>
 
                         <td className="p-4">
-                          <span className="font-mono font-bold text-slate-950 text-sm block">+51 {pass.phone}</span>
+                          <span className="font-mono font-bold text-slate-950 dark:text-white text-sm block">+51 {pass.phone}</span>
                         </td>
 
                         <td className="p-4">
-                          <span className="font-mono text-slate-700">{pass.dni || 'No registrado'}</span>
+                          <span className="font-mono text-slate-700 dark:text-slate-300">{pass.dni || 'No registrado'}</span>
                         </td>
 
                         <td className="p-4">
-                          <span className="font-extrabold text-slate-950 block">{pass.totalBookings} reservas registradas</span>
-                          <span className="text-xs text-crusoe-700 font-semibold block">{pass.confirmedBookings} completadas</span>
+                          <span className="font-extrabold text-slate-950 dark:text-white block">{pass.totalBookings} reservas registradas</span>
+                          <span className="text-xs text-crusoe-700 dark:text-crusoe-400 font-semibold block">{pass.confirmedBookings} completadas</span>
                         </td>
 
                         <td className="p-4">
                           {pass.todayActiveBookings === 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
                               0/2 hoy (2 disponibles)
                             </span>
                           )}
                           {pass.todayActiveBookings === 1 && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-[11px] font-bold text-amber-800">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2.5 py-1 text-[11px] font-bold text-amber-800 dark:text-amber-300">
                               1/2 hoy (1 disponible)
                             </span>
                           )}
                           {pass.todayActiveBookings >= 2 && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2.5 py-1 text-[11px] font-bold text-rose-800">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 px-2.5 py-1 text-[11px] font-bold text-rose-800 dark:text-rose-300">
                               2/2 hoy (Límite alcanzado)
                             </span>
                           )}
                         </td>
 
                         <td className="p-4">
-                          <span className="font-extrabold text-slate-950 block">{pass.latestCode}</span>
-                          <span className="text-[10px] text-slate-500 block">
+                          <span className="font-extrabold text-slate-950 dark:text-white block">{pass.latestCode}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
                             {new Date(pass.lastBookingDate).toLocaleDateString('es-PE')}
                           </span>
                         </td>
@@ -622,17 +615,17 @@ export default function AdminDashboardPage() {
 
         {/* TAB 3: CALENDARIO OPERATIVO */}
         {activeTab === 'calendario' && (
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 space-y-6 shadow-md">
-            <h2 className="text-xl font-extrabold text-slate-950">Calendario de Salidas y Recepción Aeropuerto</h2>
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 space-y-6 shadow-md">
+            <h2 className="text-xl font-extrabold text-slate-950 dark:text-white">Calendario de Salidas y Recepción Aeropuerto</h2>
             <div className="space-y-4">
               {reservations.map((res) => (
-                <div key={res.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div key={res.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="space-y-1 text-xs">
-                    <span className="font-extrabold text-sm text-slate-950">{res.code}</span>
-                    <span className="block font-bold text-slate-900">
+                    <span className="font-extrabold text-sm text-slate-950 dark:text-white">{res.code}</span>
+                    <span className="block font-bold text-slate-900 dark:text-slate-100">
                       {new Date(res.scheduled_at).toLocaleString('es-PE')} — {res.customer?.full_name}
                     </span>
-                    <span className="text-slate-600 block">
+                    <span className="text-slate-600 dark:text-slate-400 block">
                       Ruta: {res.origin} ➔ {res.destination}
                     </span>
                   </div>
@@ -645,20 +638,20 @@ export default function AdminDashboardPage() {
 
         {/* TAB 4: FLOTA */}
         {activeTab === 'vehiculos' && (
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 space-y-6 shadow-md">
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 space-y-6 shadow-md">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-extrabold text-slate-950">Vehículos Registrados</h2>
-                <p className="text-xs text-slate-600">SUV Jetour último modelo activa para el servicio.</p>
+                <h2 className="text-xl font-extrabold text-slate-950 dark:text-white">Vehículos Registrados</h2>
+                <p className="text-xs text-slate-600 dark:text-slate-400">SUV Jetour último modelo activa para el servicio.</p>
               </div>
               <Button size="sm">Registrar Vehículo</Button>
             </div>
 
-            <div className="rounded-2xl border border-crusoe-200 p-5 bg-crusoe-50/70 flex items-center justify-between">
+            <div className="rounded-2xl border border-crusoe-200 dark:border-crusoe-800 p-5 bg-crusoe-50/70 dark:bg-crusoe-950/50 flex items-center justify-between">
               <div>
-                <span className="font-extrabold text-base text-slate-950">Jetour X70 Plus SUV Deluxe (2026)</span>
-                <span className="block text-xs text-slate-700 font-medium">Placa: W4X-892 — Capacidad: 4 Pasajeros</span>
-                <span className="text-[11px] font-bold text-crusoe-800 block mt-1">SOAT Rímac: Vigente hasta Abril 2027</span>
+                <span className="font-extrabold text-base text-slate-950 dark:text-white">Jetour X70 Plus SUV Deluxe (2026)</span>
+                <span className="block text-xs text-slate-700 dark:text-slate-300 font-medium">Placa: W4X-892 — Capacidad: 4 Pasajeros</span>
+                <span className="text-[11px] font-bold text-crusoe-800 dark:text-crusoe-300 block mt-1">SOAT Rímac: Vigente hasta Abril 2027</span>
               </div>
               <Badge status="CONFIRMED" size="sm" />
             </div>
@@ -667,33 +660,32 @@ export default function AdminDashboardPage() {
 
         {/* REVIEW PAYMENT VOUCHER MODAL */}
         {showReviewModal && selectedRes && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-extrabold text-base text-slate-950">Revisión de Comprobante — {selectedRes.code}</h3>
-                <button onClick={() => setShowReviewModal(false)} className="text-slate-400 hover:text-slate-900 text-lg font-bold">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5 text-slate-900 dark:text-slate-100">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="font-extrabold text-base text-slate-950 dark:text-white">Revisión de Comprobante — {selectedRes.code}</h3>
+                <button onClick={() => setShowReviewModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-lg font-bold">
                   ✕
                 </button>
               </div>
 
-              <div className="space-y-3 text-xs text-slate-900 font-medium">
+              <div className="space-y-3 text-xs font-medium">
                 <div className="flex justify-between">
-                  <span className="font-bold text-slate-600">Cliente:</span>
-                  <span className="font-bold text-slate-950">{selectedRes.customer?.full_name}</span>
+                  <span className="font-bold text-slate-600 dark:text-slate-400">Cliente:</span>
+                  <span className="font-bold text-slate-950 dark:text-white">{selectedRes.customer?.full_name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-bold text-slate-600">Teléfono:</span>
+                  <span className="font-bold text-slate-600 dark:text-slate-400">Teléfono:</span>
                   <span>{selectedRes.customer?.phone}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-bold text-slate-600">Monto del Adelanto:</span>
-                  <span className="font-extrabold text-crusoe-800 text-sm">
+                  <span className="font-bold text-slate-600 dark:text-slate-400">Monto del Adelanto:</span>
+                  <span className="font-extrabold text-crusoe-800 dark:text-crusoe-400 text-sm">
                     S/ {selectedRes.deposit_amount.toFixed(2)}
                   </span>
                 </div>
 
-                {/* Voucher Image preview and full link */}
-                <div className="border rounded-2xl overflow-hidden bg-slate-100 p-2 text-center space-y-2">
+                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800/80 p-2 text-center space-y-2">
                   <img
                     src={selectedRes.payments?.[0]?.proofs?.[0]?.file_path}
                     alt="Voucher de pago"
@@ -704,7 +696,7 @@ export default function AdminDashboardPage() {
                       href={selectedRes.payments[0].proofs[0].file_path}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-crusoe-700 hover:underline"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-crusoe-700 dark:text-crusoe-400 hover:underline"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                       Abrir imagen completa en Supabase Storage
@@ -713,7 +705,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Motivo de rechazo (solo si no es válido):
                   </label>
                   <input
@@ -721,12 +713,12 @@ export default function AdminDashboardPage() {
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
                     placeholder="Ej. Monto incompleto o captura ilegible"
-                    className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-950"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-between gap-3 border-t border-slate-100 pt-4">
+              <div className="flex justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
                 <Button
                   size="sm"
                   variant="danger"
