@@ -68,9 +68,9 @@ function BookingWizardForm() {
   const [origin, setOrigin] = useState<string>('Aeropuerto de Jauja (JAU)');
 
   // Destination City Code & Exact Address
-  const [destinationCityCode, setDestinationCityCode] = useState<string>('huancayo');
+  const [destinationCityCode, setDestinationCityCode] = useState<string>('plaza-constitucion');
   const [exactAddress, setExactAddress] = useState<string>('');
-  const [destination, setDestination] = useState<string>('Huancayo (Centro / El Tambo / Chilca)');
+  const [destination, setDestination] = useState<string>('Plaza Constitución (Huancayo)');
 
   const [passengersCount, setPassengersCount] = useState<number>(1);
   const [hoursCount, setHoursCount] = useState<number>(2);
@@ -455,7 +455,7 @@ function BookingWizardForm() {
                   <label className="block text-xs font-extrabold text-slate-950 dark:text-white">
                     🚘 Tipo de Movilidad Deseada
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {MOBILITY_OPTIONS.map((mob) => (
                       <div
                         key={mob.code}
@@ -866,10 +866,10 @@ function BookingWizardForm() {
           <div>
             <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
               <CreditCard className="h-6 w-6 text-crusoe-600" />
-              5. Resumen de Cotización y Pago del Adelanto (50%)
+              5. Resumen de Cotización y Pago
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Abona el 50% de adelanto mediante Yape, Plin o BCP para asegurar tu reserva.
+              Revisa tu cotización. Puedes abonar el adelanto del 20% por Yape o Plin para asegurar tu reserva, o reservar sin pago y pagarlo antes de la hora programada.
             </p>
           </div>
 
@@ -878,7 +878,7 @@ function BookingWizardForm() {
             <div className="flex justify-between text-xs text-slate-700 dark:text-slate-300">
               <span>Modalidad:</span>
               <span className="font-bold text-slate-950 dark:text-white">
-                {serviceCode === 'privado-aeropuerto' ? 'Servicio Privado Exclusivo SUV' : 'Servicio Compartido por Asiento'}
+                {serviceCode === 'privado-aeropuerto' ? 'Servicio Privado Exclusivo' : 'Servicio Compartido por Asiento'}
               </span>
             </div>
             <div className="flex justify-between text-xs text-slate-700 dark:text-slate-300">
@@ -896,19 +896,19 @@ function BookingWizardForm() {
 
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div className="rounded-xl border border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/80 dark:bg-crusoe-950/60 p-3 text-center">
-                <span className="text-[10px] font-bold text-crusoe-800 dark:text-crusoe-300 uppercase block">Adelanto Requerido (50%)</span>
-                <span className="text-lg font-extrabold text-crusoe-950 dark:text-crusoe-200">S/ {quote?.depositRequired.toFixed(2) || '40.00'}</span>
+                <span className="text-[10px] font-bold text-crusoe-800 dark:text-crusoe-300 uppercase block">Adelanto (20%)</span>
+                <span className="text-lg font-extrabold text-crusoe-950 dark:text-crusoe-200">S/ {quote?.depositRequired.toFixed(2) || '16.00'}</span>
               </div>
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-center">
-                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase block">Saldo al Abordar (50%)</span>
-                <span className="text-lg font-extrabold text-slate-950 dark:text-white">S/ {quote?.balanceRemaining.toFixed(2) || '40.00'}</span>
+                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase block">Saldo al Abordar (80%)</span>
+                <span className="text-lg font-extrabold text-slate-950 dark:text-white">S/ {quote?.balanceRemaining.toFixed(2) || '64.00'}</span>
               </div>
             </div>
           </div>
 
           {/* Selector de Método de Pago */}
           <div className="space-y-3">
-            <label className="block text-xs font-bold text-slate-950 dark:text-slate-200">Método de Pago para el Adelanto</label>
+            <label className="block text-xs font-bold text-slate-950 dark:text-slate-200">Método de Pago para el Adelanto (opcional ahora)</label>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { code: 'yape', name: 'Yape' },
@@ -978,7 +978,7 @@ function BookingWizardForm() {
               <label htmlFor="voucher-file-input" className="cursor-pointer space-y-2 block">
                 <Upload className="h-7 w-7 text-crusoe-600 mx-auto" />
                 <span className="text-xs font-bold text-crusoe-800 dark:text-crusoe-300 block">
-                  Toca aquí para adjuntar foto de comprobante de pago
+                  Toca aquí para adjuntar foto de comprobante de pago (Opcional)
                 </span>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 block">JPG, PNG o PDF (Máx. 5MB)</span>
               </label>
@@ -988,9 +988,22 @@ function BookingWizardForm() {
               <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 flex items-center gap-3">
                 <img src={voucherPreview} alt="Vista previa del comprobante" className="h-12 w-12 rounded-lg object-cover border" />
                 <div className="flex-1 text-xs">
-                  <span className="font-bold text-slate-900 dark:text-slate-100 block">Comprobante seleccionado</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block">Comprobante seleccionado ✓</span>
                   <span className="text-slate-500 dark:text-slate-400 text-[11px]">{voucherFile?.name}</span>
                 </div>
+              </div>
+            )}
+
+            {/* Advertencia si NO sube comprobante */}
+            {!voucherFile && (
+              <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/60 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-amber-900 dark:text-amber-300 font-extrabold text-xs">
+                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+                  <span>⚠️ Reserva sin comprobante de pago</span>
+                </div>
+                <p className="text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed font-medium">
+                  Puedes reservar sin subir el comprobante ahora, pero <strong>si no realizas el pago del adelanto (S/ {quote?.depositRequired.toFixed(2) || '16.00'}) antes de la fecha y hora programada de tu servicio</strong>, tu reserva será <strong>rechazada y eliminada automáticamente</strong>. Te recomendamos pagar lo antes posible para asegurar tu viaje.
+                </p>
               </div>
             )}
           </div>
@@ -1023,7 +1036,7 @@ function BookingWizardForm() {
               Atrás
             </Button>
             <Button size="lg" isLoading={loading} onClick={handleCreateReservation}>
-              Confirmar y Enviar Reserva
+              {voucherFile ? 'Confirmar y Enviar Reserva con Pago' : 'Reservar sin Pago (Pagar después)'}
               <CheckCircle2 className="h-4 w-4" />
             </Button>
           </div>
@@ -1094,14 +1107,34 @@ function BookingWizardForm() {
               </div>
             )}
 
-            <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-2 font-bold text-sm text-slate-950 dark:text-white">
-              <span>Adelanto (50%):</span>
-              <span className="text-crusoe-800 dark:text-crusoe-400 font-extrabold">S/ {createdReservation.deposit_amount.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-slate-700 dark:text-slate-300 text-xs">
-              <span>Saldo a pagar al abordar:</span>
-              <span className="font-bold text-slate-950 dark:text-white">S/ {createdReservation.balance_amount.toFixed(2)}</span>
-            </div>
+            {createdReservation.payments && createdReservation.payments.length > 0 ? (
+              <>
+                <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-2 font-bold text-sm text-slate-950 dark:text-white">
+                  <span>Adelanto (20%):</span>
+                  <span className="text-crusoe-800 dark:text-crusoe-400 font-extrabold">S/ {createdReservation.deposit_amount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-700 dark:text-slate-300 text-xs">
+                  <span>Saldo a pagar al abordar (80%):</span>
+                  <span className="font-bold text-slate-950 dark:text-white">S/ {createdReservation.balance_amount.toFixed(2)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-2 space-y-2">
+                <div className="flex justify-between font-bold text-sm text-slate-950 dark:text-white">
+                  <span>Total del Viaje:</span>
+                  <span className="text-crusoe-800 dark:text-crusoe-400 font-extrabold">S/ {createdReservation.total_amount.toFixed(2)}</span>
+                </div>
+                <div className="rounded-xl border-2 border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/60 p-3 text-[11px] text-rose-900 dark:text-rose-200 font-bold space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                    <span>⚠️ Reserva SIN comprobante de pago adjunto</span>
+                  </div>
+                  <p className="font-medium leading-relaxed">
+                    Debes realizar el pago del adelanto de <strong>S/ {createdReservation.deposit_amount.toFixed(2)}</strong> antes de la fecha y hora programada de tu servicio. De lo contrario, tu reserva será <strong>rechazada y eliminada</strong>.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2 max-w-lg mx-auto">

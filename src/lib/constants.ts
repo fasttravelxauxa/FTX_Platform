@@ -4,7 +4,7 @@ export const BUSINESS_CONFIG = {
   appName: 'Fast Travel Xauxa',
   currencySymbol: 'S/',
   currencyCode: 'PEN',
-  depositPercentage: 0.50, // 50% de adelanto
+  depositPercentage: 0.20, // 20% de adelanto
   cancellationWindowMinutes: 60, // 60 minutos para reembolso total
   airportToleranceMinutes: 30, // 30 min de tolerancia tras aterrizaje
   maxSharedPassengers: 4, // Máximo 4 pasajeros en compartido
@@ -13,7 +13,7 @@ export const BUSINESS_CONFIG = {
   whatsappFormatted: '+51 929 667 586',
   whatsappCallDisclaimer: 'Sólo mensajes de WhatsApp (No llamadas)',
   invoicingDisclaimer: 'Emitimos Boletas y Facturas Electrónicas. Ingresa tus datos tributarios en la reserva y te enviamos tu comprobante fiscal vía WhatsApp.',
-  sharedServiceNotice: 'Tu asiento queda 100% reservado y asegurado al realizar el pago del adelanto. La confirmación de la salida del vehículo se activa al completarse un mínimo de 3 asientos para tu horario programado. Si no se alcanza el cupo, coordinaremos la reprogramación o devolución completa sin penalización.',
+  sharedServiceNotice: 'Tu asiento queda 100% reservado y asegurado. La confirmación de la salida del vehículo se activa al completarse un mínimo de 3 asientos para tu horario programado. Si no se alcanza el cupo, coordinaremos la reprogramación o devolución completa sin penalización.',
   vehicleInitial: {
     id: 'b1111111-1111-1111-1111-111111111111',
     brand: 'Jetour',
@@ -32,17 +32,10 @@ export const MOBILITY_OPTIONS = [
     recommended: true,
   },
   {
-    code: 'van-ejecutiva',
-    name: 'Van Ejecutiva (Grupos)',
-    capacity: '5 a 8 pasajeros',
-    description: 'Ideal para familias o delegaciones con equipaje voluminoso.',
-    recommended: false,
-  },
-  {
-    code: 'sedan-ejecutivo',
-    name: 'Sedán Ejecutivo',
-    capacity: '1 a 3 pasajeros',
-    description: 'Vehículo ligero confortable para traslados rápidos.',
+    code: 'auto-confortable',
+    name: 'Auto confortable de 4 pasajeros',
+    capacity: '1 a 4 pasajeros',
+    description: 'Vehículo ligero y confortable para traslados ejecutivos rápidos.',
     recommended: false,
   },
 ];
@@ -82,32 +75,53 @@ export interface DestinationRoute {
 
 export const DESTINATIONS_CATALOG: DestinationRoute[] = [
   {
-    code: 'huancayo',
-    name: 'Huancayo (Centro / El Tambo / Chilca)',
+    code: 'plaza-constitucion',
+    name: 'Plaza Constitución (Huancayo)',
     sharedPricePerSeat: 20.00,
     privatePriceSuv: 80.00,
-    description: 'Ruta principal Aeropuerto Jauja ↔ Huancayo. Privado: S/ 80.00 vehículo completo puerta a puerta | Compartido: S/ 20.00 por asiento.',
+    description: 'Servicio al centro de Huancayo. Privado: S/ 80.00 | Compartido: S/ 20.00 por asiento.',
+  },
+  {
+    code: 'ovalo-huancavelica',
+    name: 'Óvalo Huancavelica (Huancayo)',
+    sharedPricePerSeat: 20.00,
+    privatePriceSuv: 80.00,
+    description: 'Servicio a zona sur de Huancayo. Privado: S/ 80.00 | Compartido: S/ 20.00 por asiento.',
+  },
+  {
+    code: 'jr-calixto',
+    name: 'Jr. Calixto (Centro de Huancayo)',
+    sharedPricePerSeat: 20.00,
+    privatePriceSuv: 80.00,
+    description: 'Servicio al centro cívico comercial. Privado: S/ 80.00 | Compartido: S/ 20.00 por asiento.',
+  },
+  {
+    code: 'el-tambo',
+    name: 'El Tambo / Chilca',
+    sharedPricePerSeat: 20.00,
+    privatePriceSuv: 80.00,
+    description: 'Zonas aledañas de Huancayo. Privado: S/ 80.00 | Compartido: S/ 20.00 por asiento.',
   },
   {
     code: 'tarma',
     name: 'Tarma (La Perla de los Andes)',
     sharedPricePerSeat: 35.00,
     privatePriceSuv: 140.00,
-    description: 'Servicio directo Aeropuerto Jauja ↔ Tarma. Privado: S/ 140.00 vehículo completo | Compartido: S/ 35.00 por asiento.',
+    description: 'Servicio directo Aeropuerto Jauja ↔ Tarma. Privado: S/ 140.00 | Compartido: S/ 35.00.',
   },
   {
     code: 'la-oroya',
     name: 'La Oroya',
     sharedPricePerSeat: 40.00,
     privatePriceSuv: 160.00,
-    description: 'Servicio directo Aeropuerto Jauja ↔ La Oroya. Privado: S/ 160.00 vehículo completo | Compartido: S/ 40.00 por asiento.',
+    description: 'Servicio directo Aeropuerto Jauja ↔ La Oroya. Privado: S/ 160.00 | Compartido: S/ 40.00.',
   },
   {
     code: 'la-merced',
-    name: 'La Merced (Chanchamayo - Selva Central)',
+    name: 'La Merced (Selva Central)',
     sharedPricePerSeat: 60.00,
     privatePriceSuv: 240.00,
-    description: 'Servicio directo Aeropuerto Jauja ↔ La Merced. Privado: S/ 240.00 vehículo completo | Compartido: S/ 60.00 por asiento.',
+    description: 'Servicio directo Aeropuerto Jauja ↔ La Merced. Privado: S/ 240.00 | Compartido: S/ 60.00.',
   },
   {
     code: 'otro',
@@ -178,13 +192,4 @@ export const AIRLINES = [
   { code: 'OTRO', name: 'Otro Vuelo / Chárter' },
 ];
 
-export const PERIPHERY_ZONES = [
-  'chilca',
-  'azapampa',
-  'la punta',
-  'sapallanga',
-  'huancan',
-  'pilcomayo',
-  'sicaya',
-  'san jerónimo',
-];
+

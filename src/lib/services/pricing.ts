@@ -1,9 +1,10 @@
 import { PriceQuote } from '../types';
-import { BUSINESS_CONFIG, DESTINATIONS_CATALOG, PERIPHERY_ZONES, SERVICES_CATALOG } from '../constants';
+import { BUSINESS_CONFIG, DESTINATIONS_CATALOG, SERVICES_CATALOG } from '../constants';
 
 export class PricingService {
   /**
-   * Calcula una cotización formal para una reserva
+   * Calcula una cotización formal para una reserva.
+   * No aplica recargos por zona periférica — el precio del destino es fijo.
    */
   public static calculateQuote(params: {
     serviceCode: string;
@@ -19,51 +20,36 @@ export class PricingService {
     }
 
     // Buscar ruta/ciudad de destino en el catálogo
-    const destCode = params.destinationCode || 'huancayo';
+    const destCode = params.destinationCode || 'plaza-constitucion';
     const destRoute = DESTINATIONS_CATALOG.find((d) => d.code === destCode) || DESTINATIONS_CATALOG[0];
 
     let subtotal = 0;
-    let surcharges = 0;
+    const surcharges = 0;
     const details: string[] = [];
-
-    const originLower = params.origin.toLowerCase();
-    const destLower = params.destination.toLowerCase();
-
-    // Verificación de zona periférica (Chilca, Sapallanga, etc.)
-    const isOriginPeriphery = PERIPHERY_ZONES.some((zone) => originLower.includes(zone));
-    const isDestPeriphery = PERIPHERY_ZONES.some((zone) => destLower.includes(zone));
 
     switch (service.code) {
       case 'privado-aeropuerto':
         subtotal = destRoute.privatePriceSuv;
-        details.push(`Traslado Privado SUV Exclusiva (${destRoute.name}): S/ ${subtotal.toFixed(2)}`);
-
-        if ((isOriginPeriphery || isDestPeriphery) && destCode === 'huancayo') {
-          surcharges += 10.00;
-          details.push('Recargo por cobertura en zona periférica / Chilca: +S/ 10.00');
-        }
+        details.push(`Traslado Privado Exclusivo (${destRoute.name}): S/ ${subtotal.toFixed(2)}`);
         break;
 
-      case 'compartido-aeropuerto':
+      case 'compartido-aeropuerto': {
         const seatCount = Math.max(1, params.passengersCount);
         subtotal = destRoute.sharedPricePerSeat * seatCount;
         details.push(
           `Traslado Compartido (${seatCount} asiento(s) x S/ ${destRoute.sharedPricePerSeat.toFixed(2)} a ${destRoute.name}): S/ ${subtotal.toFixed(2)}`
         );
         break;
+      }
 
       case 'excursion':
       case 'visita-local':
-      case 'renta-horas':
+      case 'renta-horas': {
         const hours = Math.max(1, params.hoursCount || 2);
         subtotal = service.base_price * hours;
         details.push(`Servicio por horas (${hours} hora(s) x S/ ${service.base_price.toFixed(2)}/h): S/ ${subtotal.toFixed(2)}`);
-
-        if (isOriginPeriphery || isDestPeriphery) {
-          surcharges += 10.00;
-          details.push('Recargo por origen/destino fuera del casco central: +S/ 10.00');
-        }
         break;
+      }
 
       default:
         subtotal = service.base_price;

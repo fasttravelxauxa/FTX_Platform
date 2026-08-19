@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Fast Travel Xauxa' }],
   openGraph: {
     title: 'Fast Travel Xauxa — Traslados Ejecutivos Jauja ↔ Huancayo',
-    description: 'Reserva tu transporte privado o compartido con 50% de adelanto. Confort, puntualidad y recepción personalizada en aeropuerto. Boletas y Facturas Electrónicas.',
+    description: 'Reserva tu transporte privado o compartido. Confort, puntualidad y recepción personalizada en aeropuerto. Boletas y Facturas Electrónicas.',
     url: 'https://fasttravelxauxa.vercel.app',
     siteName: 'Fast Travel Xauxa',
     locale: 'es_PE',

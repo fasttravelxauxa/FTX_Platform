@@ -29,9 +29,9 @@ export default function TermsPage() {
             Fast Travel Xauxa es una plataforma digital de gestión de traslados ejecutivos privados, traslados compartidos aeroportuarios, excursiones turísticas y renta por horas con conductor en la ruta Aeropuerto de Jauja ↔ Huancayo, Tarma, La Oroya, La Merced y el Valle del Mantaro.
           </p>
 
-          <h2 className="text-base font-bold text-slate-950 dark:text-white">2. Modelo de Reserva y Adelanto del 50%</h2>
+          <h2 className="text-base font-bold text-slate-950 dark:text-white">2. Modelo de Reserva y Adelanto del 20%</h2>
           <p className="text-slate-700 dark:text-slate-300">
-            Para garantizar la reserva de la camioneta SUV Jetour X70 FL (2027) y la asignación del conductor, el usuario debe realizar el pago de un adelanto equivalente al <strong>50% del valor total de la cotización</strong> mediante Yape o Plin y adjuntar la imagen del comprobante válido. El 50% restante será abonado al momento de abordar el vehículo.
+            Para garantizar la reserva de la camioneta SUV Jetour X70 FL (2027) o auto de 4 pasajeros y la asignación del conductor, el usuario puede realizar el pago de un adelanto equivalente al <strong>20% del valor total de la cotización</strong> mediante Yape o Plin. El 80% restante será abonado al momento de abordar el vehículo. Si reserva sin pago, deberá pagar el adelanto antes de la hora programada.
           </p>
 
           <h2 className="text-base font-bold text-slate-950 dark:text-white">3. Tolerancia y Recepción Aeroportuaria</h2>

@@ -31,7 +31,7 @@ export default function CancellationPage() {
 
           <h2 className="text-base font-bold text-slate-950 dark:text-white">2. Cancelación fuera del plazo</h2>
           <p className="text-slate-700 dark:text-slate-300">
-            En caso de cancelaciones solicitadas posterior a los 60 minutos o el mismo día del servicio sin causa justificada, el adelanto del 50% podrá retenerse para cubrir los costos de reserva de unidad y conductor programado.
+            En caso de cancelaciones solicitadas posterior a los 60 minutos o el mismo día del servicio sin causa justificada, el adelanto del 20% podrá retenerse para cubrir los costos de reserva de unidad y conductor programado.
           </p>
 
           <h2 className="text-base font-bold text-slate-950 dark:text-white">3. Regla de No-Show en Aeropuerto</h2>

@@ -19,7 +19,7 @@ import {
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
-import { SERVICES_CATALOG, BUSINESS_CONFIG } from '@/lib/constants';
+import { SERVICES_CATALOG, BUSINESS_CONFIG, DESTINATIONS_CATALOG } from '@/lib/constants';
 import { WhatsAppService } from '@/lib/services/whatsapp';
 
 export default function HomePage() {
@@ -69,7 +69,7 @@ export default function HomePage() {
                 <div className="pt-6 grid grid-cols-3 gap-4 border-t border-crusoe-800/80 text-xs sm:text-sm text-crusoe-200">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-crusoe-400 shrink-0" />
-                    <span>Adelanto del 50%</span>
+                    <span>Adelanto del 20% (opcional)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-crusoe-400 shrink-0" />
@@ -176,9 +176,9 @@ export default function HomePage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-crusoe-600 text-white font-extrabold text-lg mb-4 shadow-md">
                   3
                 </div>
-                <h3 className="text-base font-bold text-slate-950 dark:text-white">Adelanto 50% y Comprobante</h3>
+                <h3 className="text-base font-bold text-slate-950 dark:text-white">Adelanto (opcional) y Comprobante</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                  Paga por Yape, Plin o BCP y sube tu comprobante. Solicita tu Boleta o Factura si la requieres.
+                  Puedes asegurar pagando el 20% por Yape, Plin o BCP, o pagar después. Solicita tu Boleta o Factura.
                 </p>
               </div>
 
@@ -329,43 +329,38 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* FLEET SHOWCASE SECTION */}
-        <section id="vehiculo" className="py-20 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+        {/* DESTINOS SECTION */}
+        <section id="destinos" className="py-20 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-12">
-              <span className="text-xs font-bold uppercase tracking-widest text-crusoe-600 dark:text-crusoe-400">Flota Oficial</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-crusoe-600 dark:text-crusoe-400">Rutas Disponibles</span>
               <h2 className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1 sm:text-4xl">
-                Nuestra Camioneta SUV Jetour X70 FL (2027)
+                Nuestros Destinos Principales
               </h2>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-3">
-                Imágenes reales de la unidad ejecutiva a tu servicio para un traslado confortable y seguro.
+                Viaja desde y hacia el Aeropuerto de Jauja con total comodidad a los siguientes destinos.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md bg-slate-50 dark:bg-slate-800/60">
-                <img src="/images/car/jetour-exterior-1.jpg" alt="Jetour Exterior" className="w-full h-56 object-cover hover:scale-105 transition-transform" />
-                <div className="p-4">
-                  <h4 className="font-bold text-slate-950 dark:text-white text-sm">Vista Exterior Elegante</h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Carrocería impecable, amplio espacio y máximo confort en ruta.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {DESTINATIONS_CATALOG.map((dest) => (
+                <div key={dest.code} className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-slate-50 dark:bg-slate-800/60 p-5 flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-slate-950 dark:text-white text-base">{dest.name}</h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">{dest.description}</p>
+                  </div>
+                  <div className="mt-4 space-y-2 border-t border-slate-200 dark:border-slate-700 pt-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-600 dark:text-slate-400 font-medium">Compartido:</span>
+                      <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400">S/ {dest.sharedPricePerSeat}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-600 dark:text-slate-400 font-medium">Privado:</span>
+                      <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400">S/ {dest.privatePriceSuv}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md bg-slate-50 dark:bg-slate-800/60">
-                <img src="/images/car/jetour-interior-1.jpg" alt="Jetour Interior" className="w-full h-56 object-cover hover:scale-105 transition-transform" />
-                <div className="p-4">
-                  <h4 className="font-bold text-slate-950 dark:text-white text-sm">Interior Ejecutivo</h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Asientos ergonómicos de cuero, climatización y gran comodidad.</p>
-                </div>
-              </div>
-
-              <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md bg-slate-50 dark:bg-slate-800/60">
-                <img src="/images/car/jetour-front.jpg" alt="Jetour Frontal" className="w-full h-56 object-cover hover:scale-105 transition-transform" />
-                <div className="p-4">
-                  <h4 className="font-bold text-slate-950 dark:text-white text-sm">Seguridad y Mantenimiento</h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Revisiones técnicas al día, SOAT vigente y desinfección en cada viaje.</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
@@ -377,7 +372,7 @@ export default function HomePage() {
               ¿Listo para asegurar tu traslado con Fast Travel Xauxa?
             </h2>
             <p className="text-sm text-crusoe-200 dark:text-slate-300 mt-3 max-w-xl mx-auto">
-              Realiza tu reserva ahora mismo y asegura el 50% de adelanto mediante Yape, Plin o Transferencia BCP. Coordinaciones únicamente por mensajes de WhatsApp ({BUSINESS_CONFIG.whatsappFormatted}).
+              Realiza tu reserva ahora mismo y asegura pagando el 20% de adelanto mediante Yape, Plin o Transferencia BCP, o paga después. Coordinaciones únicamente por mensajes de WhatsApp ({BUSINESS_CONFIG.whatsappFormatted}).
             </p>
             <div className="mt-8 flex justify-center gap-4">
               <Link href="/reserva">
