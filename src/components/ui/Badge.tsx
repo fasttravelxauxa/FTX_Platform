@@ -17,7 +17,7 @@ export const Badge: React.FC<BadgeProps> = ({ status, type = 'reservation', size
 
     return (
       <span
-        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-medium transition-colors ${
+        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-medium transition-colors dark:bg-opacity-20 dark:border-opacity-40 ${
           size === 'sm' ? 'text-xs' : 'text-sm'
         } ${config.color}`}
       >
@@ -45,7 +45,7 @@ export const Badge: React.FC<BadgeProps> = ({ status, type = 'reservation', size
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-medium ${
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-medium transition-colors dark:bg-opacity-20 dark:border-opacity-40 ${
         size === 'sm' ? 'text-xs' : 'text-sm'
       } ${config.color}`}
     >

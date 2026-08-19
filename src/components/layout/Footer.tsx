@@ -6,7 +6,7 @@ import { WhatsAppService } from '@/lib/services/whatsapp';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="border-t border-crusoe-200 bg-crusoe-950 text-white pt-12 pb-8">
+    <footer className="border-t border-crusoe-200 dark:border-slate-800 bg-crusoe-950 dark:bg-slate-950 text-white pt-12 pb-8 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* Brand Info */}
@@ -94,7 +94,7 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar & Legal Versioning */}
-        <div className="mt-10 border-t border-crusoe-900 pt-6 flex flex-col items-center justify-between gap-4 text-xs text-crusoe-400 sm:flex-row">
+        <div className="mt-10 border-t border-crusoe-900 dark:border-slate-800 pt-6 flex flex-col items-center justify-between gap-4 text-xs text-crusoe-400 dark:text-slate-500 sm:flex-row">
           <p>© {new Date().getFullYear()} Fast Travel Xauxa. Todos los derechos reservados. Jauja – Perú.</p>
           <div className="flex gap-4">
             <Link href="/terminos" className="hover:underline">

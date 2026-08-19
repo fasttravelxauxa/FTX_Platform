@@ -22,20 +22,7 @@ export default function AdminLoginPage() {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
-    // 1. Fallback por defecto si se ingresan las credenciales demo
-    if (
-      (cleanEmail === 'admin@fasttravelxauxa.pe' || cleanEmail === 'admin') &&
-      (cleanPassword === 'admin123' || cleanPassword === 'admin')
-    ) {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('ftx_admin_auth', 'true');
-        // Hard redirect garantiza que localStorage esté disponible antes que el admin page cargue
-        window.location.href = '/admin';
-      }
-      return;
-    }
-
-    // 2. Autenticación oficial con Supabase Auth
+    // Autenticación oficial con Supabase Auth. No se conservan accesos demo en producción.
     try {
       const supabase = createClient();
       if (supabase) {
@@ -45,15 +32,12 @@ export default function AdminLoginPage() {
         });
 
         if (!error && data.user) {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('ftx_admin_auth', 'true');
-            window.location.href = '/admin';
-          }
+          window.location.href = '/admin';
           return;
         }
       }
 
-      setErrorMsg('Credenciales incorrectas. Para pruebas rápidas usa: admin@fasttravelxauxa.pe / admin123');
+      setErrorMsg('Credenciales incorrectas. Usa tu cuenta administrativa autorizada.');
     } catch (err) {
       setErrorMsg('Error al conectar con el servidor de autenticación.');
     } finally {
@@ -84,9 +68,9 @@ export default function AdminLoginPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="bg-white py-8 px-6 shadow-2xl rounded-3xl sm:px-10 border border-crusoe-200">
+        <div className="bg-white dark:bg-slate-900 py-8 px-6 shadow-2xl rounded-3xl sm:px-10 border border-crusoe-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 transition-colors">
           {errorMsg && (
-            <div className="mb-6 flex items-center gap-3 rounded-2xl bg-red-50 border border-red-200 p-4 text-xs font-medium text-red-800">
+            <div className="mb-6 flex items-center gap-3 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 p-4 text-xs font-medium text-red-800 dark:text-red-300">
               <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -94,31 +78,31 @@ export default function AdminLoginPage() {
 
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
-              <label className="block text-xs font-bold text-crusoe-950 mb-2">Correo Electrónico / Usuario</label>
+              <label className="block text-xs font-bold text-slate-950 dark:text-slate-200 mb-2">Correo Electrónico / Usuario</label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-crusoe-600" />
+                <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-crusoe-600 dark:text-crusoe-400" />
                 <input
                   type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@fasttravelxauxa.pe"
-                  className="w-full rounded-xl border border-crusoe-300 pl-10 pr-4 py-3 text-sm focus:border-crusoe-600 focus:outline-none text-crusoe-950"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 pl-10 pr-4 py-3 text-sm focus:border-crusoe-600 focus:outline-none bg-white dark:bg-slate-800 text-slate-950 dark:text-white"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-crusoe-950 mb-2">Contraseña</label>
+              <label className="block text-xs font-bold text-slate-950 dark:text-slate-200 mb-2">Contraseña</label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-crusoe-600" />
+                <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-crusoe-600 dark:text-crusoe-400" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-crusoe-300 pl-10 pr-4 py-3 text-sm focus:border-crusoe-600 focus:outline-none text-crusoe-950"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 pl-10 pr-4 py-3 text-sm focus:border-crusoe-600 focus:outline-none bg-white dark:bg-slate-800 text-slate-950 dark:text-white"
                 />
               </div>
             </div>
@@ -128,15 +112,13 @@ export default function AdminLoginPage() {
             </Button>
           </form>
 
-
-
-          <div className="mt-6 pt-4 border-t border-crusoe-100 flex items-center justify-between text-xs text-crusoe-800">
-            <Link href="/" className="inline-flex items-center gap-1 font-bold text-crusoe-700 hover:underline">
+          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+            <Link href="/" className="inline-flex items-center gap-1 font-bold text-crusoe-700 dark:text-crusoe-400 hover:underline">
               <ArrowLeft className="h-3.5 w-3.5" />
               Volver a la web
             </Link>
-            <div className="flex items-center gap-1 text-[11px] text-gray-700">
-              <ShieldCheck className="h-3.5 w-3.5 text-crusoe-600" />
+            <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+              <ShieldCheck className="h-3.5 w-3.5 text-crusoe-600 dark:text-crusoe-400" />
               <span>Conexión Cifrada SSL</span>
             </div>
           </div>

@@ -21,10 +21,10 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variants = {
     primary: 'bg-crusoe-600 hover:bg-crusoe-700 text-white shadow-md shadow-crusoe-600/20 focus:ring-crusoe-500',
-    secondary: 'bg-crusoe-100 hover:bg-crusoe-200 text-crusoe-900 focus:ring-crusoe-400',
-    outline: 'border-2 border-crusoe-600 text-crusoe-700 hover:bg-crusoe-50 focus:ring-crusoe-500',
+    secondary: 'bg-crusoe-100 dark:bg-crusoe-900/40 hover:bg-crusoe-200 dark:hover:bg-crusoe-800/60 text-crusoe-900 dark:text-crusoe-200 focus:ring-crusoe-400',
+    outline: 'border-2 border-crusoe-600 dark:border-crusoe-500 text-crusoe-700 dark:text-crusoe-300 hover:bg-crusoe-50 dark:hover:bg-crusoe-950/60 focus:ring-crusoe-500',
     danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 shadow-sm',
-    ghost: 'text-crusoe-800 hover:bg-crusoe-100/60 focus:ring-crusoe-400',
+    ghost: 'text-crusoe-800 dark:text-crusoe-300 hover:bg-crusoe-100/60 dark:hover:bg-crusoe-900/40 focus:ring-crusoe-400',
   };
 
   const sizes = {

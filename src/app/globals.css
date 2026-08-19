@@ -104,3 +104,25 @@ html.dark ::-webkit-scrollbar-thumb {
 ::-webkit-scrollbar-thumb:hover {
   background: #23761f;
 }
+
+/* Fade-in animation for conditional UI reveals */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Dark mode focus ring offset */
+html.dark *:focus-visible {
+  --tw-ring-offset-color: #0f172a;
+}
+

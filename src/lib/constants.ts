@@ -17,30 +17,58 @@ export const BUSINESS_CONFIG = {
   vehicleInitial: {
     id: 'b1111111-1111-1111-1111-111111111111',
     brand: 'Jetour',
-    model: 'SUV Deluxe (Último Modelo)',
+    model: 'X70 FL (Modelo 2027)',
     capacity: 4,
     plate: 'W4X-892',
   },
 };
 
+export const MOBILITY_OPTIONS = [
+  {
+    code: 'suv-jetour',
+    name: 'SUV Jetour X70 FL 2027 (Oficial)',
+    capacity: '1 a 4 pasajeros',
+    description: 'Camioneta SUV moderna, aire climatizado, asientos de cuero y maletero amplio.',
+    recommended: true,
+  },
+  {
+    code: 'van-ejecutiva',
+    name: 'Van Ejecutiva (Grupos)',
+    capacity: '5 a 8 pasajeros',
+    description: 'Ideal para familias o delegaciones con equipaje voluminoso.',
+    recommended: false,
+  },
+  {
+    code: 'sedan-ejecutivo',
+    name: 'Sedán Ejecutivo',
+    capacity: '1 a 3 pasajeros',
+    description: 'Vehículo ligero confortable para traslados rápidos.',
+    recommended: false,
+  },
+];
+
 export const PAYMENT_METHODS_INFO = {
   yape: {
     name: 'Yape',
     phone: '929 667 586',
-    owner: 'Fast Travel Xauxa',
+    owner: 'JORGE TRU.',
     qrImage: '/images/payment/yape-qr.png',
+    active: true,
   },
   plin: {
     name: 'Plin',
     phone: '929 667 586',
-    owner: 'Fast Travel Xauxa',
+    owner: 'JORGE ANTONIO TRUCIOS MEZA',
     qrImage: '/images/payment/plin-qr.png',
+    active: true,
   },
   bcp: {
     name: 'Transferencia BCP',
     accountNumber: '355-98765432-0-12',
     cci: '002-355009876543201289',
-    owner: 'Fast Travel Xauxa',
+    owner: 'JORGE ANTONIO TRUCIOS MEZA',
+    active: false,
+    notice: 'En proceso de habilitación oficial. Por favor realiza tu pago por Yape o Plin.',
   },
 };
 

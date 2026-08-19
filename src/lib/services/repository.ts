@@ -1,5 +1,5 @@
 import { createClient } from '../supabase/client';
-import { Reservation, InvoiceDetails, Profile, ReservationStatus } from '../types';
+import { Reservation, InvoiceDetails, Profile, ReservationStatus, Vehicle, VehicleStatus } from '../types';
 
 const FTX_PHONE_KEY = 'ftx_passenger_phone';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -512,6 +512,164 @@ export class RepositoryService {
       return true;
     } catch (err: any) {
       console.error('[FTX Repository] Excepción al eliminar reserva:', err?.message);
+      return false;
+    }
+  }
+
+  /**
+   * Eliminar un perfil de pasajero de Supabase
+   */
+  public static async deleteProfile(profileId: string): Promise<{ success: boolean; error?: string }> {
+    const supabase = createClient();
+    if (!supabase) return { success: false, error: 'Sin conexión a Supabase' };
+
+    try {
+      const { error } = await supabase.from('profiles').delete().eq('id', profileId);
+      if (error) {
+        console.error('[FTX Repository] Error al eliminar perfil:', error.message);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('[FTX Repository] Excepción al eliminar perfil:', err?.message);
+      return { success: false, error: err?.message };
+    }
+  }
+
+  /**
+   * Obtener lista de vehículos registrados
+   */
+  public static async getVehicles(): Promise<Vehicle[]> {
+    const supabase = createClient();
+    if (!supabase) {
+      return [
+        {
+          id: 'b1111111-1111-1111-1111-111111111111',
+          brand: 'Jetour',
+          model: 'X70 FL (Modelo 2027)',
+          year: 2027,
+          plate: 'W4X-892',
+          capacity: 4,
+          status: 'AVAILABLE',
+          photo_urls: ['/images/car/jetour-front.jpg'],
+          created_at: new Date().toISOString(),
+        },
+      ];
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error || !data || data.length === 0) {
+        return [
+          {
+            id: 'b1111111-1111-1111-1111-111111111111',
+            brand: 'Jetour',
+            model: 'X70 FL (Modelo 2027)',
+            year: 2027,
+            plate: 'W4X-892',
+            capacity: 4,
+            status: 'AVAILABLE',
+            photo_urls: ['/images/car/jetour-front.jpg'],
+            created_at: new Date().toISOString(),
+          },
+        ];
+      }
+
+      return data as Vehicle[];
+    } catch (err) {
+      console.warn('[FTX Repository] Excepción en getVehicles:', err);
+      return [
+        {
+          id: 'b1111111-1111-1111-1111-111111111111',
+          brand: 'Jetour',
+          model: 'X70 FL (Modelo 2027)',
+          year: 2027,
+          plate: 'W4X-892',
+          capacity: 4,
+          status: 'AVAILABLE',
+          photo_urls: ['/images/car/jetour-front.jpg'],
+          created_at: new Date().toISOString(),
+        },
+      ];
+    }
+  }
+
+  /**
+   * Guardar o actualizar vehículo
+   */
+  public static async saveVehicle(vehicle: Vehicle): Promise<{ success: boolean; error?: string }> {
+    const supabase = createClient();
+    if (!supabase) return { success: true };
+
+    try {
+      const { error } = await supabase.from('vehicles').upsert(
+        {
+          id: vehicle.id,
+          brand: vehicle.brand,
+          model: vehicle.model,
+          year: vehicle.year,
+          plate: vehicle.plate,
+          capacity: vehicle.capacity,
+          status: vehicle.status,
+          photo_urls: vehicle.photo_urls || [],
+        },
+        { onConflict: 'id' }
+      );
+
+      if (error) {
+        console.warn('[FTX Repository] Error al guardar vehículo:', error.message);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      console.warn('[FTX Repository] Excepción en saveVehicle:', err?.message);
+      return { success: false, error: err?.message };
+    }
+  }
+
+  /**
+   * Actualizar estado de un vehículo
+   */
+  public static async updateVehicleStatus(
+    vehicleId: string,
+    status: VehicleStatus
+  ): Promise<{ success: boolean; error?: string }> {
+    const supabase = createClient();
+    if (!supabase) return { success: true };
+
+    try {
+      const { error } = await supabase
+        .from('vehicles')
+        .update({ status })
+        .eq('id', vehicleId);
+
+      if (error) {
+        console.warn('[FTX Repository] Error al actualizar estado de vehículo:', error.message);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message };
+    }
+  }
+
+  /**
+   * Eliminar un vehículo
+   */
+  public static async deleteVehicle(vehicleId: string): Promise<boolean> {
+    const supabase = createClient();
+    if (!supabase) return true;
+
+    try {
+      const { error } = await supabase.from('vehicles').delete().eq('id', vehicleId);
+      return !error;
+    } catch {
       return false;
     }
   }

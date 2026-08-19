@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 
 const inter = Inter({
@@ -46,8 +47,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${inter.variable} scroll-smooth`}>
-      <body className="min-h-screen bg-crusoe-50 font-sans text-crusoe-950 antialiased selection:bg-crusoe-300 selection:text-crusoe-950">
+    <html lang="es" className={`${inter.variable} scroll-smooth`} suppressHydrationWarning>
+      <head>
+        <Script id="ftx-theme" strategy="beforeInteractive">{`
+          try {
+            const savedTheme = localStorage.getItem('ftx_theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.toggle('dark', savedTheme === 'dark' || (!savedTheme && prefersDark));
+          } catch (_) {}
+        `}</Script>
+      </head>
+      <body className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased selection:bg-crusoe-600 selection:text-white transition-colors duration-200">
         {children}
       </body>
     </html>

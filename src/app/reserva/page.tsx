@@ -33,7 +33,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { SERVICES_CATALOG, AIRLINES, DESTINATIONS_CATALOG, PAYMENT_METHODS_INFO, BUSINESS_CONFIG } from '@/lib/constants';
+import { SERVICES_CATALOG, AIRLINES, DESTINATIONS_CATALOG, PAYMENT_METHODS_INFO, BUSINESS_CONFIG, MOBILITY_OPTIONS } from '@/lib/constants';
 import { PricingService } from '@/lib/services/pricing';
 import { WhatsAppService } from '@/lib/services/whatsapp';
 import { RepositoryService, savePassengerIdentity, generateUUID } from '@/lib/services/repository';
@@ -51,15 +51,16 @@ const STEP_TITLES: { [key: number]: string } = {
 function BookingWizardForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialService = searchParams.get('servicio') || 'privado-aeropuerto';
+  const initialService = searchParams.get('servicio') || '';
 
   // Wizard state (Fluid 6 steps)
   const [step, setStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Form Fields
+  // Form Fields — Service selection & City Destination
   const [serviceCode, setServiceCode] = useState<string>(initialService);
+  const [mobilityCode, setMobilityCode] = useState<string>('suv-jetour');
   const [scheduledDate, setScheduledDate] = useState<string>(
     new Date(Date.now() + 86400000).toISOString().split('T')[0]
   );
@@ -155,15 +156,23 @@ function BookingWizardForm() {
 
   const handleVoucherUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMsg('El comprobante no debe superar los 5MB.');
-        return;
-      }
-      setVoucherFile(file);
-      setVoucherPreview(URL.createObjectURL(file));
-      setErrorMsg(null);
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrorMsg('Adjunta una imagen JPG, PNG, WEBP o un PDF válido.');
+      e.target.value = '';
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('El comprobante no debe superar los 5MB.');
+      e.target.value = '';
+      return;
+    }
+
+    setVoucherFile(file);
+    setVoucherPreview(URL.createObjectURL(file));
+    setErrorMsg(null);
   };
 
   const handleCreateReservation = async () => {
@@ -320,7 +329,7 @@ function BookingWizardForm() {
         newRes.code = saveResult.code;
       }
       setCreatedReservation(newRes);
-      setStep(6); // Paso de confirmación final
+      setStep(6);
 
       confetti({
         particleCount: 120,
@@ -364,129 +373,180 @@ function BookingWizardForm() {
         </div>
       )}
 
-      {/* STEP 1: Servicio, Ciudad Destino y Dirección Exacta */}
+      {/* STEP 1: Selección de Servicio y Revelación Condicional de Destinos */}
       {step === 1 && (
         <div className="space-y-6">
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
               <Car className="h-6 w-6 text-crusoe-600" />
-              1. Selecciona Servicio y Ciudad de Destino
+              1. Selecciona la Modalidad de tu Servicio
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Elige entre Servicio Privado SUV Completo o Servicio Compartido por Asiento.
+              Haz clic en la opción deseada para desplegar las tarifas y destinos correspondientes.
             </p>
           </div>
 
-          {/* Selector de Modalidad */}
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            {SERVICES_CATALOG.map((srv) => (
-              <div
-                key={srv.code}
-                onClick={() => setServiceCode(srv.code)}
-                className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${
-                  serviceCode === srv.code
-                    ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950/80 dark:border-crusoe-500 shadow-md ring-2 ring-crusoe-600/30'
-                    : 'border-slate-200 dark:border-slate-800 hover:border-crusoe-300 bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-bold text-slate-950 dark:text-white text-base">{srv.name}</h3>
-                  <span className="text-xs font-extrabold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100/80 dark:bg-crusoe-900/60 px-2.5 py-1 rounded-lg shrink-0">
-                    {srv.code === 'privado-aeropuerto'
-                      ? 'Vehículo SUV Completo'
-                      : srv.code === 'compartido-aeropuerto'
-                      ? 'Precio por Asiento'
-                      : 'S/ 50.00 /hora'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-700 dark:text-slate-300 mt-2.5 leading-relaxed">{srv.description}</p>
-              </div>
-            ))}
-          </div>
+          {/* Tarjetas Principales de Modalidad */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {SERVICES_CATALOG.filter((s) => s.code === 'privado-aeropuerto' || s.code === 'compartido-aeropuerto').map((srv) => {
+              const isSelected = serviceCode === srv.code;
 
-          {/* Selector de Ciudad Destino */}
-          <div className="space-y-3 pt-2">
-            <label className="block text-xs font-extrabold text-slate-900 dark:text-slate-100">
-              Ciudad de Destino ({serviceCode === 'privado-aeropuerto' ? 'Tarifa SUV Completa' : 'Tarifa por Asiento'}) *
-            </label>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {DESTINATIONS_CATALOG.map((dest) => (
+              return (
                 <div
-                  key={dest.code}
-                  onClick={() => setDestinationCityCode(dest.code)}
-                  className={`cursor-pointer rounded-2xl border-2 p-4 transition-all ${
-                    destinationCityCode === dest.code
-                      ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950/80 dark:border-crusoe-500 shadow-sm ring-2 ring-crusoe-600/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                  key={srv.code}
+                  onClick={() => setServiceCode(srv.code)}
+                  className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${
+                    isSelected
+                      ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950/80 dark:border-crusoe-500 shadow-md ring-2 ring-crusoe-600/30'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-crusoe-300 bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-950 dark:text-white text-sm">{dest.name}</span>
-                    <span className="text-xs font-extrabold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100 dark:bg-crusoe-900/80 px-2.5 py-1 rounded-lg">
-                      {serviceCode === 'privado-aeropuerto'
-                        ? `S/ ${dest.privatePriceSuv.toFixed(2)} total`
-                        : `S/ ${dest.sharedPricePerSeat.toFixed(2)} /asiento`}
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-bold text-slate-950 dark:text-white text-base">{srv.name}</h3>
+                    <span className="text-xs font-extrabold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100/80 dark:bg-crusoe-900/60 px-2.5 py-1 rounded-lg shrink-0">
+                      {srv.code === 'privado-aeropuerto' ? 'Vehículo Completo' : 'Por Asiento (S/ 20+)'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1.5">{dest.description}</p>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 mt-2.5 leading-relaxed">{srv.description}</p>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Campo de dirección exacta si es privado */}
-          {serviceCode === 'privado-aeropuerto' ? (
-            <div className="rounded-2xl border-2 border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/60 dark:bg-crusoe-950/40 p-4 space-y-2">
-              <label className="block text-xs font-extrabold text-crusoe-950 dark:text-crusoe-200 flex items-center gap-1.5">
-                <Building className="h-4 w-4 text-crusoe-700 dark:text-crusoe-400" />
-                Dirección Exacta de Destino (Obligatorio para Servicio Privado) *
-              </label>
-              <input
-                type="text"
-                value={exactAddress}
-                onChange={(e) => setExactAddress(e.target.value)}
-                placeholder="Ej. Hotel Plaza Constitución, Av. Giráldez N° 123 (Ref. Frente a la Catedral)"
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
-              />
-              <span className="text-[11px] text-crusoe-800 dark:text-crusoe-300 block font-medium">
-                📌 En servicio privado exclusivo nuestro chofer te llevará directamente a la puerta de tu dirección.
-              </span>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 p-4 text-xs text-amber-950 dark:text-amber-200 space-y-2 shadow-sm">
-              <div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-300">
-                <Info className="h-4 w-4 text-amber-600 shrink-0" />
-                <span>Estado de Confirmación de Transporte (Servicio Compartido):</span>
+          {/* DESPLEGABLE CONDICIONAL TRAS HACER CLIC */}
+          {serviceCode && (
+            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-crusoe-800 dark:text-crusoe-400 uppercase tracking-wider">
+                  {serviceCode === 'privado-aeropuerto'
+                    ? '📍 Destinos para Servicio Privado (Tarifa Vehículo SUV Completo)'
+                    : '📍 Destinos para Servicio Compartido (Tarifa por Asiento)'}
+                </span>
               </div>
-              <div className="rounded-xl bg-white/80 dark:bg-slate-900/80 border border-amber-300 dark:border-amber-700 p-3 space-y-1">
-                {sharedSeatsInfo.isDepartureConfirmed ? (
-                  <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400 font-extrabold text-xs">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span>¡Salida de Transporte Confirmada! (Se alcanzaron {sharedSeatsInfo.occupiedSeats} de 3 asientos mínimos)</span>
+
+              {/* Selector de Ciudad Destino */}
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {DESTINATIONS_CATALOG.map((dest) => (
+                  <div
+                    key={dest.code}
+                    onClick={() => setDestinationCityCode(dest.code)}
+                    className={`cursor-pointer rounded-2xl border-2 p-4 transition-all ${
+                      destinationCityCode === dest.code
+                        ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950/80 dark:border-crusoe-500 shadow-sm ring-2 ring-crusoe-600/20'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-950 dark:text-white text-sm">{dest.name}</span>
+                      <span className="text-xs font-extrabold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100 dark:bg-crusoe-900/80 px-2.5 py-1 rounded-lg">
+                        {serviceCode === 'privado-aeropuerto'
+                          ? `S/ ${dest.privatePriceSuv.toFixed(2)} total`
+                          : `S/ ${dest.sharedPricePerSeat.toFixed(2)} /asiento`}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1.5">{dest.description}</p>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-amber-900 dark:text-amber-300 font-bold text-xs">
-                    <Clock className="h-4 w-4 text-amber-600" />
-                    <span>
-                      Asiento Reservado • Salida de Unidad pendiente ({sharedSeatsInfo.occupiedSeats} de 3 asientos mínimos reservados para esta fecha)
-                    </span>
-                  </div>
-                )}
+                ))}
               </div>
-              <p className="text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed font-medium">
-                {BUSINESS_CONFIG.sharedServiceNotice}
-              </p>
+
+              {/* Selector de Movilidad / Tipo de Unidad para Privado */}
+              {serviceCode === 'privado-aeropuerto' && (
+                <div className="space-y-2 pt-2">
+                  <label className="block text-xs font-extrabold text-slate-950 dark:text-white">
+                    🚘 Tipo de Movilidad Deseada
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {MOBILITY_OPTIONS.map((mob) => (
+                      <div
+                        key={mob.code}
+                        onClick={() => setMobilityCode(mob.code)}
+                        className={`cursor-pointer rounded-2xl border-2 p-3.5 transition-all text-left ${
+                          mobilityCode === mob.code
+                            ? 'border-crusoe-600 bg-crusoe-50/80 dark:bg-crusoe-950/70 shadow-sm ring-2 ring-crusoe-600/20'
+                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-slate-950 dark:text-white block">{mob.name}</span>
+                          {mob.recommended && (
+                            <span className="text-[9px] font-extrabold bg-crusoe-100 dark:bg-crusoe-900 text-crusoe-800 dark:text-crusoe-300 px-1.5 py-0.5 rounded">
+                              Recomendado
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-crusoe-700 dark:text-crusoe-400 font-semibold block mt-0.5">
+                          Capacidad: {mob.capacity}
+                        </span>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1">{mob.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Campo de Dirección Exacta para Privado */}
+              {serviceCode === 'privado-aeropuerto' && (
+                <div className="rounded-2xl border-2 border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/60 dark:bg-crusoe-950/40 p-4 space-y-2">
+                  <label className="block text-xs font-extrabold text-crusoe-950 dark:text-crusoe-200 flex items-center gap-1.5">
+                    <Building className="h-4 w-4 text-crusoe-700 dark:text-crusoe-400" />
+                    Dirección Exacta de Destino (Obligatorio para Servicio Privado) *
+                  </label>
+                  <input
+                    type="text"
+                    value={exactAddress}
+                    onChange={(e) => setExactAddress(e.target.value)}
+                    placeholder="Ej. Hotel Plaza Constitución, Av. Giráldez N° 123 (Ref. Frente a la Catedral)"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
+                  />
+                  <span className="text-[11px] text-crusoe-800 dark:text-crusoe-300 block font-medium">
+                    📌 En servicio privado exclusivo nuestro chofer te llevará directamente a la puerta de tu dirección indicada.
+                  </span>
+                </div>
+              )}
+
+              {/* Aviso para Compartido */}
+              {serviceCode === 'compartido-aeropuerto' && (
+                <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 p-4 text-xs text-amber-950 dark:text-amber-200 space-y-2 shadow-sm">
+                  <div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-300">
+                    <Info className="h-4 w-4 text-amber-600 shrink-0" />
+                    <span>Estado de Confirmación de Transporte (Servicio Compartido):</span>
+                  </div>
+                  <div className="rounded-xl bg-white/80 dark:bg-slate-900/80 border border-amber-300 dark:border-amber-700 p-3 space-y-1">
+                    {sharedSeatsInfo.isDepartureConfirmed ? (
+                      <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400 font-extrabold text-xs">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <span>¡Salida de Transporte Confirmada! (Se alcanzaron {sharedSeatsInfo.occupiedSeats} de 3 asientos mínimos)</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-amber-900 dark:text-amber-300 font-bold text-xs">
+                        <Clock className="h-4 w-4 text-amber-600" />
+                        <span>
+                          Asiento Reservado • Salida de Unidad pendiente ({sharedSeatsInfo.occupiedSeats} de 3 asientos mínimos reservados para esta fecha)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed font-medium">
+                    {BUSINESS_CONFIG.sharedServiceNotice}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
           <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button size="lg" onClick={() => {
-              if (serviceCode === 'privado-aeropuerto' && !exactAddress.trim()) {
-                setErrorMsg('Ingresa la dirección exacta de destino para tu servicio privado.');
-                return;
-              }
-              setStep(2);
-            }} className="w-full sm:w-auto">
+            <Button
+              size="lg"
+              disabled={!serviceCode}
+              onClick={() => {
+                if (serviceCode === 'privado-aeropuerto' && !exactAddress.trim()) {
+                  setErrorMsg('Ingresa la dirección exacta de destino para tu servicio privado.');
+                  return;
+                }
+                setStep(2);
+              }}
+              className="w-full sm:w-auto"
+            >
               Siguiente: Fecha y Aerolínea
               <ArrowRight className="h-4 w-4" />
             </Button>
@@ -498,7 +558,7 @@ function BookingWizardForm() {
       {step === 2 && (
         <div className="space-y-6">
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
               <CalendarIcon className="h-6 w-6 text-crusoe-600" />
               2. Fecha, Hora y Aerolínea
             </h2>
@@ -562,7 +622,7 @@ function BookingWizardForm() {
       {step === 3 && (
         <div className="space-y-6">
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
               <User className="h-6 w-6 text-crusoe-600" />
               3. Datos del Pasajero y Equipaje
             </h2>
@@ -687,7 +747,7 @@ function BookingWizardForm() {
       {step === 4 && (
         <div className="space-y-6">
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
               <FileCheck className="h-6 w-6 text-crusoe-600" />
               4. Comprobante de Pago (Boleta / Factura)
             </h2>
@@ -804,7 +864,7 @@ function BookingWizardForm() {
       {step === 5 && (
         <div className="space-y-6">
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
               <CreditCard className="h-6 w-6 text-crusoe-600" />
               5. Resumen de Cotización y Pago del Adelanto (50%)
             </h2>
@@ -848,7 +908,7 @@ function BookingWizardForm() {
 
           {/* Selector de Método de Pago */}
           <div className="space-y-3">
-            <label className="block text-xs font-bold text-slate-900 dark:text-slate-200">Método de Pago para el Adelanto</label>
+            <label className="block text-xs font-bold text-slate-950 dark:text-slate-200">Método de Pago para el Adelanto</label>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { code: 'yape', name: 'Yape' },
@@ -875,18 +935,25 @@ function BookingWizardForm() {
                 <div>
                   <span className="text-xs font-bold text-crusoe-900 dark:text-crusoe-300 block uppercase">Número Oficial de Yape</span>
                   <span className="text-2xl font-extrabold text-crusoe-950 dark:text-crusoe-100 block mt-0.5">929 667 586</span>
-                  <span className="text-xs text-slate-700 dark:text-slate-300 block font-medium">Titular: Fast Travel Xauxa</span>
+                  <span className="text-xs text-slate-700 dark:text-slate-300 block font-bold mt-1">Titular: JORGE TRU.</span>
                 </div>
               )}
               {paymentMethod === 'plin' && (
                 <div>
                   <span className="text-xs font-bold text-crusoe-900 dark:text-crusoe-300 block uppercase">Número Oficial de Plin</span>
                   <span className="text-2xl font-extrabold text-crusoe-950 dark:text-crusoe-100 block mt-0.5">929 667 586</span>
-                  <span className="text-xs text-slate-700 dark:text-slate-300 block font-medium">Titular: Fast Travel Xauxa</span>
+                  <span className="text-xs text-slate-700 dark:text-slate-300 block font-bold mt-1">Titular: JORGE ANTONIO TRUCIOS MEZA</span>
                 </div>
               )}
               {paymentMethod === 'bcp' && (
-                <div className="space-y-1 text-xs text-slate-900 dark:text-slate-100 font-medium">
+                <div className="space-y-1.5 text-xs text-slate-900 dark:text-slate-100 font-medium">
+                  <div className="bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700 rounded-xl p-2 text-amber-900 dark:text-amber-200 text-[11px] font-bold">
+                    ⚠️ Cuenta corriente BCP en proceso de habilitación oficial. Por favor realiza tu abono preferentemente por <strong>Yape</strong> o <strong>Plin</strong>.
+                  </div>
+                  <div>
+                    <span className="font-bold block">Titular:</span>
+                    <span className="font-bold text-crusoe-900 dark:text-crusoe-300">JORGE ANTONIO TRUCIOS MEZA</span>
+                  </div>
                   <div>
                     <span className="font-bold block">Cuenta Corriente BCP:</span>
                     <span className="font-mono text-sm font-bold text-crusoe-950 dark:text-crusoe-300">355-98765432-0-12</span>

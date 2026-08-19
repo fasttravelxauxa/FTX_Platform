@@ -29,13 +29,15 @@ import {
   Trash2,
   ArrowRight,
   ExternalLink,
+  Edit3,
+  Check,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { RepositoryService } from '@/lib/services/repository';
-import { Reservation, ReservationStatus, Profile } from '@/lib/types';
+import { Reservation, ReservationStatus, Profile, Vehicle, VehicleStatus } from '@/lib/types';
 import { WhatsAppService } from '@/lib/services/whatsapp';
 import { createClient } from '@/lib/supabase/client';
 
@@ -44,15 +46,25 @@ export default function AdminDashboardPage() {
   const [authChecking, setAuthChecking] = useState<boolean>(true);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [profilesList, setProfilesList] = useState<Profile[]>([]);
+  const [vehiclesList, setVehiclesList] = useState<Vehicle[]>([]);
   const [activeTab, setActiveTab] = useState<'reservas' | 'pasajeros' | 'calendario' | 'vehiculos'>('reservas');
   const [filterStatus, setFilterStatus] = useState<string>('TODOS');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [passengerSearch, setPassengerSearch] = useState<string>('');
 
   // Selected reservation for review modal
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string>('');
   const [showReviewModal, setShowReviewModal] = useState<boolean>(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // New vehicle modal
+  const [showVehicleModal, setShowVehicleModal] = useState<boolean>(false);
+  const [newVehicleBrand, setNewVehicleBrand] = useState<string>('Jetour');
+  const [newVehicleModel, setNewVehicleModel] = useState<string>('X70 FL');
+  const [newVehicleYear, setNewVehicleYear] = useState<number>(2027);
+  const [newVehiclePlate, setNewVehiclePlate] = useState<string>('');
+  const [newVehicleCapacity, setNewVehicleCapacity] = useState<number>(4);
 
   useEffect(() => {
     checkAdminAuth();
@@ -79,15 +91,6 @@ export default function AdminDashboardPage() {
   }, []);
 
   const checkAdminAuth = async () => {
-    if (typeof window !== 'undefined') {
-      const isLocalAuth = localStorage.getItem('ftx_admin_auth');
-      if (isLocalAuth === 'true') {
-        setAuthChecking(false);
-        await refreshData();
-        return;
-      }
-    }
-
     try {
       const supabase = createClient();
       if (supabase) {
@@ -106,10 +109,6 @@ export default function AdminDashboardPage() {
   };
 
   const handleLogout = async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('ftx_admin_auth');
-    }
-
     try {
       const supabase = createClient();
       if (supabase) {
@@ -125,8 +124,10 @@ export default function AdminDashboardPage() {
   const refreshData = async () => {
     const list = await RepositoryService.getReservations();
     const profiles = await RepositoryService.getProfiles();
+    const vehicles = await RepositoryService.getVehicles();
     setReservations(list);
     setProfilesList(profiles);
+    setVehiclesList(vehicles);
   };
 
   const handleStatusChange = async (reservationId: string, newStatus: ReservationStatus, notes?: string) => {
@@ -146,6 +147,65 @@ export default function AdminDashboardPage() {
       alert(`Error al actualizar estado en Supabase: ${result.error}`);
     }
     setUpdatingId(null);
+  };
+
+  const handleDeleteProfile = async (pass: { id: string; name: string; phone: string }) => {
+    const confirmed = window.confirm(
+      `¿Estás seguro de eliminar a "${pass.name}" (+51 ${pass.phone}) del Directorio de Pasajeros?\n\nEsta acción eliminará su registro de Supabase.`
+    );
+    if (!confirmed) return;
+
+    const res = await RepositoryService.deleteProfile(pass.id);
+    if (res.success) {
+      setProfilesList((prev) => prev.filter((p) => p.id !== pass.id));
+      alert(`Perfil de "${pass.name}" eliminado correctamente.`);
+    } else {
+      alert(`No se pudo eliminar el perfil: ${res.error}`);
+    }
+  };
+
+  const handleFilterPassengerReservations = (phone: string) => {
+    setSearchTerm(phone);
+    setActiveTab('reservas');
+  };
+
+  const handleVehicleStatusChange = async (vehicleId: string, newStatus: VehicleStatus) => {
+    await RepositoryService.updateVehicleStatus(vehicleId, newStatus);
+    setVehiclesList((prev) =>
+      prev.map((v) => (v.id === vehicleId ? { ...v, status: newStatus } : v))
+    );
+  };
+
+  const handleCreateVehicle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newVehiclePlate.trim()) {
+      alert('Ingresa la placa de la unidad');
+      return;
+    }
+
+    const newVehicle: Vehicle = {
+      id: crypto.randomUUID(),
+      brand: newVehicleBrand.trim(),
+      model: newVehicleModel.trim(),
+      year: Number(newVehicleYear),
+      plate: newVehiclePlate.trim().toUpperCase(),
+      capacity: Number(newVehicleCapacity),
+      status: 'AVAILABLE',
+      photo_urls: ['/images/car/jetour-front.jpg'],
+      created_at: new Date().toISOString(),
+    };
+
+    await RepositoryService.saveVehicle(newVehicle);
+    setVehiclesList((prev) => [newVehicle, ...prev]);
+    setShowVehicleModal(false);
+    setNewVehiclePlate('');
+    alert(`Unidad ${newVehicle.brand} ${newVehicle.model} (${newVehicle.plate}) registrada exitosamente.`);
+  };
+
+  const handleDeleteVehicle = async (vehicle: Vehicle) => {
+    if (!window.confirm(`¿Eliminar la unidad ${vehicle.brand} ${vehicle.model} (${vehicle.plate})?`)) return;
+    await RepositoryService.deleteVehicle(vehicle.id);
+    setVehiclesList((prev) => prev.filter((v) => v.id !== vehicle.id));
   };
 
   // KPIs
@@ -175,37 +235,45 @@ export default function AdminDashboardPage() {
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  const passengerSummaries = profilesList.map((prof) => {
-    const profPhone = prof.phone?.replace(/[^0-9]/g, '') || '';
-    const profReservations = reservations.filter((r) => r.customer_id === prof.id || r.customer?.phone?.replace(/[^0-9]/g, '') === profPhone);
+  const passengerSummaries = profilesList
+    .filter((prof) => {
+      const pName = (prof.full_name || '').toLowerCase();
+      const pPhone = (prof.phone || '').toLowerCase();
+      const pDni = (prof.dni || '').toLowerCase();
+      const s = passengerSearch.toLowerCase();
+      return pName.includes(s) || pPhone.includes(s) || pDni.includes(s);
+    })
+    .map((prof) => {
+      const profPhone = prof.phone?.replace(/[^0-9]/g, '') || '';
+      const profReservations = reservations.filter((r) => r.customer_id === prof.id || r.customer?.phone?.replace(/[^0-9]/g, '') === profPhone);
 
-    const totalBookings = profReservations.length;
-    const confirmedBookings = profReservations.filter((r) => ['CONFIRMED', 'COMPLETED', 'IN_PROGRESS'].includes(r.status)).length;
-    
-    const todayActiveBookings = profReservations.filter((r) => {
-      const createdDate = new Date(r.created_at);
-      return (
-        createdDate >= todayStart &&
-        createdDate <= todayEnd &&
-        !['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(r.status)
-      );
-    }).length;
+      const totalBookings = profReservations.length;
+      const confirmedBookings = profReservations.filter((r) => ['CONFIRMED', 'COMPLETED', 'IN_PROGRESS'].includes(r.status)).length;
 
-    const latestRes = profReservations[0];
+      const todayActiveBookings = profReservations.filter((r) => {
+        const createdDate = new Date(r.created_at);
+        return (
+          createdDate >= todayStart &&
+          createdDate <= todayEnd &&
+          !['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(r.status)
+        );
+      }).length;
 
-    return {
-      id: prof.id,
-      phone: profPhone,
-      name: prof.full_name || 'Pasajero',
-      dni: prof.dni || undefined,
-      title: prof.title_degree || 'Sr.',
-      totalBookings,
-      confirmedBookings,
-      todayActiveBookings,
-      lastBookingDate: latestRes ? latestRes.created_at : prof.created_at,
-      latestCode: latestRes ? latestRes.code : 'Sin reserva activa',
-    };
-  });
+      const latestRes = profReservations[0];
+
+      return {
+        id: prof.id,
+        phone: profPhone,
+        name: prof.full_name || 'Pasajero',
+        dni: prof.dni || undefined,
+        title: prof.title_degree || 'Sr.',
+        totalBookings,
+        confirmedBookings,
+        todayActiveBookings,
+        lastBookingDate: latestRes ? latestRes.created_at : prof.created_at,
+        latestCode: latestRes ? latestRes.code : 'Sin reserva activa',
+      };
+    });
 
   const copyInvoiceInfo = (res: Reservation) => {
     if (!res.invoice_details || res.invoice_details.type === 'ninguno') return;
@@ -239,7 +307,7 @@ export default function AdminDashboardPage() {
               Panel de Control — Fast Travel Xauxa
             </span>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
-              Operaciones, Reservas y Clientes
+              Operaciones, Reservas y Flota
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -275,9 +343,9 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Clientes en Supabase</span>
-            <p className="text-3xl font-extrabold text-indigo-700 dark:text-indigo-400 mt-1">{passengerSummaries.length}</p>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Perfiles registrados</span>
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Clientes Registrados</span>
+            <p className="text-3xl font-extrabold text-indigo-700 dark:text-indigo-400 mt-1">{profilesList.length}</p>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Perfiles en Supabase</span>
           </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
@@ -303,7 +371,7 @@ export default function AdminDashboardPage() {
               activeTab === 'pasajeros' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
-            Directorio de Pasajeros ({passengerSummaries.length})
+            Directorio de Pasajeros ({profilesList.length})
           </button>
           <button
             onClick={() => setActiveTab('calendario')}
@@ -319,7 +387,7 @@ export default function AdminDashboardPage() {
               activeTab === 'vehiculos' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
-            Flota SUV Jetour
+            Flota de Unidades ({vehiclesList.length})
           </button>
         </div>
 
@@ -517,12 +585,19 @@ export default function AdminDashboardPage() {
               <div>
                 <h2 className="text-xl font-extrabold text-slate-950 dark:text-white">Directorio Oficial de Pasajeros</h2>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  Perfiles persistentes en Supabase. Aunque se elimine una reserva cancelada, el perfil del pasajero se mantiene registrado.
+                  Gestiona los perfiles de clientes registrados en Supabase. Puedes contactar, filtrar viajes o eliminar perfiles.
                 </p>
               </div>
-              <span className="text-xs font-extrabold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-50 dark:bg-crusoe-950 border border-crusoe-200 dark:border-crusoe-800 px-3 py-1.5 rounded-xl">
-                {passengerSummaries.length} Clientes Registrados
-              </span>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={passengerSearch}
+                  onChange={(e) => setPassengerSearch(e.target.value)}
+                  placeholder="Buscar pasajero..."
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-4 py-2 text-xs text-slate-950 dark:text-white"
+                />
+              </div>
             </div>
 
             <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
@@ -535,14 +610,14 @@ export default function AdminDashboardPage() {
                     <th className="p-4">Historial de Viajes</th>
                     <th className="p-4">Límite Diario (Hoy)</th>
                     <th className="p-4">Última Reserva</th>
-                    <th className="p-4 text-right">Contacto</th>
+                    <th className="p-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200 font-medium">
                   {passengerSummaries.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="p-8 text-center text-slate-500 font-bold text-sm">
-                        Aún no hay perfiles registrados en la base de datos de Supabase.
+                        No se encontraron pasajeros con el criterio de búsqueda.
                       </td>
                     </tr>
                   ) : (
@@ -562,8 +637,16 @@ export default function AdminDashboardPage() {
                         </td>
 
                         <td className="p-4">
-                          <span className="font-extrabold text-slate-950 dark:text-white block">{pass.totalBookings} reservas registradas</span>
-                          <span className="text-xs text-crusoe-700 dark:text-crusoe-400 font-semibold block">{pass.confirmedBookings} completadas</span>
+                          <button
+                            onClick={() => handleFilterPassengerReservations(pass.phone)}
+                            className="text-left group cursor-pointer"
+                            title="Haz clic para ver las reservas de este pasajero"
+                          >
+                            <span className="font-extrabold text-slate-950 dark:text-white block group-hover:text-crusoe-600 transition-colors underline">
+                              {pass.totalBookings} reservas registradas
+                            </span>
+                            <span className="text-xs text-crusoe-700 dark:text-crusoe-400 font-semibold block">{pass.confirmedBookings} completadas</span>
+                          </button>
                         </td>
 
                         <td className="p-4">
@@ -591,18 +674,36 @@ export default function AdminDashboardPage() {
                           </span>
                         </td>
 
-                        <td className="p-4 text-right">
+                        <td className="p-4 text-right space-x-2">
+                          <button
+                            onClick={() => handleFilterPassengerReservations(pass.phone)}
+                            className="inline-flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            title="Ver reservas de este cliente"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-crusoe-600 dark:text-crusoe-400" />
+                            <span>Reservas</span>
+                          </button>
+
                           <a
                             href={`https://wa.me/51${pass.phone}?text=${encodeURIComponent(
                               `Hola ${pass.name}, te saludamos de Fast Travel Xauxa respecto a tus reservas ejecutivas.`
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-crusoe-600 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-crusoe-700 transition-colors"
+                            className="inline-flex items-center gap-1 rounded-xl bg-crusoe-600 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-crusoe-700 transition-colors"
                           >
                             <MessageSquare className="h-3.5 w-3.5" />
-                            WhatsApp
+                            <span>WhatsApp</span>
                           </a>
+
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            title="Eliminar pasajero del directorio"
+                            onClick={() => handleDeleteProfile(pass)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </td>
                       </tr>
                     ))
@@ -618,20 +719,29 @@ export default function AdminDashboardPage() {
           <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 space-y-6 shadow-md">
             <h2 className="text-xl font-extrabold text-slate-950 dark:text-white">Calendario de Salidas y Recepción Aeropuerto</h2>
             <div className="space-y-4">
-              {reservations.map((res) => (
-                <div key={res.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="space-y-1 text-xs">
-                    <span className="font-extrabold text-sm text-slate-950 dark:text-white">{res.code}</span>
-                    <span className="block font-bold text-slate-900 dark:text-slate-100">
-                      {new Date(res.scheduled_at).toLocaleString('es-PE')} — {res.customer?.full_name}
-                    </span>
-                    <span className="text-slate-600 dark:text-slate-400 block">
-                      Ruta: {res.origin} ➔ {res.destination}
-                    </span>
+              {reservations.length === 0 ? (
+                <p className="text-xs text-slate-500 font-bold">No hay traslados programados actualmente.</p>
+              ) : (
+                reservations.map((res) => (
+                  <div key={res.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm text-slate-950 dark:text-white">{res.code}</span>
+                        <span className="font-bold text-crusoe-700 dark:text-crusoe-400">
+                          {new Date(res.scheduled_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <span className="block font-bold text-slate-900 dark:text-slate-100">
+                        {new Date(res.scheduled_at).toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — Pasajero: <strong>{res.customer?.full_name}</strong>
+                      </span>
+                      <span className="text-slate-600 dark:text-slate-400 block">
+                        Ruta: {res.origin} ➔ {res.destination}
+                      </span>
+                    </div>
+                    <Badge status={res.status} />
                   </div>
-                  <Badge status={res.status} />
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
@@ -641,19 +751,145 @@ export default function AdminDashboardPage() {
           <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 space-y-6 shadow-md">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-extrabold text-slate-950 dark:text-white">Vehículos Registrados</h2>
-                <p className="text-xs text-slate-600 dark:text-slate-400">SUV Jetour último modelo activa para el servicio.</p>
+                <h2 className="text-xl font-extrabold text-slate-950 dark:text-white">Flota de Unidades Oficiales</h2>
+                <p className="text-xs text-slate-600 dark:text-slate-400">Camioneta SUV Jetour X70 FL (2027) y unidades operativas para el servicio.</p>
               </div>
-              <Button size="sm">Registrar Vehículo</Button>
+              <Button size="sm" onClick={() => setShowVehicleModal(true)}>
+                <Plus className="h-4 w-4" />
+                Registrar Unidad
+              </Button>
             </div>
 
-            <div className="rounded-2xl border border-crusoe-200 dark:border-crusoe-800 p-5 bg-crusoe-50/70 dark:bg-crusoe-950/50 flex items-center justify-between">
-              <div>
-                <span className="font-extrabold text-base text-slate-950 dark:text-white">Jetour X70 Plus SUV Deluxe (2026)</span>
-                <span className="block text-xs text-slate-700 dark:text-slate-300 font-medium">Placa: W4X-892 — Capacidad: 4 Pasajeros</span>
-                <span className="text-[11px] font-bold text-crusoe-800 dark:text-crusoe-300 block mt-1">SOAT Rímac: Vigente hasta Abril 2027</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {vehiclesList.map((veh) => (
+                <div
+                  key={veh.id}
+                  className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/80 dark:bg-slate-800/60 flex flex-col justify-between gap-4 shadow-sm"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-extrabold text-base text-slate-950 dark:text-white block">
+                        {veh.brand} {veh.model} ({veh.year})
+                      </span>
+                      <span className="text-xs text-slate-700 dark:text-slate-300 font-mono font-bold block mt-0.5">
+                        Placa: {veh.plate} • Capacidad: {veh.capacity} Pasajeros
+                      </span>
+                      <span className="text-[11px] font-bold text-crusoe-800 dark:text-crusoe-300 block mt-1">
+                        SOAT & Revisión Técnica: Vigente 2026-2027
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1.5">
+                      <select
+                        value={veh.status}
+                        onChange={(e) => handleVehicleStatusChange(veh.id, e.target.value as VehicleStatus)}
+                        className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-crusoe-600"
+                      >
+                        <option value="AVAILABLE">🟢 Disponible</option>
+                        <option value="IN_SERVICE">🔵 En Servicio</option>
+                        <option value="MAINTENANCE">🟡 Mantenimiento</option>
+                        <option value="UNAVAILABLE">🔴 No Disponible</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => handleDeleteVehicle(veh)}
+                      className="text-xs"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Eliminar Unidad
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: REGISTRAR VEHICULO */}
+        {showVehicleModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="font-extrabold text-base text-slate-950 dark:text-white">Registrar Nueva Unidad a la Flota</h3>
+                <button onClick={() => setShowVehicleModal(false)} className="text-slate-400 hover:text-white font-bold">
+                  ✕
+                </button>
               </div>
-              <Badge status="CONFIRMED" size="sm" />
+
+              <form onSubmit={handleCreateVehicle} className="space-y-3 text-xs font-bold">
+                <div>
+                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Marca</label>
+                  <input
+                    type="text"
+                    value={newVehicleBrand}
+                    onChange={(e) => setNewVehicleBrand(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Modelo</label>
+                  <input
+                    type="text"
+                    value={newVehicleModel}
+                    onChange={(e) => setNewVehicleModel(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block mb-1 text-slate-700 dark:text-slate-300">Año del Modelo</label>
+                    <input
+                      type="number"
+                      value={newVehicleYear}
+                      onChange={(e) => setNewVehicleYear(Number(e.target.value))}
+                      required
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1 text-slate-700 dark:text-slate-300">Capacidad (Pasajeros)</label>
+                    <input
+                      type="number"
+                      value={newVehicleCapacity}
+                      onChange={(e) => setNewVehicleCapacity(Number(e.target.value))}
+                      required
+                      min={1}
+                      max={15}
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Placa del Vehículo *</label>
+                  <input
+                    type="text"
+                    value={newVehiclePlate}
+                    onChange={(e) => setNewVehiclePlate(e.target.value.toUpperCase())}
+                    placeholder="W4X-892"
+                    required
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setShowVehicleModal(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" size="sm">
+                    Guardar Unidad
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         )}
