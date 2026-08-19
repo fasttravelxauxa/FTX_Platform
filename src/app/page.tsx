@@ -21,10 +21,12 @@ import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { SERVICES_CATALOG, BUSINESS_CONFIG, DESTINATIONS_CATALOG } from '@/lib/constants';
 import { WhatsAppService } from '@/lib/services/whatsapp';
+import { WelcomeModal } from '@/components/WelcomeModal';
 
 export default function HomePage() {
   return (
     <div className="site-page min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans transition-colors text-slate-900 dark:text-slate-100">
+      <WelcomeModal />
       <Navbar />
 
       <main className="flex-1">
@@ -344,19 +346,26 @@ export default function HomePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {DESTINATIONS_CATALOG.map((dest) => (
-                <div key={dest.code} className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-slate-50 dark:bg-slate-800/60 p-5 flex flex-col justify-between">
-                  <div>
-                    <h4 className="font-bold text-slate-950 dark:text-white text-base">{dest.name}</h4>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">{dest.description}</p>
-                  </div>
-                  <div className="mt-4 space-y-2 border-t border-slate-200 dark:border-slate-700 pt-3">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-600 dark:text-slate-400 font-medium">Compartido:</span>
-                      <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400">S/ {dest.sharedPricePerSeat}</span>
+                <div key={dest.code} className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-slate-50 dark:bg-slate-800/60 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                  {dest.image && (
+                    <div className="h-40 overflow-hidden relative">
+                      <img src={dest.image} alt={`Destino ${dest.name}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-600 dark:text-slate-400 font-medium">Privado:</span>
-                      <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400">S/ {dest.privatePriceSuv}</span>
+                  )}
+                  <div className="p-5 flex flex-col justify-between flex-1">
+                    <div>
+                      <h4 className="font-bold text-slate-950 dark:text-white text-base">{dest.name}</h4>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">{dest.description}</p>
+                    </div>
+                    <div className="mt-4 space-y-2 border-t border-slate-200 dark:border-slate-700 pt-3">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-600 dark:text-slate-400 font-medium">Compartido:</span>
+                        <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400">S/ {dest.sharedPricePerSeat}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-600 dark:text-slate-400 font-medium">Privado:</span>
+                        <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400">S/ {dest.privatePriceSuv}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

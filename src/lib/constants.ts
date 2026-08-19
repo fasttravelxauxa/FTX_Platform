@@ -71,6 +71,7 @@ export interface DestinationRoute {
   sharedPricePerSeat: number;
   privatePriceSuv: number;
   description: string;
+  image?: string;
 }
 
 export const DESTINATIONS_CATALOG: DestinationRoute[] = [
@@ -80,6 +81,7 @@ export const DESTINATIONS_CATALOG: DestinationRoute[] = [
     sharedPricePerSeat: 20.00,
     privatePriceSuv: 80.00,
     description: 'Servicio al centro de Huancayo. Privado: S/ 80.00 | Compartido: S/ 20.00 por asiento.',
+    image: '/images/destinos/plaza_constitucion.jpg',
   },
   {
     code: 'ovalo-huancavelica',
@@ -87,6 +89,7 @@ export const DESTINATIONS_CATALOG: DestinationRoute[] = [
     sharedPricePerSeat: 20.00,
     privatePriceSuv: 80.00,
     description: 'Servicio a zona sur de Huancayo. Privado: S/ 80.00 | Compartido: S/ 20.00 por asiento.',
+    image: '/images/destinos/Huancayo.webp',
   },
   {
     code: 'jr-calixto',
@@ -94,6 +97,7 @@ export const DESTINATIONS_CATALOG: DestinationRoute[] = [
     sharedPricePerSeat: 20.00,
     privatePriceSuv: 80.00,
     description: 'Servicio al centro cívico comercial. Privado: S/ 80.00 | Compartido: S/ 20.00 por asiento.',
+    image: '/images/destinos/Huancayo.webp',
   },
   {
     code: 'el-tambo',
@@ -101,27 +105,31 @@ export const DESTINATIONS_CATALOG: DestinationRoute[] = [
     sharedPricePerSeat: 20.00,
     privatePriceSuv: 80.00,
     description: 'Zonas aledañas de Huancayo. Privado: S/ 80.00 | Compartido: S/ 20.00 por asiento.',
+    image: '/images/destinos/Huancayo.webp',
   },
   {
     code: 'tarma',
     name: 'Tarma (La Perla de los Andes)',
     sharedPricePerSeat: 35.00,
     privatePriceSuv: 140.00,
-    description: 'Servicio directo Aeropuerto Jauja ↔ Tarma. Privado: S/ 140.00 | Compartido: S/ 35.00.',
+    description: 'Servicio directo Aeropuerto Jauja ➔ Tarma. Privado: S/ 140.00 | Compartido: S/ 35.00.',
+    image: '/images/destinos/tarma.jpg',
   },
   {
     code: 'la-oroya',
     name: 'La Oroya',
     sharedPricePerSeat: 40.00,
     privatePriceSuv: 160.00,
-    description: 'Servicio directo Aeropuerto Jauja ↔ La Oroya. Privado: S/ 160.00 | Compartido: S/ 40.00.',
+    description: 'Servicio directo Aeropuerto Jauja ➔ La Oroya. Privado: S/ 160.00 | Compartido: S/ 40.00.',
+    image: '/images/destinos/la_oroya.jpg',
   },
   {
     code: 'la-merced',
     name: 'La Merced (Selva Central)',
     sharedPricePerSeat: 60.00,
     privatePriceSuv: 240.00,
-    description: 'Servicio directo Aeropuerto Jauja ↔ La Merced. Privado: S/ 240.00 | Compartido: S/ 60.00.',
+    description: 'Servicio directo Aeropuerto Jauja ➔ La Merced. Privado: S/ 240.00 | Compartido: S/ 60.00.',
+    image: '/images/destinos/la_merced.jpg',
   },
   {
     code: 'otro',
