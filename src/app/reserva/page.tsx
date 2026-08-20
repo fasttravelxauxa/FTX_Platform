@@ -946,21 +946,25 @@ function BookingWizardForm() {
                 </div>
               )}
               {paymentMethod === 'bcp' && (
-                <div className="space-y-1.5 text-xs text-slate-900 dark:text-slate-100 font-medium">
-                  <div className="bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700 rounded-xl p-2 text-amber-900 dark:text-amber-200 text-[11px] font-bold">
-                    ⚠️ Cuenta corriente BCP en proceso de habilitación oficial. Por favor realiza tu abono preferentemente por <strong>Yape</strong> o <strong>Plin</strong>.
+                <div className="space-y-2 text-xs text-slate-900 dark:text-slate-100 font-medium">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 rounded-xl p-2.5 text-emerald-900 dark:text-emerald-200 text-[11px] font-bold">
+                    ✓ Cuenta Bancaria BCP Oficial Habilitada para Transferencias Directas e Interbancarias (CCI).
                   </div>
                   <div>
-                    <span className="font-bold block">Titular:</span>
-                    <span className="font-bold text-crusoe-900 dark:text-crusoe-300">JORGE ANTONIO TRUCIOS MEZA</span>
+                    <span className="font-bold block text-slate-600 dark:text-slate-400">Titular de la Cuenta:</span>
+                    <span className="font-bold text-crusoe-900 dark:text-crusoe-300 text-sm">JORGE ANTONIO TRUCIOS MEZA</span>
                   </div>
                   <div>
-                    <span className="font-bold block">Cuenta Corriente BCP:</span>
-                    <span className="font-mono text-sm font-bold text-crusoe-950 dark:text-crusoe-300">355-98765432-0-12</span>
+                    <span className="font-bold block text-slate-600 dark:text-slate-400">Número de Cuenta BCP:</span>
+                    <span className="font-mono text-sm font-extrabold text-crusoe-950 dark:text-white select-all bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg inline-block">
+                      40002021972079
+                    </span>
                   </div>
                   <div>
-                    <span className="font-bold block">CCI Interbancario:</span>
-                    <span className="font-mono text-xs font-bold text-crusoe-950 dark:text-crusoe-300">002-355009876543201289</span>
+                    <span className="font-bold block text-slate-600 dark:text-slate-400">CCI (Código de Cuenta Interbancario):</span>
+                    <span className="font-mono text-xs font-extrabold text-crusoe-950 dark:text-white select-all bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg inline-block">
+                      00240010202197207901
+                    </span>
                   </div>
                 </div>
               )}

@@ -57,11 +57,11 @@ export const PAYMENT_METHODS_INFO = {
   },
   bcp: {
     name: 'Transferencia BCP',
-    accountNumber: '355-98765432-0-12',
-    cci: '002-355009876543201289',
+    accountNumber: '40002021972079',
+    cci: '00240010202197207901',
     owner: 'JORGE ANTONIO TRUCIOS MEZA',
-    active: false,
-    notice: 'En proceso de habilitación oficial. Por favor realiza tu pago por Yape o Plin.',
+    active: true,
+    notice: 'Transferencia directa o interbancaria BCP inmediata.',
   },
 };
 

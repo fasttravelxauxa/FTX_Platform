@@ -389,8 +389,9 @@ export default function ReservationDetailPage() {
                         }`}
                       >
                         <span className="font-extrabold text-xs text-orange-700 dark:text-orange-400 block">🏦 TRANSF. BCP</span>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white block mt-0.5">355-98765432-0-12</span>
-                        <span className="text-[10px] text-slate-600 dark:text-slate-400 block truncate">
+                        <span className="text-xs font-bold text-slate-950 dark:text-white block mt-0.5 font-mono">40002021972079</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 block font-mono">CCI: 00240010202197207901</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 block truncate font-medium">
                           Titular: JORGE ANTONIO TRUCIOS MEZA
                         </span>
                       </div>
