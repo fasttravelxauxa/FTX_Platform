@@ -20,8 +20,8 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { SERVICES_CATALOG, BUSINESS_CONFIG, DESTINATIONS_CATALOG } from '@/lib/constants';
-import { WhatsAppService } from '@/lib/services/whatsapp';
 import { WelcomeModal } from '@/components/WelcomeModal';
+import { DestinationCarousel } from '@/components/DestinationCarousel';
 
 export default function HomePage() {
   return (
@@ -31,7 +31,7 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-crusoe-950 via-crusoe-900 to-crusoe-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-white py-20 lg:py-28">
+        <section className="relative overflow-hidden bg-gradient-to-b from-crusoe-950 via-crusoe-900 to-crusoe-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-white py-16 lg:py-24">
           <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-crusoe-500/15 blur-3xl"></div>
           <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-crusoe-600/15 blur-3xl"></div>
 
@@ -49,21 +49,21 @@ export default function HomePage() {
                 </h1>
 
                 <p className="text-base sm:text-lg text-crusoe-100/90 max-w-2xl leading-relaxed">
-                  Reserva con anticipación tu transporte privado o compartido desde y hacia el <strong className="text-white">Aeropuerto Francisco Carlé de Jauja</strong>. Viaja cómodo, limpio y puntual en nuestra camioneta <strong className="text-crusoe-300">SUV Jetour último modelo</strong>.
+                  Reserva con anticipación tu transporte privado o compartido desde y hacia el <strong className="text-white">Aeropuerto Francisco Carlé de Jauja</strong>. Viaja cómodo, climatizado y puntual en nuestra moderna flota <strong className="text-crusoe-300">SUV del año</strong>.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 pt-2">
                   <Link href="/reserva">
                     <Button size="lg" className="w-full sm:w-auto text-base shadow-xl shadow-crusoe-500/30">
-                      Reservar Viaje Ahora
-                      <ArrowRight className="h-5 w-5" />
+                      <span>Reservar Traslado</span>
+                      <ArrowRight className="h-5 w-5 ml-1" />
                     </Button>
                   </Link>
                   <a
                     href="#servicios"
                     className="inline-flex items-center justify-center rounded-xl border border-crusoe-600/60 bg-crusoe-900/50 px-6 py-3.5 text-base font-semibold text-crusoe-100 hover:bg-crusoe-800 transition-colors"
                   >
-                    Ver Servicios y Tarifas
+                    Ver Modalidades y Destinos
                   </a>
                 </div>
 
@@ -88,32 +88,9 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Right image card with larger Jetour photo */}
-              <div className="lg:col-span-6 relative flex items-center">
-                <div className="w-full relative rounded-3xl overflow-hidden border-2 border-crusoe-500/40 bg-crusoe-900 shadow-2xl shadow-crusoe-950/90">
-                  <div className="bg-gradient-to-b from-crusoe-700/80 via-crusoe-850 to-crusoe-950 flex items-center justify-center p-6 sm:p-10 min-h-[380px] sm:min-h-[440px] relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-crusoe-500/20 via-transparent to-transparent"></div>
-                    <img
-                      src="/images/banners/auto_sinfondo.png"
-                      alt="SUV Jetour Fast Travel Xauxa Oficial"
-                      className="relative z-10 w-full max-h-[360px] sm:max-h-[420px] object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.7)] hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="p-6 bg-gradient-to-t from-crusoe-950 via-crusoe-950/95 to-transparent">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-xs uppercase font-bold text-crusoe-400 tracking-wider">Unidad Oficial</span>
-                        <h3 className="text-2xl font-extrabold text-white">SUV Jetour X70 FL</h3>
-                      </div>
-                      <span className="rounded-full bg-crusoe-500/20 px-3.5 py-1 text-xs font-bold text-crusoe-300 border border-crusoe-500/40 shadow-inner">
-                        2027 Modelo
-                      </span>
-                    </div>
-                    <p className="text-xs text-crusoe-200 mt-2 leading-relaxed">
-                      Aire acondicionado, asientos ergonómicos, maletero amplio, WiFi a bordo e higiene impecable.
-                    </p>
-                  </div>
-                </div>
+              {/* Right column: Interactive Destination Carousel */}
+              <div className="lg:col-span-6 relative">
+                <DestinationCarousel />
               </div> 
             </div>
           </div>
@@ -132,7 +109,7 @@ export default function HomePage() {
                   Emitimos Boletas y Facturas Electrónicas
                 </h2>
                 <p className="text-xs sm:text-sm text-crusoe-200 dark:text-slate-300 leading-relaxed">
-                  ¿Necesitas sustentar tus gastos de viaje? En <strong>Fast Travel Xauxa</strong> recopilamos tus datos tributarios (DNI para Boleta o RUC, Razón Social y Dirección Fiscal para Factura) al momento de tu reserva. El comprobante fiscal electrónico te es entregado directamente a tu celular vía WhatsApp.
+                  ¿Necesitas sustentar tus gastos de viaje? En <strong>Fast Travel Xauxa</strong> recopilamos tus datos tributarios (DNI para Boleta o RUC, Razón Social y Dirección Fiscal para Factura) al momento de tu reserva. El comprobante fiscal electrónico te es entregado directamente vía WhatsApp.
                 </p>
               </div>
 
@@ -156,7 +133,7 @@ export default function HomePage() {
                 ¿Cómo funciona tu reserva en Fast Travel Xauxa?
               </p>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-3">
-                Sin complicaciones ni tarifas ocultas. Coordinación directa por mensajes de WhatsApp.
+                Sin complicaciones ni intermediarios. Tarifas transparentes calculadas en tiempo real.
               </p>
             </div>
 
@@ -165,9 +142,9 @@ export default function HomePage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-crusoe-600 text-white font-extrabold text-lg mb-4 shadow-md">
                   1
                 </div>
-                <h3 className="text-base font-bold text-slate-950 dark:text-white">Elige tu Servicio</h3>
+                <h3 className="text-base font-bold text-slate-950 dark:text-white">Elige tu Modalidad</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                  Selecciona traslado privado, compartido por S/20, excursión o renta por horas.
+                  Selecciona traslado privado exclusivo o compartido en SUV del año.
                 </p>
               </div>
 
@@ -177,7 +154,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-base font-bold text-slate-950 dark:text-white">Fecha, Hora y Vuelo</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                  Ingresa tu aerolínea y fecha de traslado. Calculamos la tarifa de forma transparente.
+                  Ingresa tu itinerario y el sistema calcula la tarifa exacta y el adelanto del 20%.
                 </p>
               </div>
 
@@ -185,9 +162,9 @@ export default function HomePage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-crusoe-600 text-white font-extrabold text-lg mb-4 shadow-md">
                   3
                 </div>
-                <h3 className="text-base font-bold text-slate-950 dark:text-white">Adelanto (opcional) y Comprobante</h3>
+                <h3 className="text-base font-bold text-slate-950 dark:text-white">Adelanto y Comprobante</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                  Puedes asegurar pagando el 20% por Yape, Plin o BCP, o pagar después. Solicita tu Boleta o Factura.
+                  Asegura tu reserva abonando el 20% por Yape, Plin o BCP y solicita Boleta o Factura.
                 </p>
               </div>
 
@@ -209,13 +186,13 @@ export default function HomePage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-crusoe-700 dark:text-crusoe-400">Catálogo Oficial</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-crusoe-700 dark:text-crusoe-400">Modalidades Oficiales</span>
                 <h2 className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1 sm:text-4xl">
-                  Nuestros Servicios de Transporte
+                  Servicios de Transporte
                 </h2>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md">
-                Todas las tarifas son transparentes en Soles (PEN). Incluyen conductor profesional y atención personalizada.
+                Unidades SUV del año climatizadas, asientos amplios y confortables, conductores profesionales y atención personalizada.
               </p>
             </div>
 
@@ -225,34 +202,34 @@ export default function HomePage() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-crusoe-100 dark:bg-crusoe-950 text-crusoe-700 dark:text-crusoe-300">
-                      <Plane className="h-6 w-6" />
+                      <Car className="h-6 w-6" />
                     </div>
                     <span className="rounded-full bg-crusoe-100 dark:bg-crusoe-950 px-3 py-1 text-xs font-bold text-crusoe-800 dark:text-crusoe-300">
-                      Recomendado
+                      Exclusivo y Climatizado
                     </span>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-950 dark:text-white">Aeropuerto Privado</h3>
+                  <h3 className="text-xl font-bold text-slate-950 dark:text-white">Servicio Privado Exclusivo</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                    Servicio exclusivo puerta a puerta desde/hacia el Aeropuerto de Jauja ↔ Huancayo.
+                    Servicio exclusivo para ti y tus acompañantes. Aire acondicionado, asientos amplios y confortables. Opción de parada en Plaza Constitución o traslado directo a tu domicilio u hotel.
                   </p>
                   <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 text-xs text-slate-900 dark:text-slate-100">
-                    <div className="flex justify-between font-semibold">
-                      <span>Tarifa base Huancayo Centro:</span>
-                      <span className="text-crusoe-700 dark:text-crusoe-400 text-base font-extrabold">S/ 80.00</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                      <span>Chilca / Periferia:</span>
-                      <span>+S/ 10.00 (S/ 90.00)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 pt-1">
+                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
-                      <span>Incluye Cartel de Bienvenida</span>
+                      <span>Camioneta SUV del año completa</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
+                      <span>Traslado a Hotel / Domicilio o Plaza Constitución</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
+                      <span>Recepción con Cartel de Bienvenida</span>
                     </div>
                   </div>
                 </div>
                 <div className="mt-6">
                   <Link href="/reserva?servicio=privado-aeropuerto">
-                    <Button className="w-full">Reservar Privado</Button>
+                    <Button className="w-full">Reservar Servicio Privado</Button>
                   </Link>
                 </div>
               </div>
@@ -265,32 +242,32 @@ export default function HomePage() {
                       <Users className="h-6 w-6" />
                     </div>
                     <span className="rounded-full bg-amber-100 dark:bg-amber-950 px-3 py-1 text-xs font-bold text-amber-900 dark:text-amber-300">
-                      Económico Executive
+                      Por Asiento
                     </span>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-950 dark:text-white">Aeropuerto Compartido</h3>
+                  <h3 className="text-xl font-bold text-slate-950 dark:text-white">Servicio Compartido</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                    Viaje ejecutivo en SUV Jetour compartida. Máximo 4 pasajeros. Aeropuerto Jauja ↔ Huancayo.
+                    Traslado en SUV del año compartida (máximo 4 pasajeros). Parada final establecida en Plaza Constitución (Centro de Huancayo).
                   </p>
                   <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 text-xs text-slate-900 dark:text-slate-100">
-                    <div className="flex justify-between font-semibold">
-                      <span>Precio por asiento:</span>
-                      <span className="text-crusoe-700 dark:text-crusoe-400 text-base font-extrabold">S/ 20.00</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                      <span>Cupo máximo:</span>
-                      <span>4 pasajeros</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 pt-1">
+                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
-                      <span>Reserva garantizada</span>
+                      <span>Parada final única: Plaza Constitución</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
+                      <span>Máximo 4 pasajeros por unidad</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
+                      <span>Asiento asegurado con 20% de adelanto</span>
                     </div>
                   </div>
                 </div>
                 <div className="mt-6">
                   <Link href="/reserva?servicio=compartido-aeropuerto">
                     <Button variant="secondary" className="w-full">
-                      Reservar Asiento S/20
+                      Reservar Asiento Compartido
                     </Button>
                   </Link>
                 </div>
@@ -307,29 +284,29 @@ export default function HomePage() {
                       Turismo y Renta
                     </span>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-950 dark:text-white">Excursiones / Renta</h3>
+                  <h3 className="text-xl font-bold text-slate-950 dark:text-white">Excursiones y Renta por Horas</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                    Tours por el Valle del Mantaro o vehículo a disposición por horas con conductor privado.
+                    Circuitos turísticos por el Valle del Mantaro, Tarma, La Merced y La Oroya con conductor profesional a tu disposición.
                   </p>
                   <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 text-xs text-slate-900 dark:text-slate-100">
-                    <div className="flex justify-between font-semibold">
-                      <span>Tarifa base por hora:</span>
-                      <span className="text-crusoe-700 dark:text-crusoe-400 text-base font-extrabold">S/ 50.00 / hora</span>
+                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
+                      <span>Rutas 100% personalizables</span>
                     </div>
-                    <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                      <span>Flexibilidad de ruta:</span>
-                      <span>100% Personalizable</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 pt-1">
+                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
                       <span>Conductor local experto</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
+                      <span>Unidad SUV del año con aire acondicionado</span>
                     </div>
                   </div>
                 </div>
                 <div className="mt-6">
                   <Link href="/reserva?servicio=excursion">
                     <Button variant="outline" className="w-full">
-                      Cotizar Excursión
+                      Cotizar Excursión / Renta
                     </Button>
                   </Link>
                 </div>
@@ -347,7 +324,7 @@ export default function HomePage() {
                 Nuestros Destinos Principales
               </h2>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-3">
-                Viaja desde y hacia el Aeropuerto de Jauja con total comodidad a los siguientes destinos.
+                Viaja desde y hacia el Aeropuerto de Jauja con total comodidad, climatización y seguridad.
               </p>
             </div>
 
@@ -355,24 +332,28 @@ export default function HomePage() {
               {DESTINATIONS_CATALOG.map((dest) => (
                 <div key={dest.code} className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-slate-50 dark:bg-slate-800/60 flex flex-col justify-between group hover:shadow-md transition-shadow">
                   {dest.image && (
-                    <div className="h-40 overflow-hidden relative">
-                      <img src={dest.image} alt={`Destino ${dest.name}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="h-44 overflow-hidden relative">
+                      <img src={dest.image} alt={dest.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
+                      <div className="absolute bottom-2.5 left-3 right-3">
+                        <span className="text-[11px] font-bold text-crusoe-300 bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm">
+                          Ruta Oficial
+                        </span>
+                      </div>
                     </div>
                   )}
                   <div className="p-5 flex flex-col justify-between flex-1">
                     <div>
                       <h4 className="font-bold text-slate-950 dark:text-white text-base">{dest.name}</h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">{dest.description}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{dest.description}</p>
                     </div>
-                    <div className="mt-4 space-y-2 border-t border-slate-200 dark:border-slate-700 pt-3">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-slate-600 dark:text-slate-400 font-medium">Compartido:</span>
-                        <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400">S/ {dest.sharedPricePerSeat}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-slate-600 dark:text-slate-400 font-medium">Privado:</span>
-                        <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400">S/ {dest.privatePriceSuv}</span>
-                      </div>
+                    <div className="mt-5 pt-3 border-t border-slate-200 dark:border-slate-700">
+                      <Link href="/reserva">
+                        <Button size="sm" variant="outline" className="w-full text-xs">
+                          <span>Ver Tarifas y Reservar</span>
+                          <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>

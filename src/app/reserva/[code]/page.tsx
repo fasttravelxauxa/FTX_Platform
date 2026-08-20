@@ -360,7 +360,7 @@ export default function ReservationDetailPage() {
                             : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'
                         }`}
                       >
-                        <span className="font-extrabold text-xs text-purple-700 dark:text-purple-400 block">🟣 YAPE</span>
+                        <span className="font-extrabold text-xs text-purple-700 dark:text-purple-400 block">YAPE OFICIAL</span>
                         <span className="text-xs font-bold text-slate-900 dark:text-white block mt-0.5">929 667 586</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 block">Titular: JORGE TRU.</span>
                       </div>
@@ -373,7 +373,7 @@ export default function ReservationDetailPage() {
                             : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'
                         }`}
                       >
-                        <span className="font-extrabold text-xs text-sky-700 dark:text-sky-400 block">🔵 PLIN</span>
+                        <span className="font-extrabold text-xs text-sky-700 dark:text-sky-400 block">PLIN OFICIAL</span>
                         <span className="text-xs font-bold text-slate-900 dark:text-white block mt-0.5">929 667 586</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 block truncate" title="JORGE ANTONIO TRUCIOS MEZA">
                           Titular: JORGE ANTONIO TRUCIOS MEZA
@@ -388,7 +388,7 @@ export default function ReservationDetailPage() {
                             : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'
                         }`}
                       >
-                        <span className="font-extrabold text-xs text-orange-700 dark:text-orange-400 block">🏦 TRANSF. BCP</span>
+                        <span className="font-extrabold text-xs text-orange-700 dark:text-orange-400 block">TRANSFERENCIA BCP</span>
                         <span className="text-xs font-bold text-slate-950 dark:text-white block mt-0.5 font-mono">40002021972079</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 block font-mono">CCI: 00240010202197207901</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 block truncate font-medium">

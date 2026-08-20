@@ -36,20 +36,20 @@ export class WhatsAppService {
     const hasVoucher = Array.isArray(reservation.payments) && reservation.payments.length > 0;
     const voucherText = hasVoucher
       ? `Adjuntado en la plataforma`
-      : `⚠️ PENDIENTE (Pagar antes del servicio)`;
+      : `PENDIENTE (Pagar antes de la hora programada)`;
 
-    const text = `🚨 *¡NUEVA RESERVA RECIBIDA EN LA PLATAFORMA!* 🚨\n\n` +
-      `📋 *Código:* *${reservation.code}*\n` +
-      `👤 *Cliente:* ${reservation.customer?.full_name || 'Pasajero'} (${reservation.customer?.phone})\n` +
-      `🚗 *Servicio:* ${reservation.service?.name || reservation.origin}\n` +
-      `📍 *Ruta:* ${reservation.origin} ➔ ${reservation.destination}\n` +
-      `📅 *Fecha/Hora:* ${dateFormatted}\n` +
-      `✈️ *Vuelo:* ${reservation.flight_airline || 'N/A'} (${reservation.flight_number || 'N/A'})\n` +
-      `💵 *Monto Total:* S/ ${reservation.total_amount.toFixed(2)}\n` +
-      `💰 *Adelanto 20%:* S/ ${reservation.deposit_amount.toFixed(2)}\n` +
-      `📑 *Comprobante Fiscal:* ${invoiceText}\n` +
-      `📸 *Voucher:* ${voucherText}\n\n` +
-      `👉 *Panel Admin:* Revisa la reserva en el panel operativo.`;
+    const text = `*NOTIFICACIÓN DE RESERVA - FAST TRAVEL XAUXA*\n\n` +
+      `*Código:* *${reservation.code}*\n` +
+      `*Cliente:* ${reservation.customer?.full_name || 'Pasajero'} (${reservation.customer?.phone})\n` +
+      `*Servicio:* ${reservation.service?.name || reservation.origin}\n` +
+      `*Ruta:* ${reservation.origin} ➔ ${reservation.destination}\n` +
+      `*Fecha y Hora:* ${dateFormatted}\n` +
+      `*Vuelo:* ${reservation.flight_airline || 'N/A'} (${reservation.flight_number || 'N/A'})\n` +
+      `*Monto Total:* S/ ${reservation.total_amount.toFixed(2)}\n` +
+      `*Adelanto (20%):* S/ ${reservation.deposit_amount.toFixed(2)}\n` +
+      `*Comprobante Fiscal:* ${invoiceText}\n` +
+      `*Voucher:* ${voucherText}\n\n` +
+      `*Panel Operativo:* Revise la reserva en el panel de control.`;
 
     return `https://wa.me/${adminPhone}?text=${encodeURIComponent(text)}`;
   }
@@ -66,12 +66,12 @@ export class WhatsAppService {
 
     let invoiceText = '';
     if (reservation.invoice_details && reservation.invoice_details.type !== 'ninguno') {
-      invoiceText = `\n📄 *Comprobante Solicitado:* ${reservation.invoice_details.type.toUpperCase()}` +
+      invoiceText = `\n*Comprobante Solicitado:* ${reservation.invoice_details.type.toUpperCase()}` +
         (reservation.invoice_details.ruc ? ` (RUC: ${reservation.invoice_details.ruc} - ${reservation.invoice_details.companyName})` : ` (DNI: ${reservation.invoice_details.dni})`) +
-        `\n_(Tu Boleta/Factura Electrónica será adjuntada por este medio)_`;
+        `\n_(Su Boleta o Factura Electrónica será adjuntada por este medio)_`;
     }
 
-    const text = `✨ *Fast Travel Xauxa — Reserva Confirmada* ✨\n\nHola *${reservation.customer?.full_name || 'Estimado(a) pasajero(a)'}*,\nTu reserva *${reservation.code}* ha sido *CONFIRMADA* con éxito.\n\n📅 *Fecha y Hora:* ${dateFormatted}\n🚗 *Origen:* ${reservation.origin}\n📍 *Destino:* ${reservation.destination}\n💵 *Saldo Pendiente:* S/ ${reservation.balance_amount.toFixed(2)} (se abonará al abordar el vehículo)${invoiceText}\n\n¡Gracias por elegir viajar con comodidad, seguridad y puntualidad! Coordinaciones únicamente por este medio de WhatsApp.`;
+    const text = `*FAST TRAVEL XAUXA - RESERVA CONFIRMADA*\n\nEstimado(a) *${reservation.customer?.full_name || 'Pasajero(a)'}*,\nSu reserva con código *${reservation.code}* ha sido *CONFIRMADA* formalmente.\n\n*Fecha y Hora:* ${dateFormatted}\n*Origen:* ${reservation.origin}\n*Destino:* ${reservation.destination}\n*Saldo Restante:* S/ ${reservation.balance_amount.toFixed(2)} (se abona al abordar la unidad)${invoiceText}\n\nGracias por elegir Fast Travel Xauxa. Coordinación oficial únicamente por este canal de WhatsApp.`;
 
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
   }
@@ -81,7 +81,7 @@ export class WhatsAppService {
    */
   public static getAdminRejectionLink(reservation: Reservation, customerPhone: string, reason: string): string {
     const cleanPhone = customerPhone.replace(/[^0-9]/g, '');
-    const text = `⚠️ *Fast Travel Xauxa — Atención con tu Reserva ${reservation.code}*\n\nHola *${reservation.customer?.full_name || 'Estimado(a)'}*,\nRevisamos el comprobante enviado para la reserva *${reservation.code}* y no pudimos procesarlo debido a:\n👉 *${reason}*\n\nPor favor vuelve a adjuntar un comprobante válido en la plataforma o escríbenos por este chat para ayudarte.`;
+    const text = `*FAST TRAVEL XAUXA - ATENCIÓN CON SU RESERVA ${reservation.code}*\n\nEstimado(a) *${reservation.customer?.full_name || 'Pasajero(a)'}*,\nRevisamos el comprobante remitido para la reserva *${reservation.code}* y no pudimos procesarlo debido al siguiente motivo:\n- *${reason}*\n\nPor favor vuelva a adjuntar un comprobante válido en la plataforma o responda a este mensaje para brindarle asistencia inmediata.`;
 
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
   }

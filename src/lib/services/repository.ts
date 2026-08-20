@@ -485,7 +485,7 @@ export class RepositoryService {
       }
 
       const finalCode = savedRes?.code || reservation.code;
-      console.log('[FTX Repository] ✅ Reserva sincronizada en la nube con éxito:', finalCode);
+      console.log('[FTX Repository] Reserva sincronizada en la nube con éxito:', finalCode);
       return { success: true, code: finalCode };
     } catch (err: any) {
       console.error('[FTX Repository] Excepción crítica al guardar reserva:', err?.message);
@@ -508,7 +508,7 @@ export class RepositoryService {
         return false;
       }
 
-      console.log('[FTX Repository] 🗑️ Reserva eliminada de Supabase:', code);
+      console.log('[FTX Repository] Reserva eliminada de Supabase:', code);
       return true;
     } catch (err: any) {
       console.error('[FTX Repository] Excepción al eliminar reserva:', err?.message);

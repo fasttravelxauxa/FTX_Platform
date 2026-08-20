@@ -11,18 +11,18 @@ export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md transition-colors overflow-x-hidden">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full max-w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md transition-colors overflow-x-clip">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 py-3">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-crusoe-600 text-white shadow-md shadow-crusoe-600/30 group-hover:scale-105 transition-transform">
-            <Car className="h-6 w-6" />
+        <Link href="/" className="flex items-center gap-2 group min-w-0">
+          <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-crusoe-600 text-white shadow-md shadow-crusoe-600/30 group-hover:scale-105 transition-transform shrink-0">
+            <Car className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-950 dark:text-white font-sans">
+          <div className="flex flex-col min-w-0">
+            <span className="text-base sm:text-xl font-extrabold tracking-tight text-slate-950 dark:text-white font-sans truncate">
               Fast Travel <span className="text-crusoe-600 dark:text-crusoe-400">Xauxa</span>
             </span>
-            <span className="text-[9px] sm:text-[10px] font-semibold text-slate-600 dark:text-slate-400 tracking-wider uppercase -mt-1">
+            <span className="text-[8.5px] sm:text-[10px] font-semibold text-slate-600 dark:text-slate-400 tracking-wider uppercase -mt-1 truncate">
               Jauja ↔ Huancayo Ejecutivo
             </span>
           </div>
@@ -84,7 +84,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Mobile Navigation Header Controls */}
-        <div className="flex items-center gap-2 lg:hidden">
+        <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden shrink-0">
           <ThemeToggle />
           <Link href="/reserva">
             <Button size="sm" className="text-xs px-2.5 py-1.5 font-bold">
@@ -93,43 +93,43 @@ export const Navbar: React.FC = () => {
           </Link>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="rounded-xl p-2 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none"
+            className="rounded-xl p-1.5 sm:p-2 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none"
             aria-label="Abrir menú"
           >
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6 text-slate-800 dark:text-slate-200" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Drawer */}
       {isOpen && (
-        <div className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 pb-6 pt-3 lg:hidden">
-          <div className="flex flex-col gap-2.5 text-slate-900 dark:text-slate-100">
+        <div className="w-full max-w-full overflow-hidden border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 pb-6 pt-3 lg:hidden animate-fadeIn">
+          <div className="flex flex-col gap-2 text-slate-900 dark:text-slate-100">
             <Link
               href="/#servicios"
               onClick={() => setIsOpen(false)}
-              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900"
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
             >
               Servicios Ejecutivos
             </Link>
             <Link
               href="/#como-funciona"
               onClick={() => setIsOpen(false)}
-              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900"
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
             >
               ¿Cómo Funciona?
             </Link>
             <Link
               href="/#destinos"
               onClick={() => setIsOpen(false)}
-              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900"
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
             >
               Destinos
             </Link>
             <Link
               href="/mis-reservas"
               onClick={() => setIsOpen(false)}
-              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900 flex items-center gap-2"
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900 flex items-center gap-2 transition-colors"
             >
               <Calendar className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400" />
               Consultar Mi Reserva
@@ -137,7 +137,7 @@ export const Navbar: React.FC = () => {
             <Link
               href="/admin"
               onClick={() => setIsOpen(false)}
-              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900 flex items-center gap-2"
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900 flex items-center gap-2 transition-colors"
             >
               <UserCheck className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400" />
               Acceso Panel Admin
@@ -147,10 +147,10 @@ export const Navbar: React.FC = () => {
                 href={WhatsAppService.getCustomerSupportLink()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl border border-crusoe-300 dark:border-slate-700 bg-crusoe-50 dark:bg-slate-900 py-3 text-xs font-bold text-crusoe-900 dark:text-crusoe-300"
+                className="flex items-center justify-center gap-2 rounded-xl border border-crusoe-300 dark:border-slate-700 bg-crusoe-50 dark:bg-slate-900 py-3 px-3 text-xs font-bold text-crusoe-900 dark:text-crusoe-300 text-center"
               >
-                <MessageSquare className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400" />
-                <span>WhatsApp Coordinación: 929 667 586 (Solo Mensajes)</span>
+                <MessageSquare className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400 shrink-0" />
+                <span>WhatsApp: 929 667 586 (Solo Mensajes)</span>
               </a>
             </div>
           </div>

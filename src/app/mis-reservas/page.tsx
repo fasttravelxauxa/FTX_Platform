@@ -136,7 +136,7 @@ export default function MyBookingsPage() {
           </div>
           {phone && (
             <p className="text-[11px] text-crusoe-800 dark:text-crusoe-300 text-center mt-2.5 font-bold">
-              📱 Mostrando viajes del número <strong>+51 {phone}</strong>
+              Mostrando reservas registradas para el número <strong>+51 {phone}</strong>
             </p>
           )}
         </form>

@@ -512,12 +512,12 @@ export default function AdminDashboardPage() {
                               <option value="PENDING_PAYMENT">Esperando Pago</option>
                               <option value="PAYMENT_SUBMITTED">Comprobante Enviado</option>
                               <option value="PAYMENT_REVIEW">En Revisión</option>
-                              <option value="CONFIRMED">✅ Confirmada</option>
-                              <option value="ASSIGNED">🚗 Chofer Asignado</option>
-                              <option value="IN_PROGRESS">🚀 En Curso</option>
-                              <option value="COMPLETED">🏁 Completada</option>
-                              <option value="PAYMENT_REJECTED">❌ Pago Rechazado</option>
-                              <option value="CANCELLED">🚫 Cancelada</option>
+                              <option value="CONFIRMED">Confirmada</option>
+                              <option value="ASSIGNED">Chofer Asignado</option>
+                              <option value="IN_PROGRESS">En Curso</option>
+                              <option value="COMPLETED">Completada</option>
+                              <option value="PAYMENT_REJECTED">Pago Rechazado</option>
+                              <option value="CANCELLED">Cancelada</option>
                             </select>
                           </div>
                         </td>
@@ -784,10 +784,10 @@ export default function AdminDashboardPage() {
                         onChange={(e) => handleVehicleStatusChange(veh.id, e.target.value as VehicleStatus)}
                         className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-crusoe-600"
                       >
-                        <option value="AVAILABLE">🟢 Disponible</option>
-                        <option value="IN_SERVICE">🔵 En Servicio</option>
-                        <option value="MAINTENANCE">🟡 Mantenimiento</option>
-                        <option value="UNAVAILABLE">🔴 No Disponible</option>
+                        <option value="AVAILABLE">Disponible</option>
+                        <option value="IN_SERVICE">En Servicio</option>
+                        <option value="MAINTENANCE">Mantenimiento</option>
+                        <option value="UNAVAILABLE">No Disponible</option>
                       </select>
                     </div>
                   </div>
@@ -936,7 +936,7 @@ export default function AdminDashboardPage() {
                 {/* Client / Passenger Card */}
                 <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2.5">
                   <span className="font-extrabold text-slate-950 dark:text-white block text-xs uppercase tracking-wider">
-                    👤 Pasajero Titular
+                    Pasajero Titular
                   </span>
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">Nombre Completo:</span>
@@ -981,7 +981,7 @@ export default function AdminDashboardPage() {
                 {/* Route & Trip Info */}
                 <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2.5">
                   <span className="font-extrabold text-slate-950 dark:text-white block text-xs uppercase tracking-wider">
-                    🚗 Itinerario y Vuelo
+                    Itinerario y Vuelo
                   </span>
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">Servicio:</span>
@@ -1026,7 +1026,7 @@ export default function AdminDashboardPage() {
                 <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold text-slate-950 dark:text-white block text-xs uppercase tracking-wider">
-                      📑 Comprobante Fiscal
+                      Comprobante Fiscal
                     </span>
                     {selectedRes.invoice_details && selectedRes.invoice_details.type !== 'ninguno' && (
                       <button
@@ -1085,7 +1085,7 @@ export default function AdminDashboardPage() {
                 {/* Financial breakdown */}
                 <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2">
                   <span className="font-extrabold text-slate-950 dark:text-white block text-xs uppercase tracking-wider">
-                    💰 Liquidación Monetaria
+                    Liquidación Monetaria
                   </span>
                   <div className="flex justify-between text-slate-700 dark:text-slate-300">
                     <span>Monto Total:</span>
@@ -1106,15 +1106,15 @@ export default function AdminDashboardPage() {
               <div className="rounded-2xl border-2 border-crusoe-200 dark:border-slate-700 bg-white dark:bg-slate-800/90 p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-sm text-slate-950 dark:text-white flex items-center gap-2">
-                    📸 Comprobante / Voucher de Adelanto
+                    Comprobante / Voucher de Adelanto
                   </span>
                   {selectedRes.payments?.[0]?.proofs?.[0] ? (
                     <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full">
-                      ✓ Voucher Adjuntado
+                      Voucher Adjuntado
                     </span>
                   ) : (
                     <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-2.5 py-0.5 rounded-full">
-                      ⚠️ Voucher Pendiente
+                      Voucher Pendiente
                     </span>
                   )}
                 </div>
@@ -1163,12 +1163,12 @@ export default function AdminDashboardPage() {
                 ) : (
                   <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 p-4 space-y-3">
                     <p className="text-xs text-amber-950 dark:text-amber-200 leading-relaxed font-medium">
-                      El pasajero reservó sin adjuntar voucher de adelanto (S/ {selectedRes.deposit_amount.toFixed(2)}). Puedes contactarlo directamente por WhatsApp para solicitarle el pago antes de confirmar.
+                      El pasajero reservó sin adjuntar voucher de adelanto (S/ {selectedRes.deposit_amount.toFixed(2)}). Puede contactarlo por WhatsApp para solicitarle el abono antes de confirmar.
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <a
                         href={`https://wa.me/51${(selectedRes.customer?.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                          `Hola *${selectedRes.customer?.full_name || 'Pasajero'}*, te saludamos de *Fast Travel Xauxa* 🚗.\n\nTe recordamos que para asegurar tu traslado con código *${selectedRes.code}* programado para el *${new Date(selectedRes.scheduled_at).toLocaleString('es-PE')}*, se requiere realizar el abono del adelanto de *S/ ${selectedRes.deposit_amount.toFixed(2)}* (20%).\n\n💳 *Cuentas Oficiales de Abono:*\n• Yape: 929 667 586 (JORGE TRU.)\n• Plin: 929 667 586 (JORGE ANTONIO TRUCIOS MEZA)\n• BCP: 40002021972079 (CCI: 00240010202197207901 - JORGE ANTONIO TRUCIOS MEZA)\n\nPuedes subir tu comprobante directamente en tu enlace de reserva:\n👉 https://ftx-platform.vercel.app/reserva/${selectedRes.code}\n\n¡Muchas gracias!`
+                          `Hola *${selectedRes.customer?.full_name || 'Pasajero'}*, le saludamos de *Fast Travel Xauxa*.\n\nLe recordamos que para asegurar su traslado con código *${selectedRes.code}* programado para el *${new Date(selectedRes.scheduled_at).toLocaleString('es-PE')}*, se requiere realizar el abono del adelanto de *S/ ${selectedRes.deposit_amount.toFixed(2)}* (20%).\n\n*Cuentas Oficiales de Abono:*\n- Yape: 929 667 586 (JORGE TRU.)\n- Plin: 929 667 586 (JORGE ANTONIO TRUCIOS MEZA)\n- BCP: 40002021972079 (CCI: 00240010202197207901 - JORGE ANTONIO TRUCIOS MEZA)\n\nPuede subir su comprobante directamente en el enlace de su reserva:\nhttps://ftx-platform.vercel.app/reserva/${selectedRes.code}\n\nMuchas gracias.`
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
