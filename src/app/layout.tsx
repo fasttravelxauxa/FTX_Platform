@@ -17,27 +17,65 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Fast Travel Xauxa — Traslados Ejecutivos Aeropuerto Jauja ↔ Huancayo',
-  description: 'Plataforma digital de transporte privado, traslados compartidos al Aeropuerto de Jauja por S/20, excursiones turísticas y renta por horas con SUV Jetour. Emitimos Boletas y Facturas Electrónicas.',
+  metadataBase: new URL('https://ftx-platform.vercel.app'),
+  title: {
+    default: 'Fast Travel Xauxa | Transporte Ejecutivo y Turístico Oficial',
+    template: '%s | Fast Travel Xauxa',
+  },
+  description: 'Servicio exclusivo de transporte ejecutivo, corporativo y turístico en el Valle del Mantaro. Conexión directa Aeropuerto Jauja ↔ Huancayo, Tarma, La Oroya y Selva Central. Máxima puntualidad, unidades SUV modernas y facturación electrónica oficial.',
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/images/banners/auto_sinfondo.png', type: 'image/png' },
+      { url: '/icon.png', type: 'image/png' },
+    ],
+    shortcut: '/images/banners/auto_sinfondo.png',
+    apple: '/images/banners/auto_sinfondo.png',
+  },
   keywords: [
-    'Aeropuerto de Jauja',
-    'transporte Jauja Huancayo',
-    'traslado aeropuerto Jauja',
-    'transporte privado Jauja',
-    'turismo Valle del Mantaro',
     'Fast Travel Xauxa',
-    'SUV Jetour Huancayo',
-    'factura electronica Jauja',
+    'Transporte Aeropuerto Jauja',
+    'Traslados Aeropuerto Jauja Huancayo',
+    'Taxi Ejecutivo Huancayo Jauja',
+    'Transporte Turistico Valle del Mantaro',
+    'Servicio Privado SUV Jetour Jauja',
+    'Facturacion Electronica Transporte Jauja',
+    'Traslado Tarma La Oroya Selva Central',
   ],
   authors: [{ name: 'Fast Travel Xauxa' }],
+  creator: 'Fast Travel Xauxa',
+  publisher: 'Fast Travel Xauxa',
   openGraph: {
-    title: 'Fast Travel Xauxa — Traslados Ejecutivos Jauja ↔ Huancayo',
-    description: 'Reserva tu transporte privado o compartido. Confort, puntualidad y recepción personalizada en aeropuerto. Boletas y Facturas Electrónicas.',
-    url: 'https://fasttravelxauxa.vercel.app',
+    title: 'Fast Travel Xauxa | Transporte Ejecutivo y Turístico Oficial',
+    description: 'Plataforma oficial de reservas para traslados ejecutivos y turísticos en el Valle del Mantaro. Puntualidad garantizada, confort en unidades SUV modernas y facturación electrónica.',
+    url: 'https://ftx-platform.vercel.app',
     siteName: 'Fast Travel Xauxa',
+    images: [
+      {
+        url: '/images/banners/banner1.png',
+        width: 1200,
+        height: 630,
+        alt: 'Fast Travel Xauxa - Transporte Ejecutivo y Turístico',
+      },
+      {
+        url: '/images/banners/auto_sinfondo.png',
+        width: 800,
+        height: 600,
+        alt: 'Unidad Ejecutiva Fast Travel Xauxa',
+      },
+    ],
     locale: 'es_PE',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Fast Travel Xauxa | Transporte Ejecutivo y Turístico Oficial',
+    description: 'Traslados seguros, confortables y puntuales desde y hacia el Aeropuerto de Jauja, Huancayo y todo el Valle del Mantaro.',
+    images: ['/images/banners/banner1.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
