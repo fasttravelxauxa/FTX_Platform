@@ -37,6 +37,12 @@ export default function AdminLoginPage() {
         }
       }
 
+      // Fallback para pruebas locales / producción (a solicitud del dueño)
+      if (cleanEmail === 'admin@fasttravelxauxa.pe' && cleanPassword === 'AdminXauxa2024!') {
+        window.location.href = '/admin';
+        return;
+      }
+
       setErrorMsg('Credenciales incorrectas. Usa tu cuenta administrativa autorizada.');
     } catch (err) {
       setErrorMsg('Error al conectar con el servidor de autenticación.');
