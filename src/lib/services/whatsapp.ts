@@ -77,6 +77,35 @@ export class WhatsAppService {
   }
 
   /**
+   * Genera enlace para que el administrador recuerde al cliente abonar el adelanto del 20%
+   */
+  public static getPaymentReminderLink(reservation: Reservation): string {
+    const cleanPhone = (reservation.customer?.phone || '').replace(/[^0-9]/g, '');
+    const dateFormatted = new Date(reservation.scheduled_at).toLocaleString('es-PE', {
+      dateStyle: 'full',
+      timeStyle: 'short',
+    });
+
+    const text = `*FAST TRAVEL XAUXA - RECORDATORIO DE ADELANTO*\n\n` +
+      `Estimado(a) *${reservation.customer?.full_name || 'Pasajero(a)'}*,\n` +
+      `Le saludamos de Fast Travel Xauxa. Le recordamos que tiene una reserva registrada con código *${reservation.code}* para el traslado:\n\n` +
+      `*Ruta:* ${reservation.origin} ➔ ${reservation.destination}\n` +
+      `*Fecha y Hora:* ${dateFormatted}\n` +
+      `*Monto Total:* S/ ${reservation.total_amount.toFixed(2)}\n` +
+      `*Adelanto Requerido (20%):* *S/ ${reservation.deposit_amount.toFixed(2)}*\n` +
+      `*Saldo al Abordar (80%):* S/ ${reservation.balance_amount.toFixed(2)}\n\n` +
+      `*Cuentas Oficiales para el Adelanto:*\n` +
+      `- Yape: 929 667 586 (JORGE TRU.)\n` +
+      `- Plin: 929 667 586 (JORGE ANTONIO TRUCIOS MEZA)\n` +
+      `- BCP: 40002021972079 (CCI: 00240010202197207901)\n\n` +
+      `Para asegurar su cupo en la SUV del año, por favor realice el abono antes de la hora programada y adjunte su comprobante aquí:\n` +
+      `https://ftx-platform.vercel.app/reserva/${reservation.code}\n\n` +
+      `Quedamos a su disposición para coordinar su viaje.`;
+
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+  }
+
+  /**
    * Genera enlace para que el administrador notifique rechazo de comprobante
    */
   public static getAdminRejectionLink(reservation: Reservation, customerPhone: string, reason: string): string {

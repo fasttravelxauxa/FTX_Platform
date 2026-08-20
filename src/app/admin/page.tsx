@@ -31,6 +31,12 @@ import {
   ExternalLink,
   Edit3,
   Check,
+  TrendingUp,
+  DollarSign,
+  PieChart,
+  CalendarDays,
+  AlertCircle,
+  ChevronRight,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -47,10 +53,16 @@ export default function AdminDashboardPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [profilesList, setProfilesList] = useState<Profile[]>([]);
   const [vehiclesList, setVehiclesList] = useState<Vehicle[]>([]);
-  const [activeTab, setActiveTab] = useState<'reservas' | 'pasajeros' | 'calendario' | 'vehiculos'>('reservas');
+  const [activeTab, setActiveTab] = useState<'reservas' | 'calendario' | 'finanzas' | 'pasajeros' | 'vehiculos'>('reservas');
   const [filterStatus, setFilterStatus] = useState<string>('TODOS');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [passengerSearch, setPassengerSearch] = useState<string>('');
+
+  // Finance tab period filter
+  const [financePeriod, setFinancePeriod] = useState<'hoy' | 'semana' | 'mes' | 'anio' | 'todos'>('mes');
+
+  // Calendar filter
+  const [calendarDateFilter, setCalendarDateFilter] = useState<string>('');
 
   // Selected reservation for review modal
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
@@ -215,9 +227,9 @@ export default function AdminDashboardPage() {
 
   const pendingReviewCount = reservations.filter((r) => r.status === 'PAYMENT_REVIEW' || r.status === 'PAYMENT_SUBMITTED').length;
   const confirmedCount = reservations.filter((r) => r.status === 'CONFIRMED').length;
-  const inProgressCount = reservations.filter((r) => r.status === 'IN_PROGRESS').length;
+  const pendingPaymentCount = reservations.filter((r) => r.status === 'PENDING_PAYMENT' || r.status === 'DRAFT').length;
 
-  // Filtered reservations
+  // Filtered reservations for the main table
   const filteredList = reservations.filter((r) => {
     const matchesStatus = filterStatus === 'TODOS' || r.status === filterStatus;
     const matchesSearch =
@@ -275,6 +287,58 @@ export default function AdminDashboardPage() {
       };
     });
 
+  // Financial calculations based on financePeriod
+  const now = new Date();
+  const getPeriodStartDate = () => {
+    const d = new Date(now);
+    if (financePeriod === 'hoy') {
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    if (financePeriod === 'semana') {
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1); // lunes de esta semana
+      d.setDate(diff);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    if (financePeriod === 'mes') {
+      d.setDate(1);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    if (financePeriod === 'anio') {
+      d.setMonth(0, 1);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    return new Date(0); // todos
+  };
+
+  const periodStartDate = getPeriodStartDate();
+
+  const financeFilteredReservations = reservations.filter((r) => {
+    const tripDate = new Date(r.scheduled_at || r.created_at);
+    return tripDate >= periodStartDate;
+  });
+
+  const completedTrips = financeFilteredReservations.filter((r) => r.status === 'COMPLETED');
+  const totalCompletedRevenue = completedTrips.reduce((acc, r) => acc + r.total_amount, 0);
+  const totalCompletedDeposits = completedTrips.reduce((acc, r) => acc + r.deposit_amount, 0);
+  const totalCompletedBalances = completedTrips.reduce((acc, r) => acc + r.balance_amount, 0);
+
+  const confirmedTrips = financeFilteredReservations.filter((r) => r.status === 'CONFIRMED' || r.status === 'ASSIGNED' || r.status === 'IN_PROGRESS');
+  const projectedRevenue = confirmedTrips.reduce((acc, r) => acc + r.total_amount, 0);
+  const confirmedDeposits = confirmedTrips.reduce((acc, r) => acc + r.deposit_amount, 0);
+
+  const privateCompletedRevenue = completedTrips
+    .filter((r) => r.service_id !== 'a2222222-2222-2222-2222-222222222222')
+    .reduce((acc, r) => acc + r.total_amount, 0);
+
+  const sharedCompletedRevenue = completedTrips
+    .filter((r) => r.service_id === 'a2222222-2222-2222-2222-222222222222')
+    .reduce((acc, r) => acc + r.total_amount, 0);
+
   const copyInvoiceInfo = (res: Reservation) => {
     if (!res.invoice_details || res.invoice_details.type === 'ninguno') return;
     const info = res.invoice_details.type === 'factura'
@@ -310,7 +374,7 @@ export default function AdminDashboardPage() {
               Operaciones, Reservas y Flota
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" variant="outline" onClick={refreshData}>
               <RefreshCw className="h-4 w-4" />
               Actualizar
@@ -331,9 +395,9 @@ export default function AdminDashboardPage() {
         {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-8">
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Pagos en Revisión</span>
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Vouchers por Revisar</span>
             <p className="text-3xl font-extrabold text-amber-700 dark:text-amber-400 mt-1">{pendingReviewCount}</p>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Requieren validación</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Requieren verificación</span>
           </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
@@ -343,15 +407,15 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Clientes Registrados</span>
-            <p className="text-3xl font-extrabold text-indigo-700 dark:text-indigo-400 mt-1">{profilesList.length}</p>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Perfiles en Supabase</span>
+            <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Sin Adelanto</span>
+            <p className="text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1">{pendingPaymentCount}</p>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Esperando pago del 20%</span>
           </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ingresos por Adelantos</span>
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Adelantos Verificados</span>
             <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">S/ {totalIncome.toFixed(2)}</p>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Adelantos verificados (20%)</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Recaudado (20%)</span>
           </div>
         </div>
 
@@ -359,34 +423,47 @@ export default function AdminDashboardPage() {
         <div className="mb-6 flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-extrabold text-slate-700 dark:text-slate-300 overflow-x-auto">
           <button
             onClick={() => setActiveTab('reservas')}
-            className={`pb-3 border-b-2 transition-colors whitespace-nowrap ${
+            className={`pb-3 border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'reservas' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
+            <FileText className="h-4 w-4" />
             Gestión de Reservas ({reservations.length})
           </button>
           <button
-            onClick={() => setActiveTab('pasajeros')}
-            className={`pb-3 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'pasajeros' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
-            }`}
-          >
-            Directorio de Pasajeros ({profilesList.length})
-          </button>
-          <button
             onClick={() => setActiveTab('calendario')}
-            className={`pb-3 border-b-2 transition-colors whitespace-nowrap ${
+            className={`pb-3 border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'calendario' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
+            <Calendar className="h-4 w-4" />
             Calendario Operativo
           </button>
           <button
+            onClick={() => setActiveTab('finanzas')}
+            className={`pb-3 border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === 'finanzas' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
+            }`}
+          >
+            <DollarSign className="h-4 w-4" />
+            Finanzas e Ingresos
+          </button>
+          <button
+            onClick={() => setActiveTab('pasajeros')}
+            className={`pb-3 border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === 'pasajeros' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
+            }`}
+          >
+            <Users className="h-4 w-4" />
+            Directorio de Pasajeros ({profilesList.length})
+          </button>
+          <button
             onClick={() => setActiveTab('vehiculos')}
-            className={`pb-3 border-b-2 transition-colors whitespace-nowrap ${
+            className={`pb-3 border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'vehiculos' ? 'border-crusoe-600 text-crusoe-800 dark:text-crusoe-400' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
+            <Car className="h-4 w-4" />
             Flota de Unidades ({vehiclesList.length})
           </button>
         </div>
@@ -414,6 +491,8 @@ export default function AdminDashboardPage() {
                   className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:border-crusoe-600"
                 >
                   <option value="TODOS">Todos los Estados</option>
+                  <option value="PENDING_PAYMENT">Esperando Pago (Sin Adelanto)</option>
+                  <option value="PAYMENT_SUBMITTED">Comprobante Enviado</option>
                   <option value="PAYMENT_REVIEW">En Revisión de Pago</option>
                   <option value="CONFIRMED">Confirmadas</option>
                   <option value="ASSIGNED">Conductor Asignado</option>
@@ -425,8 +504,138 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
+            {/* Vista Móvil: Tarjetas Responsive */}
+            <div className="space-y-4 md:hidden">
+              {filteredList.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-slate-500 font-bold text-xs">
+                  No se encontraron reservas con los filtros aplicados.
+                </div>
+              ) : (
+                filteredList.map((res) => {
+                  const hasVoucher = Boolean(res.payments?.[0]?.proofs?.[0]);
+                  const isUnpaid = !hasVoucher && (res.status === 'PENDING_PAYMENT' || res.status === 'DRAFT');
+
+                  return (
+                    <div
+                      key={res.id}
+                      className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <div>
+                          <span className="font-extrabold text-sm text-slate-950 dark:text-white block">{res.code}</span>
+                          <span className="font-bold text-xs text-slate-800 dark:text-slate-200 block">{res.customer?.full_name}</span>
+                          <span className="text-[11px] text-slate-500 font-mono">{res.customer?.phone}</span>
+                        </div>
+                        <Badge status={res.status} size="sm" />
+                      </div>
+
+                      <div className="space-y-1 text-xs">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block">{res.service?.name || 'Traslado'}</span>
+                        <span className="text-slate-600 dark:text-slate-400 block text-[11px]">
+                          {res.origin} ➔ {res.destination}
+                        </span>
+                        <span className="text-slate-500 dark:text-slate-400 block text-[10px]">
+                          {new Date(res.scheduled_at).toLocaleString('es-PE')}
+                        </span>
+                      </div>
+
+                      {/* Monto y Adelanto en Móvil */}
+                      <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 flex justify-between items-center text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase block font-bold">Total del Viaje</span>
+                          <span className="font-extrabold text-slate-950 dark:text-white text-sm">S/ {res.total_amount.toFixed(2)}</span>
+                        </div>
+                        <div className="text-right">
+                          {isUnpaid ? (
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 px-2 py-0.5 text-[10px] font-extrabold text-rose-700 dark:text-rose-300">
+                              <AlertCircle className="h-3 w-3 shrink-0" />
+                              Falta adelanto: S/ {res.deposit_amount.toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300">
+                              <Check className="h-3 w-3 shrink-0" />
+                              Adelanto: S/ {res.deposit_amount.toFixed(2)}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                            Saldo: S/ {res.balance_amount.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Selector de Estado */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estado de la Reserva</label>
+                        <select
+                          value={res.status}
+                          disabled={updatingId === res.id}
+                          onChange={(e) => handleStatusChange(res.id, e.target.value as ReservationStatus)}
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 p-2 text-xs font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-800 focus:border-crusoe-600 shadow-sm"
+                        >
+                          <option value="PENDING_PAYMENT">Esperando Pago (Sin Adelanto)</option>
+                          <option value="PAYMENT_SUBMITTED">Comprobante Enviado</option>
+                          <option value="PAYMENT_REVIEW">En Revisión</option>
+                          <option value="CONFIRMED">Confirmada</option>
+                          <option value="ASSIGNED">Chofer Asignado</option>
+                          <option value="IN_PROGRESS">En Curso</option>
+                          <option value="COMPLETED">Completada</option>
+                          <option value="PAYMENT_REJECTED">Pago Rechazado</option>
+                          <option value="CANCELLED">Cancelada</option>
+                        </select>
+                      </div>
+
+                      {/* Acciones en Móvil */}
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <Button
+                          size="sm"
+                          variant={hasVoucher ? 'primary' : 'secondary'}
+                          onClick={() => {
+                            setSelectedRes(res);
+                            setShowReviewModal(true);
+                          }}
+                          className="w-full text-xs"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          {hasVoucher ? 'Ver Voucher' : 'Detalles'}
+                        </Button>
+
+                        <Link href={`/admin/cartel/${res.code}`} className="w-full">
+                          <Button size="sm" variant="outline" className="w-full text-xs">
+                            <Printer className="h-3.5 w-3.5" />
+                            Cartel
+                          </Button>
+                        </Link>
+
+                        {isUnpaid ? (
+                          <a
+                            href={WhatsAppService.getPaymentReminderLink(res)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 px-3 py-2 text-xs font-bold text-white shadow-sm"
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            Cobrar Adelanto por WhatsApp
+                          </a>
+                        ) : (
+                          <a
+                            href={WhatsAppService.getAdminConfirmationLink(res, res.customer?.phone || '')}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-xs font-bold text-white shadow-sm"
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            Confirmar Viaje por WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Vista PC: Tabla de Escritorio */}
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100/90 dark:bg-slate-800/80 text-slate-950 dark:text-white font-extrabold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
                   <tr>
@@ -434,7 +643,7 @@ export default function AdminDashboardPage() {
                     <th className="p-4">Servicio / Ruta</th>
                     <th className="p-4">Comprobante Fiscal</th>
                     <th className="p-4">Monto / Adelanto</th>
-                    <th className="p-4">Cambiar Estado</th>
+                    <th className="p-4">Estado</th>
                     <th className="p-4 text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -446,130 +655,161 @@ export default function AdminDashboardPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredList.map((res) => (
-                      <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="p-4">
-                          <span className="font-extrabold block text-slate-950 dark:text-white text-sm">{res.code}</span>
-                          <span className="font-bold text-slate-900 dark:text-slate-100 block">{res.customer?.full_name}</span>
-                          <span className="text-slate-600 dark:text-slate-400 block text-[11px]">{res.customer?.phone}</span>
-                        </td>
+                    filteredList.map((res) => {
+                      const hasVoucher = Boolean(res.payments?.[0]?.proofs?.[0]);
+                      const isUnpaid = !hasVoucher && (res.status === 'PENDING_PAYMENT' || res.status === 'DRAFT');
 
-                        <td className="p-4">
-                          <span className="font-bold text-slate-950 dark:text-white block">{res.service?.name || 'Traslado'}</span>
-                          <span className="text-slate-600 dark:text-slate-400 block text-[11px]">
-                            {res.origin} ➔ {res.destination}
-                          </span>
-                          <span className="text-slate-500 dark:text-slate-400 block text-[10px]">
-                            {new Date(res.scheduled_at).toLocaleString('es-PE')}
-                          </span>
-                        </td>
+                      return (
+                        <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="p-4">
+                            <span className="font-extrabold block text-slate-950 dark:text-white text-sm">{res.code}</span>
+                            <span className="font-bold text-slate-900 dark:text-slate-100 block">{res.customer?.full_name}</span>
+                            <span className="text-slate-600 dark:text-slate-400 block text-[11px] font-mono">{res.customer?.phone}</span>
+                          </td>
 
-                        <td className="p-4">
-                          {res.invoice_details && res.invoice_details.type !== 'ninguno' ? (
-                            <div className="space-y-1">
-                              <span className="font-extrabold text-crusoe-800 dark:text-crusoe-400 uppercase block">
-                                {res.invoice_details.type}
+                          <td className="p-4">
+                            <span className="font-bold text-slate-950 dark:text-white block">{res.service?.name || 'Traslado'}</span>
+                            <span className="text-slate-600 dark:text-slate-400 block text-[11px]">
+                              {res.origin} ➔ {res.destination}
+                            </span>
+                            <span className="text-slate-500 dark:text-slate-400 block text-[10px]">
+                              {new Date(res.scheduled_at).toLocaleString('es-PE')}
+                            </span>
+                          </td>
+
+                          <td className="p-4">
+                            {res.invoice_details && res.invoice_details.type !== 'ninguno' ? (
+                              <div className="space-y-1">
+                                <span className="font-extrabold text-crusoe-800 dark:text-crusoe-400 uppercase block">
+                                  {res.invoice_details.type}
+                                </span>
+                                <span className="text-slate-700 dark:text-slate-300 block text-[11px]">
+                                  {res.invoice_details.ruc ? `RUC: ${res.invoice_details.ruc}` : `DNI: ${res.invoice_details.dni}`}
+                                </span>
+                                <button
+                                  onClick={() => copyInvoiceInfo(res)}
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-crusoe-700 dark:text-crusoe-400 hover:underline"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                  Copiar Datos
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-500 italic">No solicitado</span>
+                            )}
+                          </td>
+
+                          <td className="p-4">
+                            <span className="font-extrabold text-slate-950 dark:text-white block text-sm">
+                              S/ {res.total_amount.toFixed(2)}
+                            </span>
+                            {isUnpaid ? (
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 px-2 py-0.5 text-[10px] font-extrabold text-rose-700 dark:text-rose-300 mt-0.5">
+                                <AlertCircle className="h-3 w-3 shrink-0" />
+                                Falta adelanto: S/ {res.deposit_amount.toFixed(2)}
                               </span>
-                              <span className="text-slate-700 dark:text-slate-300 block text-[11px]">
-                                {res.invoice_details.ruc ? `RUC: ${res.invoice_details.ruc}` : `DNI: ${res.invoice_details.dni}`}
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                                <Check className="h-3 w-3 shrink-0" />
+                                Adelanto: S/ {res.deposit_amount.toFixed(2)}
                               </span>
-                              <button
-                                onClick={() => copyInvoiceInfo(res)}
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-crusoe-700 dark:text-crusoe-400 hover:underline"
+                            )}
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                              Saldo: S/ {res.balance_amount.toFixed(2)}
+                            </span>
+                          </td>
+
+                          <td className="p-4">
+                            <div className="space-y-1.5">
+                              <Badge status={res.status} size="sm" />
+                              <select
+                                value={res.status}
+                                disabled={updatingId === res.id}
+                                onChange={(e) =>
+                                  handleStatusChange(res.id, e.target.value as ReservationStatus)
+                                }
+                                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 p-1.5 text-[11px] font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-800 focus:border-crusoe-600 shadow-sm"
                               >
-                                <Copy className="h-3 w-3" />
-                                Copiar Datos
-                              </button>
+                                <option value="PENDING_PAYMENT">Esperando Pago</option>
+                                <option value="PAYMENT_SUBMITTED">Comprobante Enviado</option>
+                                <option value="PAYMENT_REVIEW">En Revisión</option>
+                                <option value="CONFIRMED">Confirmada</option>
+                                <option value="ASSIGNED">Chofer Asignado</option>
+                                <option value="IN_PROGRESS">En Curso</option>
+                                <option value="COMPLETED">Completada</option>
+                                <option value="PAYMENT_REJECTED">Pago Rechazado</option>
+                                <option value="CANCELLED">Cancelada</option>
+                              </select>
                             </div>
-                          ) : (
-                            <span className="text-slate-400 dark:text-slate-500 italic">No solicitado</span>
-                          )}
-                        </td>
+                          </td>
 
-                        <td className="p-4">
-                          <span className="font-extrabold text-slate-950 dark:text-white block text-sm">
-                            S/ {res.total_amount.toFixed(2)}
-                          </span>
-                          <span className="text-xs font-bold text-crusoe-700 dark:text-crusoe-400 block">
-                            Adelanto: S/ {res.deposit_amount.toFixed(2)}
-                          </span>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
-                            Saldo: S/ {res.balance_amount.toFixed(2)}
-                          </span>
-                        </td>
+                          <td className="p-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5 flex-nowrap">
+                              <Button
+                                size="sm"
+                                variant={hasVoucher ? 'primary' : 'secondary'}
+                                onClick={() => {
+                                  setSelectedRes(res);
+                                  setShowReviewModal(true);
+                                }}
+                                title="Ver todos los detalles y comprobante"
+                                className="text-xs py-1.5 px-2.5"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                <span>{hasVoucher ? 'Voucher' : 'Detalles'}</span>
+                              </Button>
 
-                        <td className="p-4">
-                          <div className="space-y-1.5">
-                            <Badge status={res.status} size="sm" />
-                            <select
-                              value={res.status}
-                              disabled={updatingId === res.id}
-                              onChange={(e) =>
-                                handleStatusChange(res.id, e.target.value as ReservationStatus)
-                              }
-                              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 p-1.5 text-[11px] font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-800 focus:border-crusoe-600 shadow-sm"
-                            >
-                              <option value="PENDING_PAYMENT">Esperando Pago</option>
-                              <option value="PAYMENT_SUBMITTED">Comprobante Enviado</option>
-                              <option value="PAYMENT_REVIEW">En Revisión</option>
-                              <option value="CONFIRMED">Confirmada</option>
-                              <option value="ASSIGNED">Chofer Asignado</option>
-                              <option value="IN_PROGRESS">En Curso</option>
-                              <option value="COMPLETED">Completada</option>
-                              <option value="PAYMENT_REJECTED">Pago Rechazado</option>
-                              <option value="CANCELLED">Cancelada</option>
-                            </select>
-                          </div>
-                        </td>
+                              <Link href={`/admin/cartel/${res.code}`}>
+                                <Button size="sm" variant="outline" title="Generar Cartel para Aeropuerto" className="text-xs py-1.5 px-2.5">
+                                  <Printer className="h-3.5 w-3.5" />
+                                  <span>Cartel</span>
+                                </Button>
+                              </Link>
 
-                        <td className="p-4 text-right space-x-2">
-                          <Button
-                            size="sm"
-                            variant={res.payments?.[0]?.proofs?.[0] ? 'primary' : 'secondary'}
-                            onClick={() => {
-                              setSelectedRes(res);
-                              setShowReviewModal(true);
-                            }}
-                            title="Ver todos los detalles y comprobante de la reserva"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            {res.payments?.[0]?.proofs?.[0] ? 'Voucher' : 'Detalles'}
-                          </Button>
+                              {isUnpaid ? (
+                                <a
+                                  href={WhatsAppService.getPaymentReminderLink(res)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm transition-colors"
+                                  title="Cobrar adelanto por WhatsApp"
+                                >
+                                  <MessageSquare className="h-3.5 w-3.5" />
+                                  <span>Cobrar</span>
+                                </a>
+                              ) : (
+                                <a
+                                  href={WhatsAppService.getAdminConfirmationLink(res, res.customer?.phone || '')}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm transition-colors"
+                                  title="Confirmar viaje por WhatsApp"
+                                >
+                                  <MessageSquare className="h-3.5 w-3.5" />
+                                  <span>Confirmar</span>
+                                </a>
+                              )}
 
-                          <Link href={`/admin/cartel/${res.code}`}>
-                            <Button size="sm" variant="outline" title="Generar Cartel para Aeropuerto">
-                              <Printer className="h-3.5 w-3.5" />
-                              Cartel
-                            </Button>
-                          </Link>
-
-                          <a
-                            href={WhatsAppService.getAdminConfirmationLink(res, res.customer?.phone || '')}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-xl bg-crusoe-100 dark:bg-crusoe-950 p-2 text-xs font-bold text-crusoe-900 dark:text-crusoe-200 hover:bg-crusoe-200 transition-colors"
-                            title="Enviar confirmación por WhatsApp"
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                          </a>
-
-                          {['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(res.status) && (
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              title="Eliminar reserva cancelada"
-                              onClick={async () => {
-                                if (!window.confirm(`¿Eliminar la reserva ${res.code}? (El perfil del usuario permanecerá en el Directorio de Supabase)`)) return;
-                                await RepositoryService.deleteReservation(res.id, res.code);
-                                await refreshData();
-                              }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
+                              {['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(res.status) && (
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  title="Eliminar reserva cancelada"
+                                  onClick={async () => {
+                                    if (!window.confirm(`¿Eliminar la reserva ${res.code}? (El perfil del usuario permanecerá en el Directorio de Supabase)`)) return;
+                                    await RepositoryService.deleteReservation(res.id, res.code);
+                                    await refreshData();
+                                  }}
+                                  className="py-1.5 px-2"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -577,7 +817,341 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 2: DIRECTORIO DE PASAJEROS */}
+        {/* TAB 2: CALENDARIO OPERATIVO CON ACCIONES DIRECTAS */}
+        {activeTab === 'calendario' && (
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 space-y-6 shadow-md">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-950 dark:text-white">Calendario Operativo y Recepción de Vuelos</h2>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                  Gestiona las salidas del día y marca rápidamente si el viaje fue completado (cobro 100%) o cancelado.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <input
+                  type="date"
+                  value={calendarDateFilter}
+                  onChange={(e) => setCalendarDateFilter(e.target.value)}
+                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-xs font-bold text-slate-900 dark:text-white"
+                />
+                {calendarDateFilter && (
+                  <Button size="sm" variant="outline" onClick={() => setCalendarDateFilter('')}>
+                    Limpiar Filtro
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {reservations
+                .filter((r) => {
+                  if (!calendarDateFilter) return true;
+                  const resDate = new Date(r.scheduled_at).toISOString().split('T')[0];
+                  return resDate === calendarDateFilter;
+                })
+                .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
+                .length === 0 ? (
+                <div className="p-8 text-center text-slate-500 font-bold text-xs">
+                  No hay traslados programados para la fecha seleccionada.
+                </div>
+              ) : (
+                reservations
+                  .filter((r) => {
+                    if (!calendarDateFilter) return true;
+                    const resDate = new Date(r.scheduled_at).toISOString().split('T')[0];
+                    return resDate === calendarDateFilter;
+                  })
+                  .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
+                  .map((res) => {
+                    const isCompleted = res.status === 'COMPLETED';
+                    const isCancelled = res.status === 'CANCELLED' || res.status === 'PAYMENT_REJECTED';
+
+                    return (
+                      <div
+                        key={res.id}
+                        className={`rounded-2xl border p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all ${
+                          isCompleted
+                            ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20'
+                            : isCancelled
+                            ? 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 opacity-70'
+                            : 'border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 shadow-sm'
+                        }`}
+                      >
+                        <div className="space-y-1.5 text-xs flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-sm text-slate-950 dark:text-white font-mono">{res.code}</span>
+                            <span className="font-extrabold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100 dark:bg-crusoe-900/80 px-2.5 py-0.5 rounded-lg text-xs">
+                              {new Date(res.scheduled_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <Badge status={res.status} size="sm" />
+                          </div>
+
+                          <div className="text-slate-900 dark:text-slate-100 font-bold">
+                            {new Date(res.scheduled_at).toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • Pasajero: <span className="text-crusoe-900 dark:text-crusoe-200">{res.customer?.full_name}</span> ({res.customer?.phone})
+                          </div>
+
+                          <div className="text-slate-600 dark:text-slate-400">
+                            <strong>Ruta:</strong> {res.origin} ➔ {res.destination}
+                            {res.flight_airline && (
+                              <span> • Vuelo: {res.flight_airline} {res.flight_number ? `(${res.flight_number})` : ''}</span>
+                            )}
+                          </div>
+
+                          <div className="text-[11px] text-slate-700 dark:text-slate-300 font-bold pt-1">
+                            Total: S/ {res.total_amount.toFixed(2)} | Adelanto: S/ {res.deposit_amount.toFixed(2)} | Saldo a cobrar: S/ {res.balance_amount.toFixed(2)}
+                          </div>
+                        </div>
+
+                        {/* Botones de acción directa del calendario */}
+                        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-200 dark:border-slate-700">
+                          {res.status !== 'COMPLETED' && (
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={async () => {
+                                if (window.confirm(`¿Confirmar que el viaje ${res.code} fue realizado con éxito y se cobró el saldo de S/ ${res.balance_amount.toFixed(2)}?`)) {
+                                  await handleStatusChange(res.id, 'COMPLETED');
+                                }
+                              }}
+                              className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Marcar Completado (100%)
+                            </Button>
+                          )}
+
+                          {res.status === 'PENDING_PAYMENT' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleStatusChange(res.id, 'CONFIRMED')}
+                              className="text-xs"
+                            >
+                              Confirmar Adelanto
+                            </Button>
+                          )}
+
+                          {!isCompleted && !isCancelled && (
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => {
+                                const reason = prompt('Ingrese el motivo de cancelación:');
+                                if (reason) handleStatusChange(res.id, 'CANCELLED', reason);
+                              }}
+                              className="text-xs"
+                            >
+                              Cancelar
+                            </Button>
+                          )}
+
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setSelectedRes(res);
+                              setShowReviewModal(true);
+                            }}
+                            className="text-xs"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            Detalles
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: FINANZAS E INGRESOS (DIARIO, SEMANAL, MENSUAL, ANUAL) */}
+        {activeTab === 'finanzas' && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
+                  <TrendingUp className="h-6 w-6 text-crusoe-600" />
+                  Registro Financiero y Reporte de Ingresos
+                </h2>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                  Balance consolidado de viajes completados, adelantos recibidos por Yape/Plin/BCP y saldos cobrados al abordar.
+                </p>
+              </div>
+
+              {/* Selector de Rango Temporal */}
+              <div className="inline-flex rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1 text-xs font-bold">
+                {[
+                  { key: 'hoy', label: 'Hoy (Diario)' },
+                  { key: 'semana', label: 'Esta Semana' },
+                  { key: 'mes', label: 'Este Mes' },
+                  { key: 'anio', label: 'Este Año' },
+                  { key: 'todos', label: 'Histórico' },
+                ].map((p) => (
+                  <button
+                    key={p.key}
+                    onClick={() => setFinancePeriod(p.key as any)}
+                    className={`rounded-lg px-3 py-1.5 transition-all ${
+                      financePeriod === p.key
+                        ? 'bg-white dark:bg-slate-900 text-crusoe-800 dark:text-crusoe-400 shadow-sm font-extrabold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tarjetas de Resumen Financiero */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="rounded-2xl border-2 border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/40 p-5 shadow-sm">
+                <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block">
+                  Ingreso Total Generado (100%)
+                </span>
+                <p className="text-3xl font-extrabold text-emerald-950 dark:text-emerald-100 mt-1 font-mono">
+                  S/ {totalCompletedRevenue.toFixed(2)}
+                </p>
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-1 block font-semibold">
+                  {completedTrips.length} viajes completados exitosamente
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <span className="text-[11px] font-bold text-crusoe-800 dark:text-crusoe-400 uppercase tracking-wider block">
+                  Adelantos Cobrados (20%)
+                </span>
+                <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1 font-mono">
+                  S/ {totalCompletedDeposits.toFixed(2)}
+                </p>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
+                  Recibido por Yape, Plin o BCP
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                  Saldos Cobrados al Abordar (80%)
+                </span>
+                <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1 font-mono">
+                  S/ {totalCompletedBalances.toFixed(2)}
+                </p>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
+                  Cobrado por chofer al abordar
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider block">
+                  Ticket Promedio
+                </span>
+                <p className="text-3xl font-extrabold text-indigo-950 dark:text-indigo-100 mt-1 font-mono">
+                  S/ {(completedTrips.length > 0 ? totalCompletedRevenue / completedTrips.length : 0).toFixed(2)}
+                </p>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
+                  Promedio por servicio
+                </span>
+              </div>
+            </div>
+
+            {/* Desglose por Servicio */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
+                <span className="font-extrabold text-sm text-slate-950 dark:text-white block">
+                  Ingresos por Modalidad de Servicio
+                </span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                    <span className="font-bold">Servicio Privado Exclusivo SUV</span>
+                    <span className="font-extrabold text-crusoe-800 dark:text-crusoe-400">
+                      S/ {privateCompletedRevenue.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                    <span className="font-bold">Servicio Compartido por Asiento</span>
+                    <span className="font-extrabold text-crusoe-800 dark:text-crusoe-400">
+                      S/ {sharedCompletedRevenue.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
+                <span className="font-extrabold text-sm text-slate-950 dark:text-white block">
+                  Proyección de Viajes Próximos Confirmados
+                </span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                    <span className="font-bold">Viajes Confirmados por Realizar</span>
+                    <span className="font-extrabold text-slate-950 dark:text-white">{confirmedTrips.length} traslados</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                    <span className="font-bold">Monto Total Proyectado a Recaudar</span>
+                    <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
+                      S/ {projectedRevenue.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabla Detallada de Viajes del Periodo */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md overflow-hidden">
+              <div className="p-4 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 font-extrabold text-xs text-slate-950 dark:text-white uppercase tracking-wider flex justify-between items-center">
+                <span>Historial de Liquidación del Periodo ({completedTrips.length} completados)</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
+                    <tr>
+                      <th className="p-3.5">Código / Pasajero</th>
+                      <th className="p-3.5">Fecha Realizado</th>
+                      <th className="p-3.5">Servicio</th>
+                      <th className="p-3.5 text-right">Adelanto (20%)</th>
+                      <th className="p-3.5 text-right">Saldo al Abordar (80%)</th>
+                      <th className="p-3.5 text-right">Total Cobrado (100%)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {completedTrips.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-500 font-bold text-xs">
+                          No hay viajes marcados como completados en este periodo.
+                        </td>
+                      </tr>
+                    ) : (
+                      completedTrips.map((res) => (
+                        <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                          <td className="p-3.5">
+                            <span className="font-extrabold text-slate-950 dark:text-white block">{res.code}</span>
+                            <span className="text-slate-600 dark:text-slate-400 block text-[11px]">{res.customer?.full_name}</span>
+                          </td>
+                          <td className="p-3.5 text-slate-700 dark:text-slate-300">
+                            {new Date(res.scheduled_at).toLocaleDateString('es-PE')}
+                          </td>
+                          <td className="p-3.5 font-medium">{res.service?.name || res.origin}</td>
+                          <td className="p-3.5 text-right font-bold text-crusoe-800 dark:text-crusoe-400">
+                            S/ {res.deposit_amount.toFixed(2)}
+                          </td>
+                          <td className="p-3.5 text-right font-bold text-slate-700 dark:text-slate-300">
+                            S/ {res.balance_amount.toFixed(2)}
+                          </td>
+                          <td className="p-3.5 text-right font-extrabold text-emerald-800 dark:text-emerald-400 text-sm">
+                            S/ {res.total_amount.toFixed(2)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: DIRECTORIO DE PASAJEROS */}
         {activeTab === 'pasajeros' && (
           <div className="space-y-6">
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -685,7 +1259,7 @@ export default function AdminDashboardPage() {
 
                           <a
                             href={`https://wa.me/51${pass.phone}?text=${encodeURIComponent(
-                              `Hola ${pass.name}, te saludamos de Fast Travel Xauxa respecto a tus reservas ejecutivas.`
+                              `Hola ${pass.name}, le saludamos de Fast Travel Xauxa respecto a sus traslados programados.`
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -713,39 +1287,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 3: CALENDARIO OPERATIVO */}
-        {activeTab === 'calendario' && (
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 space-y-6 shadow-md">
-            <h2 className="text-xl font-extrabold text-slate-950 dark:text-white">Calendario de Salidas y Recepción Aeropuerto</h2>
-            <div className="space-y-4">
-              {reservations.length === 0 ? (
-                <p className="text-xs text-slate-500 font-bold">No hay traslados programados actualmente.</p>
-              ) : (
-                reservations.map((res) => (
-                  <div key={res.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="space-y-1 text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm text-slate-950 dark:text-white">{res.code}</span>
-                        <span className="font-bold text-crusoe-700 dark:text-crusoe-400">
-                          {new Date(res.scheduled_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <span className="block font-bold text-slate-900 dark:text-slate-100">
-                        {new Date(res.scheduled_at).toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — Pasajero: <strong>{res.customer?.full_name}</strong>
-                      </span>
-                      <span className="text-slate-600 dark:text-slate-400 block">
-                        Ruta: {res.origin} ➔ {res.destination}
-                      </span>
-                    </div>
-                    <Badge status={res.status} />
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: FLOTA */}
+        {/* TAB 5: FLOTA */}
         {activeTab === 'vehiculos' && (
           <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 space-y-6 shadow-md">
             <div className="flex justify-between items-center">
@@ -770,8 +1312,8 @@ export default function AdminDashboardPage() {
                       <span className="font-extrabold text-base text-slate-950 dark:text-white block">
                         {veh.brand} {veh.model} ({veh.year})
                       </span>
-                      <span className="text-xs text-slate-700 dark:text-slate-300 font-mono font-bold block mt-0.5">
-                        Placa: {veh.plate} • Capacidad: {veh.capacity} Pasajeros
+                      <span className="text-xs font-mono font-bold text-crusoe-800 dark:text-crusoe-400 block mt-0.5">
+                        Placa: {veh.plate} • Capacidad: {veh.capacity} pasajeros
                       </span>
                       <span className="text-[11px] font-bold text-crusoe-800 dark:text-crusoe-300 block mt-1">
                         SOAT & Revisión Técnica: Vigente 2026-2027
@@ -809,122 +1351,24 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* MODAL: REGISTRAR VEHICULO */}
-        {showVehicleModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 className="font-extrabold text-base text-slate-950 dark:text-white">Registrar Nueva Unidad a la Flota</h3>
-                <button onClick={() => setShowVehicleModal(false)} className="text-slate-400 hover:text-white font-bold">
-                  ✕
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateVehicle} className="space-y-3 text-xs font-bold">
-                <div>
-                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Marca</label>
-                  <input
-                    type="text"
-                    value={newVehicleBrand}
-                    onChange={(e) => setNewVehicleBrand(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Modelo</label>
-                  <input
-                    type="text"
-                    value={newVehicleModel}
-                    onChange={(e) => setNewVehicleModel(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block mb-1 text-slate-700 dark:text-slate-300">Año del Modelo</label>
-                    <input
-                      type="number"
-                      value={newVehicleYear}
-                      onChange={(e) => setNewVehicleYear(Number(e.target.value))}
-                      required
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-slate-700 dark:text-slate-300">Capacidad (Pasajeros)</label>
-                    <input
-                      type="number"
-                      value={newVehicleCapacity}
-                      onChange={(e) => setNewVehicleCapacity(Number(e.target.value))}
-                      required
-                      min={1}
-                      max={15}
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Placa del Vehículo *</label>
-                  <input
-                    type="text"
-                    value={newVehiclePlate}
-                    onChange={(e) => setNewVehiclePlate(e.target.value.toUpperCase())}
-                    placeholder="W4X-892"
-                    required
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setShowVehicleModal(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" size="sm">
-                    Guardar Unidad
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* FULL RESERVATION DETAILS & VOUCHER REVIEW MODAL */}
+        {/* REVIEW MODAL */}
         {showReviewModal && selectedRes && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm overflow-y-auto">
-            <div className="w-full max-w-2xl sm:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-7 shadow-2xl space-y-6 text-slate-900 dark:text-slate-100 my-auto">
-              {/* Header */}
-              <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm overflow-y-auto">
+            <div className="w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-2xl space-y-6 my-8">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
                 <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs uppercase font-extrabold text-crusoe-700 dark:text-crusoe-400">Reserva Oficial</span>
-                    <Badge status={selectedRes.status} size="sm" />
-                    {selectedRes.payments?.[0] && (
-                      <Badge type="payment" status={selectedRes.payments[0].status} size="sm" />
-                    )}
-                  </div>
-                  <h3 className="font-extrabold text-xl text-slate-950 dark:text-white mt-1">{selectedRes.code}</h3>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Registrada el {new Date(selectedRes.created_at).toLocaleString('es-PE')}
+                  <span className="text-xs font-extrabold uppercase tracking-widest text-crusoe-700 dark:text-crusoe-400">
+                    Ficha Operativa de Reserva
                   </span>
+                  <h2 className="text-2xl font-extrabold text-slate-950 dark:text-white mt-0.5">
+                    {selectedRes.code}
+                  </h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Link href={`/admin/cartel/${selectedRes.code}`} target="_blank">
-                    <Button size="sm" variant="outline" className="text-xs">
-                      <Printer className="h-3.5 w-3.5" />
-                      Imprimir Cartel
-                    </Button>
-                  </Link>
+                  <Badge status={selectedRes.status} />
                   <button
-                    onClick={() => {
-                      setShowReviewModal(false);
-                      setRejectionReason('');
-                    }}
-                    className="rounded-full p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+                    onClick={() => setShowReviewModal(false)}
+                    className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-950 flex items-center justify-center font-bold"
                   >
                     ✕
                   </button>
@@ -949,7 +1393,7 @@ export default function AdminDashboardPage() {
                   <div className="flex justify-between items-center">
                     <span className="text-slate-600 dark:text-slate-400">Teléfono WhatsApp:</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-950 dark:text-white">{selectedRes.customer?.phone}</span>
+                      <span className="font-bold text-slate-950 dark:text-white font-mono">{selectedRes.customer?.phone}</span>
                       <a
                         href={`https://wa.me/51${(selectedRes.customer?.phone || '').replace(/[^0-9]/g, '')}`}
                         target="_blank"
@@ -961,21 +1405,6 @@ export default function AdminDashboardPage() {
                       </a>
                     </div>
                   </div>
-                  {selectedRes.passengers && selectedRes.passengers.length > 0 && (
-                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                        Pasajeros Adicionales ({selectedRes.passengers.length}):
-                      </span>
-                      <div className="space-y-1">
-                        {selectedRes.passengers.map((p, idx) => (
-                          <div key={idx} className="flex justify-between text-[11px] text-slate-700 dark:text-slate-300">
-                            <span>• {p.name} ({p.passenger_type})</span>
-                            <span className="font-mono">{p.dni || ''}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Route & Trip Info */}
@@ -1009,12 +1438,6 @@ export default function AdminDashboardPage() {
                     <div className="pt-1 border-t border-slate-200 dark:border-slate-700">
                       <span className="text-slate-600 dark:text-slate-400 text-[11px] block">Equipaje:</span>
                       <span className="text-slate-800 dark:text-slate-200 text-[11px]">{selectedRes.luggage_notes}</span>
-                    </div>
-                  )}
-                  {selectedRes.notes && (
-                    <div>
-                      <span className="text-slate-600 dark:text-slate-400 text-[11px] block">Notas Especiales:</span>
-                      <span className="text-slate-800 dark:text-slate-200 text-[11px] italic">{selectedRes.notes}</span>
                     </div>
                   )}
                 </div>
@@ -1088,7 +1511,7 @@ export default function AdminDashboardPage() {
                     Liquidación Monetaria
                   </span>
                   <div className="flex justify-between text-slate-700 dark:text-slate-300">
-                    <span>Monto Total:</span>
+                    <span>Monto Total del Viaje:</span>
                     <span className="font-bold text-slate-950 dark:text-white text-sm">S/ {selectedRes.total_amount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-crusoe-800 dark:text-crusoe-400 font-bold">
@@ -1113,8 +1536,8 @@ export default function AdminDashboardPage() {
                       Voucher Adjuntado
                     </span>
                   ) : (
-                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-2.5 py-0.5 rounded-full">
-                      Voucher Pendiente
+                    <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/60 px-2.5 py-0.5 rounded-full">
+                      Sin Adelanto (Falta S/ {selectedRes.deposit_amount.toFixed(2)})
                     </span>
                   )}
                 </div>
@@ -1167,59 +1590,139 @@ export default function AdminDashboardPage() {
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <a
-                        href={`https://wa.me/51${(selectedRes.customer?.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                          `Hola *${selectedRes.customer?.full_name || 'Pasajero'}*, le saludamos de *Fast Travel Xauxa*.\n\nLe recordamos que para asegurar su traslado con código *${selectedRes.code}* programado para el *${new Date(selectedRes.scheduled_at).toLocaleString('es-PE')}*, se requiere realizar el abono del adelanto de *S/ ${selectedRes.deposit_amount.toFixed(2)}* (20%).\n\n*Cuentas Oficiales de Abono:*\n- Yape: 929 667 586 (JORGE TRU.)\n- Plin: 929 667 586 (JORGE ANTONIO TRUCIOS MEZA)\n- BCP: 40002021972079 (CCI: 00240010202197207901 - JORGE ANTONIO TRUCIOS MEZA)\n\nPuede subir su comprobante directamente en el enlace de su reserva:\nhttps://ftx-platform.vercel.app/reserva/${selectedRes.code}\n\nMuchas gracias.`
-                        )}`}
+                        href={WhatsAppService.getPaymentReminderLink(selectedRes)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm"
                       >
                         <MessageSquare className="h-4 w-4" />
-                        Pedir Voucher por WhatsApp
+                        Cobrar Adelanto por WhatsApp
                       </a>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleStatusChange(selectedRes.id, 'CONFIRMED')}
-                        title="Marcar como confirmado si el cliente pagó en efectivo o transferencia externa"
-                      >
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                        Confirmar Manualmente sin Voucher
-                      </Button>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Action Buttons in Modal */}
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+              {/* Botones de acción del Modal */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  {selectedRes.status !== 'COMPLETED' && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleStatusChange(selectedRes.id, 'COMPLETED')}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      Marcar Completado (100%)
+                    </Button>
+                  )}
+                  {selectedRes.status !== 'CONFIRMED' && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleStatusChange(selectedRes.id, 'CONFIRMED')}
+                    >
+                      Confirmar Reserva
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     variant="danger"
-                    isLoading={updatingId === selectedRes.id}
-                    onClick={() => handleStatusChange(selectedRes.id, 'PAYMENT_REJECTED', `Motivo: ${rejectionReason || 'Voucher no válido'}`)}
-                    className="w-full sm:w-auto"
+                    onClick={() => handleStatusChange(selectedRes.id, 'PAYMENT_REJECTED', rejectionReason || 'Comprobante observado')}
                   >
-                    <XCircle className="h-4 w-4" />
-                    Rechazar Pago
+                    Rechazar Comprobante
                   </Button>
-                </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    isLoading={updatingId === selectedRes.id}
-                    onClick={() => handleStatusChange(selectedRes.id, 'CONFIRMED')}
-                    className="w-full sm:w-auto bg-crusoe-600 hover:bg-crusoe-700 text-white"
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                    Aprobar Adelanto y Confirmar Reserva
+                  <Button size="sm" variant="outline" onClick={() => setShowReviewModal(false)}>
+                    Cerrar
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL REGISTRO DE VEHÍCULO */}
+        {showVehicleModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 className="font-extrabold text-base text-slate-950 dark:text-white">Registrar Nueva Unidad a la Flota</h3>
+                <button onClick={() => setShowVehicleModal(false)} className="text-slate-500 hover:text-slate-950 font-bold">
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateVehicle} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-900 dark:text-slate-200 mb-1">Marca</label>
+                  <input
+                    type="text"
+                    required
+                    value={newVehicleBrand}
+                    onChange={(e) => setNewVehicleBrand(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-900 dark:text-slate-200 mb-1">Modelo</label>
+                  <input
+                    type="text"
+                    required
+                    value={newVehicleModel}
+                    onChange={(e) => setNewVehicleModel(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 font-bold"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-900 dark:text-slate-200 mb-1">Año</label>
+                    <input
+                      type="number"
+                      required
+                      value={newVehicleYear}
+                      onChange={(e) => setNewVehicleYear(Number(e.target.value))}
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-900 dark:text-slate-200 mb-1">Capacidad Pasajeros</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={10}
+                      value={newVehicleCapacity}
+                      onChange={(e) => setNewVehicleCapacity(Number(e.target.value))}
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-900 dark:text-slate-200 mb-1">Placa de Rodaje *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. W4Z-892"
+                    value={newVehiclePlate}
+                    onChange={(e) => setNewVehiclePlate(e.target.value.toUpperCase())}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 font-mono font-extrabold uppercase"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setShowVehicleModal(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" size="sm">
+                    Guardar Unidad
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         )}
