@@ -60,6 +60,7 @@ export const PAYMENT_METHODS_INFO = {
     accountNumber: '40002021972079',
     cci: '00240010202197207901',
     owner: 'JORGE ANTONIO TRUCIOS MEZA',
+    qrImage: '/images/payment/bcp-qr.png',
     active: true,
     notice: 'Transferencia directa o interbancaria BCP inmediata.',
   },

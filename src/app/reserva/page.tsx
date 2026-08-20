@@ -930,23 +930,49 @@ function BookingWizardForm() {
               ))}
             </div>
 
-            <div className="rounded-2xl border border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/70 dark:bg-crusoe-950/60 p-4 text-center space-y-2">
+            <div className="rounded-2xl border border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/70 dark:bg-crusoe-950/60 p-4 text-center space-y-3">
               {paymentMethod === 'yape' && (
-                <div>
+                <div className="space-y-2">
                   <span className="text-xs font-bold text-crusoe-900 dark:text-crusoe-300 block uppercase">Número Oficial de Yape</span>
-                  <span className="text-2xl font-extrabold text-crusoe-950 dark:text-crusoe-100 block mt-0.5">929 667 586</span>
-                  <span className="text-xs text-slate-700 dark:text-slate-300 block font-bold mt-1">Titular: JORGE TRU.</span>
+                  <span className="text-2xl font-extrabold text-crusoe-950 dark:text-crusoe-100 block mt-0.5 font-mono">929 667 586</span>
+                  <span className="text-xs text-slate-700 dark:text-slate-300 block font-bold">Titular: JORGE TRU.</span>
+                  
+                  {PAYMENT_METHODS_INFO.yape.qrImage && (
+                    <div className="pt-1 flex justify-center">
+                      <img
+                        src={PAYMENT_METHODS_INFO.yape.qrImage}
+                        alt="QR Yape"
+                        className="h-48 w-48 object-contain rounded-2xl bg-white p-2.5 border border-slate-200 dark:border-slate-700 shadow-sm"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
               {paymentMethod === 'plin' && (
-                <div>
+                <div className="space-y-2">
                   <span className="text-xs font-bold text-crusoe-900 dark:text-crusoe-300 block uppercase">Número Oficial de Plin</span>
-                  <span className="text-2xl font-extrabold text-crusoe-950 dark:text-crusoe-100 block mt-0.5">929 667 586</span>
-                  <span className="text-xs text-slate-700 dark:text-slate-300 block font-bold mt-1">Titular: JORGE ANTONIO TRUCIOS MEZA</span>
+                  <span className="text-2xl font-extrabold text-crusoe-950 dark:text-crusoe-100 block mt-0.5 font-mono">929 667 586</span>
+                  <span className="text-xs text-slate-700 dark:text-slate-300 block font-bold">Titular: JORGE ANTONIO TRUCIOS MEZA</span>
+
+                  {PAYMENT_METHODS_INFO.plin.qrImage && (
+                    <div className="pt-1 flex justify-center">
+                      <img
+                        src={PAYMENT_METHODS_INFO.plin.qrImage}
+                        alt="QR Plin"
+                        className="h-48 w-48 object-contain rounded-2xl bg-white p-2.5 border border-slate-200 dark:border-slate-700 shadow-sm"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
               {paymentMethod === 'bcp' && (
-                <div className="space-y-2 text-xs text-slate-900 dark:text-slate-100 font-medium">
+                <div className="space-y-2.5 text-xs text-slate-900 dark:text-slate-100 font-medium">
                   <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 rounded-xl p-2.5 text-emerald-900 dark:text-emerald-200 text-[11px] font-bold">
                     ✓ Cuenta Bancaria BCP Oficial Habilitada para Transferencias Directas e Interbancarias (CCI).
                   </div>
@@ -956,16 +982,29 @@ function BookingWizardForm() {
                   </div>
                   <div>
                     <span className="font-bold block text-slate-600 dark:text-slate-400">Número de Cuenta BCP:</span>
-                    <span className="font-mono text-sm font-extrabold text-crusoe-950 dark:text-white select-all bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg inline-block">
+                    <span className="font-mono text-sm font-extrabold text-crusoe-950 dark:text-white select-all bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg inline-block">
                       40002021972079
                     </span>
                   </div>
                   <div>
                     <span className="font-bold block text-slate-600 dark:text-slate-400">CCI (Código de Cuenta Interbancario):</span>
-                    <span className="font-mono text-xs font-extrabold text-crusoe-950 dark:text-white select-all bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg inline-block">
+                    <span className="font-mono text-xs font-extrabold text-crusoe-950 dark:text-white select-all bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg inline-block">
                       00240010202197207901
                     </span>
                   </div>
+
+                  {PAYMENT_METHODS_INFO.bcp.qrImage && (
+                    <div className="pt-1 flex justify-center">
+                      <img
+                        src={PAYMENT_METHODS_INFO.bcp.qrImage}
+                        alt="QR BCP"
+                        className="h-48 w-48 object-contain rounded-2xl bg-white p-2.5 border border-slate-200 dark:border-slate-700 shadow-sm"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
