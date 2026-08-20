@@ -24,7 +24,7 @@ export const Footer: React.FC = () => {
             </p>
             <div className="flex items-center gap-2 text-xs text-crusoe-300">
               <ShieldCheck className="h-4 w-4 text-crusoe-400" />
-              <span>Reserva anticipada garantizada (50% adelanto)</span>
+              <span>Reserva anticipada garantizada (20% adelanto)</span>
             </div>
           </div>
 

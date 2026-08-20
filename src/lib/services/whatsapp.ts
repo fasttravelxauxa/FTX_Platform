@@ -33,6 +33,11 @@ export class WhatsAppService {
         (reservation.invoice_details.ruc ? `(RUC: ${reservation.invoice_details.ruc} - ${reservation.invoice_details.companyName})` : `(DNI: ${reservation.invoice_details.dni})`);
     }
 
+    const hasVoucher = Array.isArray(reservation.payments) && reservation.payments.length > 0;
+    const voucherText = hasVoucher
+      ? `Adjuntado en la plataforma`
+      : `⚠️ PENDIENTE (Pagar antes del servicio)`;
+
     const text = `🚨 *¡NUEVA RESERVA RECIBIDA EN LA PLATAFORMA!* 🚨\n\n` +
       `📋 *Código:* *${reservation.code}*\n` +
       `👤 *Cliente:* ${reservation.customer?.full_name || 'Pasajero'} (${reservation.customer?.phone})\n` +
@@ -41,10 +46,10 @@ export class WhatsAppService {
       `📅 *Fecha/Hora:* ${dateFormatted}\n` +
       `✈️ *Vuelo:* ${reservation.flight_airline || 'N/A'} (${reservation.flight_number || 'N/A'})\n` +
       `💵 *Monto Total:* S/ ${reservation.total_amount.toFixed(2)}\n` +
-      `💰 *Adelanto 50%:* S/ ${reservation.deposit_amount.toFixed(2)}\n` +
+      `💰 *Adelanto 20%:* S/ ${reservation.deposit_amount.toFixed(2)}\n` +
       `📑 *Comprobante Fiscal:* ${invoiceText}\n` +
-      `📸 *Voucher:* Adjuntado en la plataforma\n\n` +
-      `👉 *Ingresa al Panel Admin:* https://ftx-platform.vercel.app/admin para revisar el voucher y confirmar.`;
+      `📸 *Voucher:* ${voucherText}\n\n` +
+      `👉 *Panel Admin:* Revisa la reserva en el panel operativo.`;
 
     return `https://wa.me/${adminPhone}?text=${encodeURIComponent(text)}`;
   }

@@ -191,7 +191,7 @@ export default function AdminDashboardPage() {
       plate: newVehiclePlate.trim().toUpperCase(),
       capacity: Number(newVehicleCapacity),
       status: 'AVAILABLE',
-      photo_urls: ['/images/car/jetour-front.jpg'],
+      photo_urls: ['/images/banners/auto_sinfondo.png'],
       created_at: new Date().toISOString(),
     };
 
@@ -351,7 +351,7 @@ export default function AdminDashboardPage() {
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ingresos por Adelantos</span>
             <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">S/ {totalIncome.toFixed(2)}</p>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Adelantos verificados (50%)</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block font-medium">Adelantos verificados (20%)</span>
           </div>
         </div>
 

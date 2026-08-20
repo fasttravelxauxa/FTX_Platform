@@ -171,7 +171,7 @@ export default function ReservationDetailPage() {
                     <span className="font-bold text-slate-950 dark:text-white">S/ {reservation.total_amount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-crusoe-800 dark:text-crusoe-400">
-                    <span>Adelanto del 50%:</span>
+                    <span>Adelanto requerido (20%):</span>
                     <span className="font-bold">S/ {reservation.deposit_amount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-slate-900 dark:text-slate-100 border-t border-slate-200 dark:border-slate-700 pt-2 font-bold text-sm">

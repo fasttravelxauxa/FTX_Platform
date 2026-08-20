@@ -551,7 +551,7 @@ export class RepositoryService {
           plate: 'W4X-892',
           capacity: 4,
           status: 'AVAILABLE',
-          photo_urls: ['/images/car/jetour-front.jpg'],
+          photo_urls: ['/images/banners/auto_sinfondo.png'],
           created_at: new Date().toISOString(),
         },
       ];
@@ -573,7 +573,7 @@ export class RepositoryService {
             plate: 'W4X-892',
             capacity: 4,
             status: 'AVAILABLE',
-            photo_urls: ['/images/car/jetour-front.jpg'],
+            photo_urls: ['/images/banners/auto_sinfondo.png'],
             created_at: new Date().toISOString(),
           },
         ];
@@ -591,7 +591,7 @@ export class RepositoryService {
           plate: 'W4X-892',
           capacity: 4,
           status: 'AVAILABLE',
-          photo_urls: ['/images/car/jetour-front.jpg'],
+          photo_urls: ['/images/banners/auto_sinfondo.png'],
           created_at: new Date().toISOString(),
         },
       ];

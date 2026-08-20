@@ -87,11 +87,13 @@ export default function HomePage() {
               {/* Right image card with real Jetour photo */}
               <div className="lg:col-span-5 relative">
                 <div className="relative rounded-3xl overflow-hidden border-2 border-crusoe-500/30 bg-crusoe-900 shadow-2xl shadow-crusoe-950/80">
-                  <img
-                    src="/images/cartoons/cartoon1.png"
-                    alt="SUV Jetour Fast Travel Xauxa Cartoon"
-                    className="w-full h-80 object-cover bg-white"
-                  />
+                  <div className="bg-gradient-to-b from-crusoe-800 to-crusoe-900 flex items-center justify-center p-6 min-h-[300px]">
+                    <img
+                      src="/images/banners/auto_sinfondo.png"
+                      alt="SUV Jetour Fast Travel Xauxa Oficial"
+                      className="w-full max-h-72 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
                   <div className="p-6 bg-gradient-to-t from-crusoe-950 via-crusoe-950/90 to-transparent">
                     <div className="flex items-center justify-between">
                       <div>

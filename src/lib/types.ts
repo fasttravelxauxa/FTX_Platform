@@ -86,8 +86,8 @@ export interface PriceQuote {
   surcharges: number;
   discounts: number;
   total: number;
-  depositRequired: number; // 50%
-  balanceRemaining: number; // 50%
+  depositRequired: number; // 20%
+  balanceRemaining: number; // 80%
   currency: 'PEN';
   details: string[];
   invoiceDetails?: InvoiceDetails;
