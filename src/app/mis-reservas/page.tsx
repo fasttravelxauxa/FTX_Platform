@@ -17,6 +17,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Info,
+  Upload,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -247,6 +248,15 @@ export default function MyBookingsPage() {
                           </div>
 
                           <div className="flex flex-col gap-2 w-full sm:w-auto">
+                            {!res.payments?.[0]?.proofs?.[0] && !['CANCELLED', 'COMPLETED', 'PAYMENT_REJECTED'].includes(res.status) && (
+                              <Link href={`/reserva/${res.code}`}>
+                                <Button size="sm" className="text-xs w-full bg-amber-600 hover:bg-amber-700 text-white shadow-sm font-bold">
+                                  <Upload className="h-3.5 w-3.5" />
+                                  Adjuntar Voucher
+                                </Button>
+                              </Link>
+                            )}
+
                             <Link href={`/reserva/${res.code}`}>
                               <Button size="sm" variant="outline" className="text-xs w-full">
                                 Ver Detalle

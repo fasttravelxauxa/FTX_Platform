@@ -523,19 +523,18 @@ export default function AdminDashboardPage() {
                         </td>
 
                         <td className="p-4 text-right space-x-2">
-                          {res.payments?.[0]?.proofs?.[0] && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => {
-                                setSelectedRes(res);
-                                setShowReviewModal(true);
-                              }}
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              Voucher
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant={res.payments?.[0]?.proofs?.[0] ? 'primary' : 'secondary'}
+                            onClick={() => {
+                              setSelectedRes(res);
+                              setShowReviewModal(true);
+                            }}
+                            title="Ver todos los detalles y comprobante de la reserva"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            {res.payments?.[0]?.proofs?.[0] ? 'Voucher' : 'Detalles'}
+                          </Button>
 
                           <Link href={`/admin/cartel/${res.code}`}>
                             <Button size="sm" variant="outline" title="Generar Cartel para Aeropuerto">
@@ -894,85 +893,332 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* REVIEW PAYMENT VOUCHER MODAL */}
+        {/* FULL RESERVATION DETAILS & VOUCHER REVIEW MODAL */}
         {showReviewModal && selectedRes && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5 text-slate-900 dark:text-slate-100">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 className="font-extrabold text-base text-slate-950 dark:text-white">Revisión de Comprobante — {selectedRes.code}</h3>
-                <button onClick={() => setShowReviewModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-lg font-bold">
-                  ✕
-                </button>
-              </div>
-
-              <div className="space-y-3 text-xs font-medium">
-                <div className="flex justify-between">
-                  <span className="font-bold text-slate-600 dark:text-slate-400">Cliente:</span>
-                  <span className="font-bold text-slate-950 dark:text-white">{selectedRes.customer?.full_name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-bold text-slate-600 dark:text-slate-400">Teléfono:</span>
-                  <span>{selectedRes.customer?.phone}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-bold text-slate-600 dark:text-slate-400">Monto del Adelanto:</span>
-                  <span className="font-extrabold text-crusoe-800 dark:text-crusoe-400 text-sm">
-                    S/ {selectedRes.deposit_amount.toFixed(2)}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm overflow-y-auto">
+            <div className="w-full max-w-2xl sm:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-7 shadow-2xl space-y-6 text-slate-900 dark:text-slate-100 my-auto">
+              {/* Header */}
+              <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs uppercase font-extrabold text-crusoe-700 dark:text-crusoe-400">Reserva Oficial</span>
+                    <Badge status={selectedRes.status} size="sm" />
+                    {selectedRes.payments?.[0] && (
+                      <Badge type="payment" status={selectedRes.payments[0].status} size="sm" />
+                    )}
+                  </div>
+                  <h3 className="font-extrabold text-xl text-slate-950 dark:text-white mt-1">{selectedRes.code}</h3>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Registrada el {new Date(selectedRes.created_at).toLocaleString('es-PE')}
                   </span>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Link href={`/admin/cartel/${selectedRes.code}`} target="_blank">
+                    <Button size="sm" variant="outline" className="text-xs">
+                      <Printer className="h-3.5 w-3.5" />
+                      Imprimir Cartel
+                    </Button>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setShowReviewModal(false);
+                      setRejectionReason('');
+                    }}
+                    className="rounded-full p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
 
-                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800/80 p-2 text-center space-y-2">
-                  <img
-                    src={selectedRes.payments?.[0]?.proofs?.[0]?.file_path}
-                    alt="Voucher de pago"
-                    className="max-h-72 w-auto mx-auto rounded-xl object-contain"
-                  />
-                  {selectedRes.payments?.[0]?.proofs?.[0]?.file_path && (
-                    <a
-                      href={selectedRes.payments[0].proofs[0].file_path}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-crusoe-700 dark:text-crusoe-400 hover:underline"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      Abrir imagen completa en Supabase Storage
-                    </a>
+              {/* Grid with full reservation details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-medium">
+                {/* Client / Passenger Card */}
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2.5">
+                  <span className="font-extrabold text-slate-950 dark:text-white block text-xs uppercase tracking-wider">
+                    👤 Pasajero Titular
+                  </span>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Nombre Completo:</span>
+                    <span className="font-bold text-slate-950 dark:text-white text-right">{selectedRes.customer?.full_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">DNI / Documento:</span>
+                    <span className="font-bold text-slate-950 dark:text-white">{selectedRes.customer?.dni || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Teléfono WhatsApp:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-950 dark:text-white">{selectedRes.customer?.phone}</span>
+                      <a
+                        href={`https://wa.me/51${(selectedRes.customer?.phone || '').replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2 py-0.5 text-[11px] font-extrabold text-white hover:bg-emerald-700 shadow-sm"
+                      >
+                        <MessageSquare className="h-3 w-3" />
+                        Chat
+                      </a>
+                    </div>
+                  </div>
+                  {selectedRes.passengers && selectedRes.passengers.length > 0 && (
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                        Pasajeros Adicionales ({selectedRes.passengers.length}):
+                      </span>
+                      <div className="space-y-1">
+                        {selectedRes.passengers.map((p, idx) => (
+                          <div key={idx} className="flex justify-between text-[11px] text-slate-700 dark:text-slate-300">
+                            <span>• {p.name} ({p.passenger_type})</span>
+                            <span className="font-mono">{p.dni || ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Motivo de rechazo (solo si no es válido):
-                  </label>
-                  <input
-                    type="text"
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    placeholder="Ej. Monto incompleto o captura ilegible"
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white"
-                  />
+                {/* Route & Trip Info */}
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2.5">
+                  <span className="font-extrabold text-slate-950 dark:text-white block text-xs uppercase tracking-wider">
+                    🚗 Itinerario y Vuelo
+                  </span>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Servicio:</span>
+                    <span className="font-bold text-slate-950 dark:text-white text-right">{selectedRes.service?.name || selectedRes.origin}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-600 dark:text-slate-400 block text-[11px]">Ruta de Traslado:</span>
+                    <span className="font-bold text-slate-950 dark:text-white block mt-0.5">
+                      {selectedRes.origin} ➔ {selectedRes.destination}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Fecha y Hora:</span>
+                    <span className="font-bold text-slate-950 dark:text-white">{new Date(selectedRes.scheduled_at).toLocaleString('es-PE')}</span>
+                  </div>
+                  {selectedRes.flight_airline && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600 dark:text-slate-400">Vuelo de Arribo:</span>
+                      <span className="font-bold text-slate-950 dark:text-white">
+                        {selectedRes.flight_airline} {selectedRes.flight_number ? `(${selectedRes.flight_number})` : ''}
+                      </span>
+                    </div>
+                  )}
+                  {selectedRes.luggage_notes && (
+                    <div className="pt-1 border-t border-slate-200 dark:border-slate-700">
+                      <span className="text-slate-600 dark:text-slate-400 text-[11px] block">Equipaje:</span>
+                      <span className="text-slate-800 dark:text-slate-200 text-[11px]">{selectedRes.luggage_notes}</span>
+                    </div>
+                  )}
+                  {selectedRes.notes && (
+                    <div>
+                      <span className="text-slate-600 dark:text-slate-400 text-[11px] block">Notas Especiales:</span>
+                      <span className="text-slate-800 dark:text-slate-200 text-[11px] italic">{selectedRes.notes}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="flex justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
-                <Button
-                  size="sm"
-                  variant="danger"
-                  isLoading={updatingId === selectedRes.id}
-                  onClick={() => handleStatusChange(selectedRes.id, 'PAYMENT_REJECTED', `Motivo: ${rejectionReason}`)}
-                >
-                  <XCircle className="h-4 w-4" />
-                  Rechazar Pago
-                </Button>
+              {/* Invoicing and Financial Breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-medium">
+                {/* Invoicing */}
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-slate-950 dark:text-white block text-xs uppercase tracking-wider">
+                      📑 Comprobante Fiscal
+                    </span>
+                    {selectedRes.invoice_details && selectedRes.invoice_details.type !== 'ninguno' && (
+                      <button
+                        onClick={() => copyInvoiceInfo(selectedRes)}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-crusoe-700 dark:text-crusoe-400 hover:underline"
+                      >
+                        <Copy className="h-3 w-3" />
+                        Copiar Datos
+                      </button>
+                    )}
+                  </div>
+                  {selectedRes.invoice_details && selectedRes.invoice_details.type !== 'ninguno' ? (
+                    <div className="space-y-1.5 text-[11px]">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600 dark:text-slate-400">Tipo:</span>
+                        <span className="font-extrabold uppercase text-crusoe-800 dark:text-crusoe-400">
+                          {selectedRes.invoice_details.type}
+                        </span>
+                      </div>
+                      {selectedRes.invoice_details.ruc && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600 dark:text-slate-400">RUC:</span>
+                          <span className="font-mono font-bold">{selectedRes.invoice_details.ruc}</span>
+                        </div>
+                      )}
+                      {selectedRes.invoice_details.companyName && (
+                        <div>
+                          <span className="text-slate-600 dark:text-slate-400 block">Razón Social:</span>
+                          <span className="font-bold text-slate-950 dark:text-white block">{selectedRes.invoice_details.companyName}</span>
+                        </div>
+                      )}
+                      {selectedRes.invoice_details.dni && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600 dark:text-slate-400">DNI:</span>
+                          <span className="font-mono font-bold">{selectedRes.invoice_details.dni}</span>
+                        </div>
+                      )}
+                      {selectedRes.invoice_details.name && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600 dark:text-slate-400">Nombre Boleta:</span>
+                          <span className="font-bold">{selectedRes.invoice_details.name}</span>
+                        </div>
+                      )}
+                      {selectedRes.invoice_details.fiscalAddress && (
+                        <div>
+                          <span className="text-slate-600 dark:text-slate-400 block">Dirección Fiscal:</span>
+                          <span className="text-slate-800 dark:text-slate-200 block">{selectedRes.invoice_details.fiscalAddress}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-slate-400 dark:text-slate-500 italic text-[11px]">No solicitó comprobante fiscal (Solo ticket de servicio).</p>
+                  )}
+                </div>
 
-                <Button
-                  size="sm"
-                  isLoading={updatingId === selectedRes.id}
-                  onClick={() => handleStatusChange(selectedRes.id, 'CONFIRMED')}
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Aprobar Pago y Confirmar
-                </Button>
+                {/* Financial breakdown */}
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2">
+                  <span className="font-extrabold text-slate-950 dark:text-white block text-xs uppercase tracking-wider">
+                    💰 Liquidación Monetaria
+                  </span>
+                  <div className="flex justify-between text-slate-700 dark:text-slate-300">
+                    <span>Monto Total:</span>
+                    <span className="font-bold text-slate-950 dark:text-white text-sm">S/ {selectedRes.total_amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-crusoe-800 dark:text-crusoe-400 font-bold">
+                    <span>Adelanto (20%):</span>
+                    <span>S/ {selectedRes.deposit_amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-900 dark:text-slate-100 border-t border-slate-200 dark:border-slate-700 pt-2 font-extrabold">
+                    <span>Saldo a cobrar al abordar (80%):</span>
+                    <span className="text-sm">S/ {selectedRes.balance_amount.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* VOUCHER INSPECTION SECTION */}
+              <div className="rounded-2xl border-2 border-crusoe-200 dark:border-slate-700 bg-white dark:bg-slate-800/90 p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-sm text-slate-950 dark:text-white flex items-center gap-2">
+                    📸 Comprobante / Voucher de Adelanto
+                  </span>
+                  {selectedRes.payments?.[0]?.proofs?.[0] ? (
+                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full">
+                      ✓ Voucher Adjuntado
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-2.5 py-0.5 rounded-full">
+                      ⚠️ Voucher Pendiente
+                    </span>
+                  )}
+                </div>
+
+                {selectedRes.payments?.[0]?.proofs?.[0] ? (
+                  <div className="space-y-3">
+                    <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-900 p-3 text-center space-y-2">
+                      <img
+                        src={selectedRes.payments[0].proofs![0].file_path}
+                        alt="Voucher de pago"
+                        className="max-h-80 w-auto mx-auto rounded-xl object-contain shadow-md cursor-pointer hover:opacity-95"
+                        onClick={() => {
+                          const url = selectedRes.payments?.[0]?.proofs?.[0]?.file_path;
+                          if (url) window.open(url, '_blank');
+                        }}
+                      />
+                      <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+                        <span className="text-slate-600 dark:text-slate-400">
+                          Método: <strong className="uppercase">{selectedRes.payments[0].payment_method || 'Yape'}</strong> | Ref: <strong>{selectedRes.payments[0].proofs![0].reference_number || 'N/A'}</strong>
+                        </span>
+                        <a
+                          href={selectedRes.payments[0].proofs![0].file_path}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 font-bold text-crusoe-700 dark:text-crusoe-400 hover:underline"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Abrir original en pestaña nueva
+                        </a>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Motivo de rechazo (opcional, solo si el voucher no es válido):
+                      </label>
+                      <input
+                        type="text"
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        placeholder="Ej. Monto incompleto, voucher falso o captura ilegible"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-xs text-slate-950 dark:text-white focus:border-crusoe-600"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 p-4 space-y-3">
+                    <p className="text-xs text-amber-950 dark:text-amber-200 leading-relaxed font-medium">
+                      El pasajero reservó sin adjuntar voucher de adelanto (S/ {selectedRes.deposit_amount.toFixed(2)}). Puedes contactarlo directamente por WhatsApp para solicitarle el pago antes de confirmar.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <a
+                        href={`https://wa.me/51${(selectedRes.customer?.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                          `Hola *${selectedRes.customer?.full_name || 'Pasajero'}*, te saludamos de *Fast Travel Xauxa* 🚗.\n\nTe recordamos que para asegurar tu traslado con código *${selectedRes.code}* programado para el *${new Date(selectedRes.scheduled_at).toLocaleString('es-PE')}*, se requiere realizar el abono del adelanto de *S/ ${selectedRes.deposit_amount.toFixed(2)}* (20%).\n\n💳 *Cuentas Disponibles:*\n• Yape: 929 667 586 (JORGE TRU.)\n• Plin: 929 667 586 (JORGE ANTONIO TRUCIOS MEZA)\n• BCP: 355-98765432-0-12 (JORGE ANTONIO TRUCIOS MEZA)\n\nPuedes subir tu comprobante directamente en tu enlace de reserva:\n👉 https://ftx-platform.vercel.app/reserva/${selectedRes.code}\n\n¡Muchas gracias!`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Pedir Voucher por WhatsApp
+                      </a>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleStatusChange(selectedRes.id, 'CONFIRMED')}
+                        title="Marcar como confirmado si el cliente pagó en efectivo o transferencia externa"
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        Confirmar Manualmente sin Voucher
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons in Modal */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    isLoading={updatingId === selectedRes.id}
+                    onClick={() => handleStatusChange(selectedRes.id, 'PAYMENT_REJECTED', `Motivo: ${rejectionReason || 'Voucher no válido'}`)}
+                    className="w-full sm:w-auto"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Rechazar Pago
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    isLoading={updatingId === selectedRes.id}
+                    onClick={() => handleStatusChange(selectedRes.id, 'CONFIRMED')}
+                    className="w-full sm:w-auto bg-crusoe-600 hover:bg-crusoe-700 text-white"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Aprobar Adelanto y Confirmar Reserva
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

@@ -38,7 +38,7 @@ export default function HomePage() {
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-center">
               {/* Left text column */}
-              <div className="lg:col-span-7 space-y-6">
+              <div className="lg:col-span-6 space-y-6">
                 <div className="inline-flex items-center gap-2 rounded-full border border-crusoe-500/40 bg-crusoe-500/10 px-3.5 py-1.5 text-xs font-semibold text-crusoe-300">
                   <ShieldCheck className="h-4 w-4 text-crusoe-400" />
                   <span>Servicio Ejecutivo Oficial Jauja ↔ Huancayo</span>
@@ -68,10 +68,14 @@ export default function HomePage() {
                 </div>
 
                 {/* Key features bar */}
-                <div className="pt-6 grid grid-cols-3 gap-4 border-t border-crusoe-800/80 text-xs sm:text-sm text-crusoe-200">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 text-xs font-semibold text-crusoe-200 border-t border-crusoe-800/80">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-crusoe-400 shrink-0" />
-                    <span>Adelanto del 20% (opcional)</span>
+                    <span>Adelanto 20%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-crusoe-400 shrink-0" />
+                    <span>Reembolso 100% (1h)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-crusoe-400 shrink-0" />
@@ -84,32 +88,33 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Right image card with real Jetour photo */}
-              <div className="lg:col-span-5 relative">
-                <div className="relative rounded-3xl overflow-hidden border-2 border-crusoe-500/30 bg-crusoe-900 shadow-2xl shadow-crusoe-950/80">
-                  <div className="bg-gradient-to-b from-crusoe-800 to-crusoe-900 flex items-center justify-center p-6 min-h-[300px]">
+              {/* Right image card with larger Jetour photo */}
+              <div className="lg:col-span-6 relative flex items-center">
+                <div className="w-full relative rounded-3xl overflow-hidden border-2 border-crusoe-500/40 bg-crusoe-900 shadow-2xl shadow-crusoe-950/90">
+                  <div className="bg-gradient-to-b from-crusoe-700/80 via-crusoe-850 to-crusoe-950 flex items-center justify-center p-6 sm:p-10 min-h-[380px] sm:min-h-[440px] relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-crusoe-500/20 via-transparent to-transparent"></div>
                     <img
                       src="/images/banners/auto_sinfondo.png"
                       alt="SUV Jetour Fast Travel Xauxa Oficial"
-                      className="w-full max-h-72 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-300"
+                      className="relative z-10 w-full max-h-[360px] sm:max-h-[420px] object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.7)] hover:scale-105 transition-transform duration-500"
                     />
                   </div>
-                  <div className="p-6 bg-gradient-to-t from-crusoe-950 via-crusoe-950/90 to-transparent">
+                  <div className="p-6 bg-gradient-to-t from-crusoe-950 via-crusoe-950/95 to-transparent">
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-xs uppercase font-bold text-crusoe-400 tracking-wider">Unidad Oficial</span>
-                        <h3 className="text-xl font-extrabold text-white">SUV Jetour X70 FL</h3>
+                        <h3 className="text-2xl font-extrabold text-white">SUV Jetour X70 FL</h3>
                       </div>
-                      <span className="rounded-full bg-crusoe-500/20 px-3 py-1 text-xs font-bold text-crusoe-300 border border-crusoe-500/30">
+                      <span className="rounded-full bg-crusoe-500/20 px-3.5 py-1 text-xs font-bold text-crusoe-300 border border-crusoe-500/40 shadow-inner">
                         2027 Modelo
                       </span>
                     </div>
-                    <p className="text-xs text-crusoe-200 mt-2">
+                    <p className="text-xs text-crusoe-200 mt-2 leading-relaxed">
                       Aire acondicionado, asientos ergonómicos, maletero amplio, WiFi a bordo e higiene impecable.
                     </p>
                   </div>
                 </div>
-              </div>
+              </div> 
             </div>
           </div>
         </section>
