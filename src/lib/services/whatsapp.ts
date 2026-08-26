@@ -38,10 +38,15 @@ export class WhatsAppService {
       ? `Adjuntado en la plataforma`
       : `PENDIENTE (Pagar antes de la hora programada)`;
 
+    const isShared = reservation.service_id === 'a2222222-2222-2222-2222-222222222222' || reservation.service?.code === 'compartido-aeropuerto';
+    const modalityText = isShared
+      ? `Servicio Compartido (${reservation.passengers_count || 1} Asiento(s) contratado(s))`
+      : `Servicio Privado Exclusivo SUV (Camioneta Completa)`;
+
     const text = `*NOTIFICACIÓN DE RESERVA - FAST TRAVEL XAUXA*\n\n` +
       `*Código:* *${reservation.code}*\n` +
       `*Cliente:* ${reservation.customer?.full_name || 'Pasajero'} (${reservation.customer?.phone})\n` +
-      `*Servicio:* ${reservation.service?.name || reservation.origin}\n` +
+      `*Modalidad:* ${modalityText}\n` +
       `*Ruta:* ${reservation.origin} ➔ ${reservation.destination}\n` +
       `*Fecha y Hora:* ${dateFormatted}\n` +
       `*Vuelo:* ${reservation.flight_airline || 'N/A'} (${reservation.flight_number || 'N/A'})\n` +
@@ -64,6 +69,11 @@ export class WhatsAppService {
       timeStyle: 'short',
     });
 
+    const isShared = reservation.service_id === 'a2222222-2222-2222-2222-222222222222' || reservation.service?.code === 'compartido-aeropuerto';
+    const modalityText = isShared
+      ? `Servicio Compartido (${reservation.passengers_count || 1} Asiento(s) contratado(s))`
+      : `Servicio Privado Exclusivo SUV (Camioneta Completa)`;
+
     let invoiceText = '';
     if (reservation.invoice_details && reservation.invoice_details.type !== 'ninguno') {
       invoiceText = `\n*Comprobante Solicitado:* ${reservation.invoice_details.type.toUpperCase()}` +
@@ -71,7 +81,7 @@ export class WhatsAppService {
         `\n_(Su Boleta o Factura Electrónica será adjuntada por este medio)_`;
     }
 
-    const text = `*FAST TRAVEL XAUXA - RESERVA CONFIRMADA*\n\nEstimado(a) *${reservation.customer?.full_name || 'Pasajero(a)'}*,\nSu reserva con código *${reservation.code}* ha sido *CONFIRMADA* formalmente.\n\n*Fecha y Hora:* ${dateFormatted}\n*Origen:* ${reservation.origin}\n*Destino:* ${reservation.destination}\n*Saldo Restante:* S/ ${reservation.balance_amount.toFixed(2)} (se abona al abordar la unidad)${invoiceText}\n\nGracias por elegir Fast Travel Xauxa. Coordinación oficial únicamente por este canal de WhatsApp.`;
+    const text = `*FAST TRAVEL XAUXA - RESERVA CONFIRMADA*\n\nEstimado(a) *${reservation.customer?.full_name || 'Pasajero(a)'}*,\nSu reserva con código *${reservation.code}* ha sido *CONFIRMADA* formalmente.\n\n*Modalidad:* ${modalityText}\n*Fecha y Hora:* ${dateFormatted}\n*Origen:* ${reservation.origin}\n*Destino:* ${reservation.destination}\n*Saldo Restante:* S/ ${reservation.balance_amount.toFixed(2)} (se abona al abordar la unidad)${invoiceText}\n\nGracias por elegir Fast Travel Xauxa. Coordinación oficial únicamente por este canal de WhatsApp.`;
 
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
   }
@@ -86,9 +96,15 @@ export class WhatsAppService {
       timeStyle: 'short',
     });
 
+    const isShared = reservation.service_id === 'a2222222-2222-2222-2222-222222222222' || reservation.service?.code === 'compartido-aeropuerto';
+    const modalityText = isShared
+      ? `Servicio Compartido (${reservation.passengers_count || 1} Asiento(s) contratado(s))`
+      : `Servicio Privado Exclusivo SUV (Camioneta Completa)`;
+
     const text = `*FAST TRAVEL XAUXA - RECORDATORIO DE ADELANTO*\n\n` +
       `Estimado(a) *${reservation.customer?.full_name || 'Pasajero(a)'}*,\n` +
       `Le saludamos de Fast Travel Xauxa. Le recordamos que tiene una reserva registrada con código *${reservation.code}* para el traslado:\n\n` +
+      `*Modalidad:* ${modalityText}\n` +
       `*Ruta:* ${reservation.origin} ➔ ${reservation.destination}\n` +
       `*Fecha y Hora:* ${dateFormatted}\n` +
       `*Monto Total:* S/ ${reservation.total_amount.toFixed(2)}\n` +

@@ -92,8 +92,12 @@ export default function ReceptionPosterPage() {
           {/* Footer Metadata */}
           <div className="border-t-4 border-crusoe-950 pt-8 flex items-center justify-between text-base font-bold text-crusoe-900">
             <span>AEROPUERTO DE JAUJA (JAU)</span>
-            <span>VUELO: {reservation.flight_airline} {reservation.flight_number}</span>
-            <span>SUV JETOUR</span>
+            <span>VUELO: {reservation.flight_airline || 'OFICIAL'} {reservation.flight_number || ''}</span>
+            <span>
+              {reservation.service_id === 'a2222222-2222-2222-2222-222222222222'
+                ? `COMPARTIDO (${reservation.passengers_count || 1} ASIENTO${(reservation.passengers_count || 1) > 1 ? 'S' : ''})`
+                : 'SUV JETOUR EXCLUSIVO'}
+            </span>
           </div>
         </div>
       </div>

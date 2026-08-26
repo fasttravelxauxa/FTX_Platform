@@ -43,7 +43,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { RepositoryService } from '@/lib/services/repository';
-import { Reservation, ReservationStatus, Profile, Vehicle, VehicleStatus } from '@/lib/types';
+import { Reservation, ReservationStatus, Profile, Vehicle, VehicleStatus, LedgerEntry } from '@/lib/types';
 import { WhatsAppService } from '@/lib/services/whatsapp';
 import { createClient } from '@/lib/supabase/client';
 
@@ -53,6 +53,7 @@ export default function AdminDashboardPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [profilesList, setProfilesList] = useState<Profile[]>([]);
   const [vehiclesList, setVehiclesList] = useState<Vehicle[]>([]);
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'reservas' | 'calendario' | 'finanzas' | 'pasajeros' | 'vehiculos'>('reservas');
   const [filterStatus, setFilterStatus] = useState<string>('TODOS');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -137,9 +138,11 @@ export default function AdminDashboardPage() {
     const list = await RepositoryService.getReservations();
     const profiles = await RepositoryService.getProfiles();
     const vehicles = await RepositoryService.getVehicles();
+    const ledger = await RepositoryService.getFinancialLedger();
     setReservations(list);
     setProfilesList(profiles);
     setVehiclesList(vehicles);
+    setLedgerEntries(ledger);
   };
 
   const handleStatusChange = async (reservationId: string, newStatus: ReservationStatus, notes?: string) => {
@@ -155,6 +158,11 @@ export default function AdminDashboardPage() {
       }
       setShowReviewModal(false);
       setRejectionReason('');
+      // Si se completó, recargar el libro contable
+      if (newStatus === 'COMPLETED') {
+        const updatedLedger = await RepositoryService.getFinancialLedger();
+        setLedgerEntries(updatedLedger);
+      }
     } else {
       alert(`Error al actualizar estado en Supabase: ${result.error}`);
     }
@@ -163,16 +171,43 @@ export default function AdminDashboardPage() {
 
   const handleDeleteProfile = async (pass: { id: string; name: string; phone: string }) => {
     const confirmed = window.confirm(
-      `¿Estás seguro de eliminar a "${pass.name}" (+51 ${pass.phone}) del Directorio de Pasajeros?\n\nEsta acción eliminará su registro de Supabase.`
+      `¿Estás seguro de eliminar a "${pass.name}" (+51 ${pass.phone}) del Directorio de Pasajeros?\n\nEsta acción eliminará su perfil y todas sus reservas vinculadas en Supabase.`
     );
     if (!confirmed) return;
 
     const res = await RepositoryService.deleteProfile(pass.id);
     if (res.success) {
       setProfilesList((prev) => prev.filter((p) => p.id !== pass.id));
-      alert(`Perfil de "${pass.name}" eliminado correctamente.`);
+      setReservations((prev) =>
+        prev.filter((r) => r.customer_id !== pass.id && r.customer?.phone?.replace(/[^0-9]/g, '') !== pass.phone)
+      );
+      alert(`Perfil de "${pass.name}" y sus registros fueron eliminados correctamente de Supabase.`);
     } else {
-      alert(`No se pudo eliminar el perfil: ${res.error}`);
+      alert(
+        `No se pudo eliminar el perfil: ${res.error}\n\nNota: Si es un error de permisos en Supabase, asegúrate de ejecutar el script "fix_delete_cascade_and_policies.sql" en el SQL Editor de Supabase.`
+      );
+    }
+  };
+
+  const handleDeleteReservation = async (res: Reservation) => {
+    if (res.status === 'COMPLETED') {
+      const confirmCompleted = window.confirm(
+        `ATENCIÓN: La reserva ${res.code} está marcada como COMPLETADA y sus ingresos ya fueron asentados en el Libro Contable Histórico.\n\n¿Deseas depurarla de la lista operativa? Los ingresos contables seguirán registrados de forma permanente.`
+      );
+      if (!confirmCompleted) return;
+    } else {
+      if (!window.confirm(`¿Eliminar la reserva ${res.code} de Supabase?`)) return;
+    }
+
+    const ok = await RepositoryService.deleteReservation(res.id, res.code);
+    if (ok) {
+      setReservations((prev) => prev.filter((r) => r.id !== res.id));
+      if (selectedRes && selectedRes.id === res.id) {
+        setShowReviewModal(false);
+      }
+      alert(`Reserva ${res.code} eliminada de la lista operativa.`);
+    } else {
+      alert(`Error al eliminar la reserva ${res.code}.`);
     }
   };
 
@@ -317,26 +352,68 @@ export default function AdminDashboardPage() {
 
   const periodStartDate = getPeriodStartDate();
 
-  const financeFilteredReservations = reservations.filter((r) => {
-    const tripDate = new Date(r.scheduled_at || r.created_at);
+  // Combinar todos los viajes completados del Libro Contable Histórico Inmutable y de las reservas activas
+  const allCompletedTripsMap = new Map<string, LedgerEntry>();
+
+  // 1. Asientos guardados en el Libro Contable Histórico
+  ledgerEntries.forEach((entry) => {
+    allCompletedTripsMap.set(entry.reservation_code, entry);
+  });
+
+  // 2. Asientos de reservas activas completadas (para sincronía inmediata)
+  reservations
+    .filter((r) => r.status === 'COMPLETED')
+    .forEach((r) => {
+      const isShared = r.service_id === 'a2222222-2222-2222-2222-222222222222';
+      if (!allCompletedTripsMap.has(r.code)) {
+        allCompletedTripsMap.set(r.code, {
+          id: r.id,
+          reservation_code: r.code,
+          service_type: isShared ? 'compartido' : 'privado',
+          service_name: r.service?.name || (isShared ? 'Servicio Compartido' : 'Servicio Privado Exclusivo'),
+          origin: r.origin,
+          destination: r.destination,
+          scheduled_at: r.scheduled_at,
+          completed_at: r.updated_at || r.created_at,
+          passengers_count: r.passengers_count || 1,
+          customer_name: r.customer?.full_name || 'Pasajero',
+          customer_phone: r.customer?.phone || '',
+          total_amount: Number(r.total_amount || 0),
+          deposit_amount: Number(r.deposit_amount || 0),
+          balance_amount: Number(r.balance_amount || 0),
+          payment_method: r.payments?.[0]?.payment_method || 'yape',
+          created_at: r.created_at,
+        });
+      }
+    });
+
+  const allCompletedTrips = Array.from(allCompletedTripsMap.values()).sort(
+    (a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()
+  );
+
+  const completedTripsInPeriod = allCompletedTrips.filter((entry) => {
+    const tripDate = new Date(entry.scheduled_at || entry.completed_at);
     return tripDate >= periodStartDate;
   });
 
-  const completedTrips = financeFilteredReservations.filter((r) => r.status === 'COMPLETED');
-  const totalCompletedRevenue = completedTrips.reduce((acc, r) => acc + r.total_amount, 0);
-  const totalCompletedDeposits = completedTrips.reduce((acc, r) => acc + r.deposit_amount, 0);
-  const totalCompletedBalances = completedTrips.reduce((acc, r) => acc + r.balance_amount, 0);
+  const totalCompletedRevenue = completedTripsInPeriod.reduce((acc, r) => acc + r.total_amount, 0);
+  const totalCompletedDeposits = completedTripsInPeriod.reduce((acc, r) => acc + r.deposit_amount, 0);
+  const totalCompletedBalances = completedTripsInPeriod.reduce((acc, r) => acc + r.balance_amount, 0);
 
-  const confirmedTrips = financeFilteredReservations.filter((r) => r.status === 'CONFIRMED' || r.status === 'ASSIGNED' || r.status === 'IN_PROGRESS');
+  const confirmedTrips = reservations.filter(
+    (r) =>
+      ['CONFIRMED', 'ASSIGNED', 'IN_PROGRESS'].includes(r.status) &&
+      new Date(r.scheduled_at || r.created_at) >= periodStartDate
+  );
   const projectedRevenue = confirmedTrips.reduce((acc, r) => acc + r.total_amount, 0);
   const confirmedDeposits = confirmedTrips.reduce((acc, r) => acc + r.deposit_amount, 0);
 
-  const privateCompletedRevenue = completedTrips
-    .filter((r) => r.service_id !== 'a2222222-2222-2222-2222-222222222222')
+  const privateCompletedRevenue = completedTripsInPeriod
+    .filter((r) => r.service_type === 'privado')
     .reduce((acc, r) => acc + r.total_amount, 0);
 
-  const sharedCompletedRevenue = completedTrips
-    .filter((r) => r.service_id === 'a2222222-2222-2222-2222-222222222222')
+  const sharedCompletedRevenue = completedTripsInPeriod
+    .filter((r) => r.service_type === 'compartido')
     .reduce((acc, r) => acc + r.total_amount, 0);
 
   const copyInvoiceInfo = (res: Reservation) => {
@@ -530,7 +607,15 @@ export default function AdminDashboardPage() {
                       </div>
 
                       <div className="space-y-1 text-xs">
-                        <span className="font-bold text-slate-900 dark:text-slate-100 block">{res.service?.name || 'Traslado'}</span>
+                        {res.service_id === 'a2222222-2222-2222-2222-222222222222' ? (
+                          <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400 block text-xs">
+                            Servicio Compartido • {res.passengers_count || 1} Asiento(s) (S/ 20.00 c/u)
+                          </span>
+                        ) : (
+                          <span className="font-extrabold text-slate-950 dark:text-white block text-xs">
+                            Servicio Privado Exclusivo SUV
+                          </span>
+                        )}
                         <span className="text-slate-600 dark:text-slate-400 block text-[11px]">
                           {res.origin} ➔ {res.destination}
                         </span>
@@ -668,7 +753,15 @@ export default function AdminDashboardPage() {
                           </td>
 
                           <td className="p-4">
-                            <span className="font-bold text-slate-950 dark:text-white block">{res.service?.name || 'Traslado'}</span>
+                            {res.service_id === 'a2222222-2222-2222-2222-222222222222' ? (
+                              <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400 block text-xs">
+                                Servicio Compartido • {res.passengers_count || 1} Asiento(s) (S/ 20.00 c/u)
+                              </span>
+                            ) : (
+                              <span className="font-extrabold text-slate-950 dark:text-white block text-xs">
+                                Servicio Privado Exclusivo SUV
+                              </span>
+                            )}
                             <span className="text-slate-600 dark:text-slate-400 block text-[11px]">
                               {res.origin} ➔ {res.destination}
                             </span>
@@ -790,21 +883,15 @@ export default function AdminDashboardPage() {
                                 </a>
                               )}
 
-                              {['CANCELLED', 'PAYMENT_REJECTED', 'EXPIRED'].includes(res.status) && (
-                                <Button
-                                  size="sm"
-                                  variant="danger"
-                                  title="Eliminar reserva cancelada"
-                                  onClick={async () => {
-                                    if (!window.confirm(`¿Eliminar la reserva ${res.code}? (El perfil del usuario permanecerá en el Directorio de Supabase)`)) return;
-                                    await RepositoryService.deleteReservation(res.id, res.code);
-                                    await refreshData();
-                                  }}
-                                  className="py-1.5 px-2"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                title="Eliminar reserva"
+                                onClick={() => handleDeleteReservation(res)}
+                                className="py-1.5 px-2"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -1015,7 +1102,7 @@ export default function AdminDashboardPage() {
                   S/ {totalCompletedRevenue.toFixed(2)}
                 </p>
                 <span className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-1 block font-semibold">
-                  {completedTrips.length} viajes completados exitosamente
+                  {completedTripsInPeriod.length} viajes completados exitosamente
                 </span>
               </div>
 
@@ -1048,7 +1135,7 @@ export default function AdminDashboardPage() {
                   Ticket Promedio
                 </span>
                 <p className="text-3xl font-extrabold text-indigo-950 dark:text-indigo-100 mt-1 font-mono">
-                  S/ {(completedTrips.length > 0 ? totalCompletedRevenue / completedTrips.length : 0).toFixed(2)}
+                  S/ {(completedTripsInPeriod.length > 0 ? totalCompletedRevenue / completedTripsInPeriod.length : 0).toFixed(2)}
                 </p>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
                   Promedio por servicio
@@ -1100,38 +1187,51 @@ export default function AdminDashboardPage() {
             {/* Tabla Detallada de Viajes del Periodo */}
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md overflow-hidden">
               <div className="p-4 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 font-extrabold text-xs text-slate-950 dark:text-white uppercase tracking-wider flex justify-between items-center">
-                <span>Historial de Liquidación del Periodo ({completedTrips.length} completados)</span>
+                <span>Historial de Liquidación del Periodo ({completedTripsInPeriod.length} viajes completados)</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                     <tr>
                       <th className="p-3.5">Código / Pasajero</th>
-                      <th className="p-3.5">Fecha Realizado</th>
-                      <th className="p-3.5">Servicio</th>
+                      <th className="p-3.5">Fecha y Hora</th>
+                      <th className="p-3.5">Modalidad / Ruta</th>
                       <th className="p-3.5 text-right">Adelanto (20%)</th>
                       <th className="p-3.5 text-right">Saldo al Abordar (80%)</th>
                       <th className="p-3.5 text-right">Total Cobrado (100%)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {completedTrips.length === 0 ? (
+                    {completedTripsInPeriod.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="p-8 text-center text-slate-500 font-bold text-xs">
                           No hay viajes marcados como completados en este periodo.
                         </td>
                       </tr>
                     ) : (
-                      completedTrips.map((res) => (
-                        <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      completedTripsInPeriod.map((res) => (
+                        <tr key={res.reservation_code} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                           <td className="p-3.5">
-                            <span className="font-extrabold text-slate-950 dark:text-white block">{res.code}</span>
-                            <span className="text-slate-600 dark:text-slate-400 block text-[11px]">{res.customer?.full_name}</span>
+                            <span className="font-extrabold text-slate-950 dark:text-white block">{res.reservation_code}</span>
+                            <span className="text-slate-600 dark:text-slate-400 block text-[11px]">{res.customer_name} ({res.customer_phone})</span>
                           </td>
                           <td className="p-3.5 text-slate-700 dark:text-slate-300">
-                            {new Date(res.scheduled_at).toLocaleDateString('es-PE')}
+                            {new Date(res.scheduled_at).toLocaleString('es-PE')}
                           </td>
-                          <td className="p-3.5 font-medium">{res.service?.name || res.origin}</td>
+                          <td className="p-3.5">
+                            {res.service_type === 'compartido' ? (
+                              <span className="font-extrabold text-crusoe-700 dark:text-crusoe-400 block text-xs">
+                                Servicio Compartido • {res.passengers_count || 1} Asiento(s) (S/ 20 c/u)
+                              </span>
+                            ) : (
+                              <span className="font-extrabold text-slate-950 dark:text-white block text-xs">
+                                Servicio Privado Exclusivo SUV
+                              </span>
+                            )}
+                            <span className="text-slate-500 dark:text-slate-400 text-[11px] block">
+                              {res.origin} ➔ {res.destination}
+                            </span>
+                          </td>
                           <td className="p-3.5 text-right font-bold text-crusoe-800 dark:text-crusoe-400">
                             S/ {res.deposit_amount.toFixed(2)}
                           </td>
@@ -1413,8 +1513,12 @@ export default function AdminDashboardPage() {
                     Itinerario y Vuelo
                   </span>
                   <div className="flex justify-between">
-                    <span className="text-slate-600 dark:text-slate-400">Servicio:</span>
-                    <span className="font-bold text-slate-950 dark:text-white text-right">{selectedRes.service?.name || selectedRes.origin}</span>
+                    <span className="text-slate-600 dark:text-slate-400">Modalidad:</span>
+                    <span className="font-bold text-slate-950 dark:text-white text-right">
+                      {selectedRes.service_id === 'a2222222-2222-2222-2222-222222222222'
+                        ? `Servicio Compartido (${selectedRes.passengers_count || 1} Asiento(s) - S/ 20.00 c/u)`
+                        : 'Servicio Privado Exclusivo SUV Jetour (Camioneta Completa)'}
+                    </span>
                   </div>
                   <div>
                     <span className="text-slate-600 dark:text-slate-400 block text-[11px]">Ruta de Traslado:</span>

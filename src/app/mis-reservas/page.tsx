@@ -204,7 +204,11 @@ export default function MyBookingsPage() {
 
                           <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
                             <Car className="h-3.5 w-3.5 text-crusoe-600 shrink-0" />
-                            <span className="font-bold text-slate-950 dark:text-white">{res.service?.name || 'Traslado Ejecutivo'}</span>
+                            <span className="font-bold text-slate-950 dark:text-white">
+                              {isShared
+                                ? `Servicio Compartido • ${res.passengers_count || 1} Asiento(s) (S/ 20.00 c/u)`
+                                : 'Servicio Privado Exclusivo SUV (Camioneta Completa)'}
+                            </span>
                           </div>
 
                           <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">

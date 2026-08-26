@@ -203,3 +203,23 @@ export interface RestrictionRecord {
   created_at: string;
   expires_at?: string;
 }
+
+export interface LedgerEntry {
+  id: string;
+  reservation_code: string;
+  service_type: string;
+  service_name: string;
+  origin: string;
+  destination: string;
+  scheduled_at: string;
+  completed_at: string;
+  passengers_count: number;
+  customer_name: string;
+  customer_phone: string;
+  total_amount: number;
+  deposit_amount: number;
+  balance_amount: number;
+  payment_method: string;
+  created_at: string;
+}
+

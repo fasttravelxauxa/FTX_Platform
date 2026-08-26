@@ -1,7 +1,8 @@
 import { createClient } from '../supabase/client';
-import { Reservation, InvoiceDetails, Profile, ReservationStatus, Vehicle, VehicleStatus } from '../types';
+import { Reservation, InvoiceDetails, Profile, ReservationStatus, Vehicle, VehicleStatus, LedgerEntry } from '../types';
 
 const FTX_PHONE_KEY = 'ftx_passenger_phone';
+const FTX_LEDGER_STORAGE_KEY = 'ftx_accounting_ledger_cache';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function isUUID(str?: string | null): boolean {
@@ -125,6 +126,13 @@ export class RepositoryService {
       if (error) {
         console.error('[FTX Repository] Error al actualizar estado de reserva:', error.message);
         return { success: false, error: error.message };
+      }
+
+      // Si el viaje se marca como COMPLETADO, registrar inmediatamente en el Libro Contable Inmutable
+      if (status === 'COMPLETED') {
+        RepositoryService.recordCompletedTripInLedger(reservationId).catch((err) => {
+          console.warn('[FTX Repository] Error secundario al asentar en libro contable:', err);
+        });
       }
 
       return { success: true };
@@ -494,13 +502,29 @@ export class RepositoryService {
   }
 
   /**
-   * Eliminar reserva cancelada o rechazada en la nube
+   * Eliminar reserva cancelada o rechazada en la nube con limpieza en cascada
    */
   public static async deleteReservation(reservationId: string, code: string): Promise<boolean> {
     const supabase = createClient();
     if (!supabase) return false;
 
     try {
+      // 1. Obtener pagos asociados para limpiar comprobantes
+      const { data: payments } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('reservation_id', reservationId);
+
+      if (payments && payments.length > 0) {
+        const paymentIds = payments.map((p) => p.id);
+        await supabase.from('payment_proofs').delete().in('payment_id', paymentIds);
+        await supabase.from('payments').delete().eq('reservation_id', reservationId);
+      }
+
+      // 2. Limpiar pasajeros adicionales
+      await supabase.from('reservation_passengers').delete().eq('reservation_id', reservationId);
+
+      // 3. Eliminar la reserva principal
       const { error } = await supabase.from('reservations').delete().eq('id', reservationId);
 
       if (error) {
@@ -517,23 +541,159 @@ export class RepositoryService {
   }
 
   /**
-   * Eliminar un perfil de pasajero de Supabase
+   * Eliminar un perfil de pasajero de Supabase con limpieza de reservas en cascada
    */
   public static async deleteProfile(profileId: string): Promise<{ success: boolean; error?: string }> {
     const supabase = createClient();
     if (!supabase) return { success: false, error: 'Sin conexión a Supabase' };
 
     try {
+      // 1. Buscar todas las reservas vinculadas al perfil
+      const { data: userReservations } = await supabase
+        .from('reservations')
+        .select('id, code')
+        .eq('customer_id', profileId);
+
+      // 2. Eliminar en cascada cada reserva vinculada
+      if (userReservations && userReservations.length > 0) {
+        for (const res of userReservations) {
+          await RepositoryService.deleteReservation(res.id, res.code);
+        }
+      }
+
+      // 3. Eliminar el perfil del pasajero
       const { error } = await supabase.from('profiles').delete().eq('id', profileId);
       if (error) {
         console.error('[FTX Repository] Error al eliminar perfil:', error.message);
         return { success: false, error: error.message };
       }
+
+      console.log('[FTX Repository] Perfil de usuario eliminado de Supabase:', profileId);
       return { success: true };
     } catch (err: any) {
       console.error('[FTX Repository] Excepción al eliminar perfil:', err?.message);
       return { success: false, error: err?.message };
     }
+  }
+
+  /**
+   * Asentar viaje completado en el Libro Contable Histórico Inmutable
+   */
+  public static async recordCompletedTripInLedger(reservationId: string): Promise<boolean> {
+    const supabase = createClient();
+    if (!supabase) return false;
+
+    try {
+      const { data: res, error } = await supabase
+        .from('reservations')
+        .select('*, customer:profiles!customer_id(*), service:services(*), payments(*)')
+        .eq('id', reservationId)
+        .maybeSingle();
+
+      if (error || !res) {
+        console.error('[FTX Repository] No se pudo obtener la reserva para asentar en el libro contable:', error?.message);
+        return false;
+      }
+
+      const paymentMethod = res.payments?.[0]?.payment_method || 'yape';
+      const isShared = res.service_id === 'a2222222-2222-2222-2222-222222222222';
+
+      const entry: LedgerEntry = {
+        id: generateUUID(),
+        reservation_code: res.code,
+        service_type: isShared ? 'compartido' : 'privado',
+        service_name: res.service?.name || (isShared ? 'Servicio Compartido' : 'Servicio Privado Exclusivo'),
+        origin: res.origin,
+        destination: res.destination,
+        scheduled_at: res.scheduled_at,
+        completed_at: new Date().toISOString(),
+        passengers_count: res.passengers_count || 1,
+        customer_name: res.customer?.full_name || 'Pasajero',
+        customer_phone: res.customer?.phone || '',
+        total_amount: Number(res.total_amount || 0),
+        deposit_amount: Number(res.deposit_amount || 0),
+        balance_amount: Number(res.balance_amount || 0),
+        payment_method: paymentMethod,
+        created_at: new Date().toISOString(),
+      };
+
+      // 1. Guardar en Supabase si la tabla accounting_ledger está lista
+      try {
+        await supabase.from('accounting_ledger').upsert(entry, { onConflict: 'reservation_code' });
+      } catch (e) {
+        console.warn('[FTX Repository] accounting_ledger en Supabase no disponible, usando respaldo persistente:', e);
+      }
+
+      // 2. Guardar en caché persistente local
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem(FTX_LEDGER_STORAGE_KEY);
+          const list: LedgerEntry[] = raw ? JSON.parse(raw) : [];
+          const existingIdx = list.findIndex((x) => x.reservation_code === entry.reservation_code);
+          if (existingIdx >= 0) {
+            list[existingIdx] = entry;
+          } else {
+            list.unshift(entry);
+          }
+          localStorage.setItem(FTX_LEDGER_STORAGE_KEY, JSON.stringify(list));
+        } catch (storageErr) {
+          console.warn('[FTX Repository] Error guardando respaldo contable local:', storageErr);
+        }
+      }
+
+      console.log('[FTX Repository] Viaje asentado en Libro Contable Histórico:', entry.reservation_code);
+      return true;
+    } catch (err: any) {
+      console.error('[FTX Repository] Excepción al registrar en libro contable:', err?.message);
+      return false;
+    }
+  }
+
+  /**
+   * Obtener todos los asientos del Libro Contable Histórico Inmutable
+   */
+  public static async getFinancialLedger(): Promise<LedgerEntry[]> {
+    const supabase = createClient();
+    let remoteEntries: LedgerEntry[] = [];
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('accounting_ledger')
+          .select('*')
+          .order('scheduled_at', { ascending: false });
+
+        if (!error && data) {
+          remoteEntries = data.map((d: any) => ({
+            ...d,
+            total_amount: Number(d.total_amount || 0),
+            deposit_amount: Number(d.deposit_amount || 0),
+            balance_amount: Number(d.balance_amount || 0),
+            passengers_count: Number(d.passengers_count || 1),
+          }));
+        }
+      } catch (err) {
+        console.warn('[FTX Repository] Tabla accounting_ledger en Supabase no consultable aún:', err);
+      }
+    }
+
+    // Unir con caché local persistente para no perder nada
+    let localEntries: LedgerEntry[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(FTX_LEDGER_STORAGE_KEY);
+        if (raw) localEntries = JSON.parse(raw);
+      } catch {}
+    }
+
+    // Combinar sin duplicados por reservation_code
+    const combinedMap = new Map<string, LedgerEntry>();
+    localEntries.forEach((e) => combinedMap.set(e.reservation_code, e));
+    remoteEntries.forEach((e) => combinedMap.set(e.reservation_code, e));
+
+    return Array.from(combinedMap.values()).sort(
+      (a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()
+    );
   }
 
   /**

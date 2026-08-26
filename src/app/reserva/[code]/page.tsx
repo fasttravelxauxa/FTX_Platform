@@ -201,6 +201,17 @@ export default function ReservationDetailPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 text-xs text-slate-900 dark:text-slate-100 font-medium">
                 <div className="space-y-3">
                   <div className="flex items-start gap-2.5">
+                    <Car className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold block text-slate-950 dark:text-white">Modalidad Contratada:</span>
+                      <span className="font-extrabold text-crusoe-800 dark:text-crusoe-400">
+                        {reservation.service_id === 'a2222222-2222-2222-2222-222222222222'
+                          ? `Servicio Compartido • ${reservation.passengers_count || 1} Asiento(s) (S/ 20.00 c/u)`
+                          : 'Servicio Privado Exclusivo SUV (Camioneta Completa)'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5">
                     <MapPin className="h-4 w-4 text-crusoe-600 dark:text-crusoe-400 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-bold block text-slate-950 dark:text-white">Origen y Destino:</span>
