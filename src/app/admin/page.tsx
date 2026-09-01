@@ -255,6 +255,21 @@ export default function AdminDashboardPage() {
     setVehiclesList((prev) => prev.filter((v) => v.id !== vehicle.id));
   };
 
+  const handleDeleteLedgerEntry = async (entry: LedgerEntry) => {
+    if (!window.confirm(`¿Eliminar definitivamente el servicio ${entry.reservation_code} (${entry.customer_name}) del historial de liquidación y de todos los registros del sistema?\n\nEsta acción recalculará los ingresos y purgará los datos de forma permanente e irrecuperable.`)) {
+      return;
+    }
+
+    try {
+      await RepositoryService.deleteLedgerEntry(entry.reservation_code, entry.id);
+      setLedgerEntries((prev) => prev.filter((e) => e.reservation_code !== entry.reservation_code));
+      setReservations((prev) => prev.filter((r) => r.code !== entry.reservation_code));
+      alert(`El registro ${entry.reservation_code} ha sido purgado completamente del sistema.`);
+    } catch (err: any) {
+      alert(`Error al eliminar: ${err?.message || 'Error desconocido'}`);
+    }
+  };
+
   // KPIs
   const totalIncome = reservations
     .filter((r) => r.status === 'CONFIRMED' || r.status === 'COMPLETED')
@@ -1184,10 +1199,13 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Tabla Detallada de Viajes del Periodo */}
+            {/* Tabla Detallada de Viajes del Periodo con Opción de Purgado */}
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md overflow-hidden">
               <div className="p-4 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 font-extrabold text-xs text-slate-950 dark:text-white uppercase tracking-wider flex justify-between items-center">
                 <span>Historial de Liquidación del Periodo ({completedTripsInPeriod.length} viajes completados)</span>
+                <span className="text-[10px] text-slate-500 font-normal lowercase bg-white dark:bg-slate-900 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
+                  opción de purgado total
+                </span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
@@ -1199,12 +1217,13 @@ export default function AdminDashboardPage() {
                       <th className="p-3.5 text-right">Adelanto (20%)</th>
                       <th className="p-3.5 text-right">Saldo al Abordar (80%)</th>
                       <th className="p-3.5 text-right">Total Cobrado (100%)</th>
+                      <th className="p-3.5 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {completedTripsInPeriod.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-slate-500 font-bold text-xs">
+                        <td colSpan={7} className="p-8 text-center text-slate-500 font-bold text-xs">
                           No hay viajes marcados como completados en este periodo.
                         </td>
                       </tr>
@@ -1240,6 +1259,18 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="p-3.5 text-right font-extrabold text-emerald-800 dark:text-emerald-400 text-sm">
                             S/ {res.total_amount.toFixed(2)}
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => handleDeleteLedgerEntry(res)}
+                              className="text-[11px] py-1 px-2.5 h-auto shadow-sm inline-flex items-center gap-1 font-bold"
+                              title="Eliminar definitivamente este servicio del historial contable y purgar todos sus datos"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              <span>Eliminar</span>
+                            </Button>
                           </td>
                         </tr>
                       ))

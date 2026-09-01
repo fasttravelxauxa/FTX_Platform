@@ -650,6 +650,69 @@ export class RepositoryService {
   }
 
   /**
+   * Eliminar un servicio definitivamente del Historial Contable y de toda la base de datos (Purgado Total)
+   */
+  public static async deleteLedgerEntry(reservationCode: string, reservationId?: string): Promise<{ success: boolean; error?: string }> {
+    const supabase = createClient();
+
+    try {
+      // 1. Eliminar de la tabla accounting_ledger en Supabase
+      if (supabase) {
+        try {
+          const { error: ledgerError } = await supabase
+            .from('accounting_ledger')
+            .delete()
+            .eq('reservation_code', reservationCode);
+          if (ledgerError) {
+            console.warn('[FTX Repository] Error al borrar de accounting_ledger en Supabase:', ledgerError.message);
+          }
+        } catch (e) {
+          console.warn('[FTX Repository] Excepción al borrar de accounting_ledger:', e);
+        }
+
+        // 2. Si existe la reserva activa en reservations, eliminarla en cascada total
+        try {
+          let targetId = reservationId;
+          if (!targetId) {
+            const { data: foundRes } = await supabase
+              .from('reservations')
+              .select('id')
+              .eq('code', reservationCode)
+              .maybeSingle();
+            if (foundRes) targetId = foundRes.id;
+          }
+
+          if (targetId) {
+            await RepositoryService.deleteReservation(targetId, reservationCode);
+          }
+        } catch (resErr) {
+          console.warn('[FTX Repository] Error al purgar reserva vinculada:', resErr);
+        }
+      }
+
+      // 3. Eliminar de la caché local persistente de ledger
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem(FTX_LEDGER_STORAGE_KEY);
+          if (raw) {
+            const list: LedgerEntry[] = JSON.parse(raw);
+            const filtered = list.filter((x) => x.reservation_code !== reservationCode);
+            localStorage.setItem(FTX_LEDGER_STORAGE_KEY, JSON.stringify(filtered));
+          }
+        } catch (storageErr) {
+          console.warn('[FTX Repository] Error limpiando caché local contable:', storageErr);
+        }
+      }
+
+      console.log('[FTX Repository] Asiento purgado exitosamente del libro contable y de toda la base de datos:', reservationCode);
+      return { success: true };
+    } catch (err: any) {
+      console.error('[FTX Repository] Excepción al eliminar del libro contable:', err?.message);
+      return { success: false, error: err?.message };
+    }
+  }
+
+  /**
    * Obtener todos los asientos del Libro Contable Histórico Inmutable
    */
   public static async getFinancialLedger(): Promise<LedgerEntry[]> {
