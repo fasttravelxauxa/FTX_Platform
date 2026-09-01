@@ -39,15 +39,26 @@ export default function HomePage() {
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-center">
               {/* Left text column */}
               <div className="lg:col-span-6 space-y-6">
-                <div className="inline-flex items-center gap-3 rounded-2xl border border-crusoe-500/40 bg-white/95 dark:bg-slate-900/90 p-2 sm:px-4 sm:py-2 shadow-lg shadow-crusoe-900/30">
-                  <img
-                    src="/images/yomil-removebg-preview.png"
-                    alt="Empresa de Transportes y Turismo Jomyl"
-                    className="h-7 sm:h-8 w-auto object-contain shrink-0"
-                  />
-                  <span className="border-l border-slate-300 dark:border-slate-700 pl-2.5 text-[11px] sm:text-xs font-bold text-slate-900 dark:text-crusoe-300">
-                    Operado por Empresa de Transportes y Turismo Jomyl • Servicio Turístico Nacional
-                  </span>
+                <div className="flex items-center gap-3.5 sm:gap-4.5 p-2.5 sm:p-3.5 rounded-3xl border-2 border-crusoe-500/40 bg-white/95 dark:bg-slate-900/95 shadow-2xl backdrop-blur-md">
+                  <div className="flex items-center justify-center p-2 rounded-2xl bg-white shadow-inner shrink-0">
+                    <img
+                      src="/images/yomil-removebg-preview.png"
+                      alt="Empresa de Transportes y Turismo Jomyl"
+                      className="h-12 sm:h-16 md:h-18 w-auto object-contain drop-shadow-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="inline-flex items-center gap-1.5 text-[9.5px] sm:text-xs font-black uppercase tracking-wider text-crusoe-800 dark:text-crusoe-400">
+                      <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-crusoe-600 shrink-0" />
+                      <span>Empresa de Transportes y Turismo JOMYL</span>
+                    </div>
+                    <span className="text-lg sm:text-2xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+                      Fast Travel <span className="text-crusoe-600 dark:text-crusoe-400">Xauxa</span>
+                    </span>
+                    <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300 font-semibold truncate">
+                      Servicio Turístico Nacional Autorizado • Aeropuerto Jauja (JAU)
+                    </span>
+                  </div>
                 </div>
 
                 <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-white leading-tight">

@@ -33,11 +33,11 @@ export function WelcomeModal() {
           <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-crusoe-500/10 blur-2xl"></div>
           <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-crusoe-400/10 blur-2xl"></div>
 
-          <div className="relative z-10 flex items-center justify-center p-2 rounded-2xl bg-white/95 shadow-xl mb-2.5 ring-4 ring-white/10 max-h-16">
+          <div className="relative z-10 flex items-center justify-center p-2.5 rounded-2xl bg-white shadow-2xl mb-3 ring-4 ring-white/20">
             <img
               src="/images/yomil-removebg-preview.png"
               alt="Empresa de Transportes y Turismo Jomyl"
-              className="h-12 w-auto object-contain"
+              className="h-16 sm:h-20 w-auto object-contain drop-shadow-md"
             />
           </div>
 

@@ -14,20 +14,20 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-50 w-full max-w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md transition-colors overflow-x-clip">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 py-3">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group min-w-0">
-          <div className="relative h-10 w-auto flex items-center justify-center p-1 rounded-xl bg-white/90 dark:bg-white/10 border border-slate-200 dark:border-slate-800 shadow-sm shrink-0">
+        <Link href="/" className="flex items-center gap-3 group min-w-0">
+          <div className="relative h-12 sm:h-14 w-auto flex items-center justify-center p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm shrink-0 group-hover:scale-105 transition-transform">
             <img
               src="/images/yomil-removebg-preview.png"
               alt="Empresa de Transportes y Turismo Jomyl"
-              className="h-8 sm:h-9 w-auto object-contain"
+              className="h-9 sm:h-11 w-auto object-contain"
             />
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm sm:text-base font-extrabold tracking-tight text-slate-950 dark:text-white font-sans truncate">
+            <span className="text-base sm:text-xl font-extrabold tracking-tight text-slate-950 dark:text-white font-sans leading-none truncate">
               Fast Travel <span className="text-crusoe-600 dark:text-crusoe-400">Xauxa</span>
             </span>
-            <span className="text-[8.5px] sm:text-[10px] font-bold text-crusoe-700 dark:text-crusoe-400 tracking-wider uppercase -mt-0.5 truncate">
-              Transporte & Turismo Jomyl
+            <span className="text-[9px] sm:text-[11px] font-bold text-crusoe-700 dark:text-crusoe-400 tracking-wider uppercase mt-0.5 truncate">
+              Transportes & Turismo JOMYL
             </span>
           </div>
         </Link>

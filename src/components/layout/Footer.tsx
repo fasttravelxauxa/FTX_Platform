@@ -12,14 +12,14 @@ export const Footer: React.FC = () => {
           {/* Brand Info */}
           <div className="flex flex-col gap-3.5">
             <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-xl bg-white text-slate-950 flex items-center justify-center max-w-[150px] shadow-sm">
+              <div className="p-2 rounded-2xl bg-white text-slate-950 flex items-center justify-center max-w-[170px] shadow-md">
                 <img
                   src="/images/yomil-removebg-preview.png"
                   alt="Empresa de Transportes y Turismo Jomyl"
-                  className="h-10 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                 />
               </div>
-              <span className="text-lg font-extrabold tracking-tight text-white">
+              <span className="text-xl font-extrabold tracking-tight text-white leading-tight">
                 Fast Travel <span className="text-crusoe-400">Xauxa</span>
               </span>
             </div>
