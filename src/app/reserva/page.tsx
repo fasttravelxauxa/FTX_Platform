@@ -342,9 +342,10 @@ function BookingWizardForm() {
         customer: {
           id: customerId,
           role: 'CUSTOMER',
-          full_name: customerTitle ? `${customerTitle} ${customerName}` : customerName,
+          full_name: customerName.trim(),
           phone: customerPhone,
           dni: customerDni || undefined,
+          title_degree: customerTitle || 'Sr.',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },

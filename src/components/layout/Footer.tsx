@@ -10,17 +10,21 @@ export const Footer: React.FC = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* Brand Info */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-crusoe-500 text-crusoe-950 font-bold">
-                <Car className="h-6 w-6" />
+          <div className="flex flex-col gap-3.5">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 rounded-xl bg-white text-slate-950 flex items-center justify-center max-w-[150px] shadow-sm">
+                <img
+                  src="/images/yomil-removebg-preview.png"
+                  alt="Empresa de Transportes y Turismo Jomyl"
+                  className="h-10 w-auto object-contain"
+                />
               </div>
-              <span className="text-xl font-extrabold tracking-tight text-white">
+              <span className="text-lg font-extrabold tracking-tight text-white">
                 Fast Travel <span className="text-crusoe-400">Xauxa</span>
               </span>
             </div>
             <p className="text-xs text-crusoe-200 leading-relaxed">
-              Plataforma ejecutiva de transporte privado y personalizado en el Valle del Mantaro. Conexión puntual entre el Aeropuerto Francisco Carlé de Jauja y Huancayo.
+              Operado por <strong>Empresa de Transportes y Turismo Jomyl</strong>. Servicio Turístico Nacional autorizado y transporte ejecutivo en el Valle del Mantaro.
             </p>
             <div className="flex items-center gap-2 text-xs text-crusoe-300">
               <ShieldCheck className="h-4 w-4 text-crusoe-400" />

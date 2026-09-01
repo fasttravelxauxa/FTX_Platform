@@ -39,9 +39,15 @@ export default function HomePage() {
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-center">
               {/* Left text column */}
               <div className="lg:col-span-6 space-y-6">
-                <div className="inline-flex items-center gap-2 rounded-full border border-crusoe-500/40 bg-crusoe-500/10 px-3.5 py-1.5 text-xs font-semibold text-crusoe-300">
-                  <ShieldCheck className="h-4 w-4 text-crusoe-400" />
-                  <span>Servicio Ejecutivo Oficial Jauja ↔ Huancayo</span>
+                <div className="inline-flex items-center gap-3 rounded-2xl border border-crusoe-500/40 bg-white/95 dark:bg-slate-900/90 p-2 sm:px-4 sm:py-2 shadow-lg shadow-crusoe-900/30">
+                  <img
+                    src="/images/yomil-removebg-preview.png"
+                    alt="Empresa de Transportes y Turismo Jomyl"
+                    className="h-7 sm:h-8 w-auto object-contain shrink-0"
+                  />
+                  <span className="border-l border-slate-300 dark:border-slate-700 pl-2.5 text-[11px] sm:text-xs font-bold text-slate-900 dark:text-crusoe-300">
+                    Operado por Empresa de Transportes y Turismo Jomyl • Servicio Turístico Nacional
+                  </span>
                 </div>
 
                 <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-white leading-tight">

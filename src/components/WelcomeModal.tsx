@@ -33,18 +33,22 @@ export function WelcomeModal() {
           <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-crusoe-500/10 blur-2xl"></div>
           <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-crusoe-400/10 blur-2xl"></div>
 
-          <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-crusoe-700 shadow-xl mb-3 ring-4 ring-white/10">
-            <ShieldCheck className="h-7 w-7 text-crusoe-700" />
+          <div className="relative z-10 flex items-center justify-center p-2 rounded-2xl bg-white/95 shadow-xl mb-2.5 ring-4 ring-white/10 max-h-16">
+            <img
+              src="/images/yomil-removebg-preview.png"
+              alt="Empresa de Transportes y Turismo Jomyl"
+              className="h-12 w-auto object-contain"
+            />
           </div>
 
           <span className="relative z-10 text-[11px] font-bold uppercase tracking-widest text-crusoe-300">
             Plataforma Ejecutiva Oficial
           </span>
-          <h2 className="relative z-10 text-2xl font-extrabold text-white mt-1 tracking-tight">
+          <h2 className="relative z-10 text-2xl font-extrabold text-white mt-0.5 tracking-tight">
             Fast Travel Xauxa
           </h2>
           <p className="relative z-10 text-xs text-crusoe-200 mt-1 max-w-xs font-medium">
-            Transporte ejecutivo, corporativo y turístico en el Valle del Mantaro.
+            Operado por Empresa de Transportes y Turismo Jomyl — Servicio Turístico Nacional.
           </p>
         </div>
 

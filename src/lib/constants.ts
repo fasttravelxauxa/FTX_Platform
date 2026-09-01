@@ -2,6 +2,8 @@ import { Service } from './types';
 
 export const BUSINESS_CONFIG = {
   appName: 'Fast Travel Xauxa',
+  domain: 'www.fasttravelxauxa.com',
+  operatorName: 'Empresa de Transportes y Turismo Jomyl',
   currencySymbol: 'S/',
   currencyCode: 'PEN',
   depositPercentage: 0.20, // 20% de adelanto
