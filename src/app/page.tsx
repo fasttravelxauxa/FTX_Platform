@@ -15,6 +15,9 @@ import {
   FileCheck,
   Building2,
   Sparkles,
+  Search,
+  Phone,
+  Calendar,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -145,12 +148,12 @@ export default function HomePage() {
         <section id="como-funciona" className="py-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-12">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-crusoe-600 dark:text-crusoe-400">Proceso Transparente</h2>
-              <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1 sm:text-4xl">
+              <span className="text-xs font-bold uppercase tracking-widest text-crusoe-600 dark:text-crusoe-400">Proceso Transparente y Seguro</span>
+              <h2 className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1 sm:text-4xl">
                 ¿Cómo funciona tu reserva en Fast Travel Xauxa?
-              </p>
+              </h2>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-3">
-                Sin complicaciones ni intermediarios. Tarifas transparentes calculadas en tiempo real.
+                Sin complicaciones ni intermediarios. Cotiza en línea, consulta tu viaje en la web y recibe atención personalizada.
               </p>
             </div>
 
@@ -161,7 +164,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-base font-bold text-slate-950 dark:text-white">Elige tu Modalidad</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                  Selecciona traslado privado exclusivo o compartido en SUV del año.
+                  Selecciona traslado privado exclusivo (camioneta SUV completa a tu destino) o compartido por asiento (S/ 20.00).
                 </p>
               </div>
 
@@ -171,7 +174,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-base font-bold text-slate-950 dark:text-white">Fecha, Hora y Vuelo</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                  Ingresa tu itinerario y el sistema calcula la tarifa exacta y el adelanto del 20%.
+                  Ingresa tu itinerario y vuelo. Monitoreamos tu llegada con 30 minutos de tolerancia tras el aterrizaje.
                 </p>
               </div>
 
@@ -179,9 +182,9 @@ export default function HomePage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-crusoe-600 text-white font-extrabold text-lg mb-4 shadow-md">
                   3
                 </div>
-                <h3 className="text-base font-bold text-slate-950 dark:text-white">Adelanto y Comprobante</h3>
+                <h3 className="text-base font-bold text-slate-950 dark:text-white">Adelanto del 20%</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                  Asegura tu reserva abonando el 20% por Yape, Plin o BCP y solicita Boleta o Factura.
+                  Asegura tu cupo abonando el 20% por Yape, Plin o BCP, adjunta tu voucher y solicita Boleta o Factura. El 80% se paga al abordar.
                 </p>
               </div>
 
@@ -189,10 +192,43 @@ export default function HomePage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-crusoe-600 text-white font-extrabold text-lg mb-4 shadow-md">
                   4
                 </div>
-                <h3 className="text-base font-bold text-slate-950 dark:text-white">Confirmación y Viaje</h3>
+                <h3 className="text-base font-bold text-slate-950 dark:text-white">Consulta Web y WhatsApp</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                  Recibes tu confirmación en WhatsApp. Te recibimos en puerta o con cartel en el aeropuerto.
+                  Consulta el estado de tu viaje en la web con tu celular o código de reserva, y recibe confirmación oficial por WhatsApp.
                 </p>
+              </div>
+            </div>
+
+            {/* Módulo Destacado de Consulta y Autoservicio Web */}
+            <div className="mt-12 rounded-3xl border-2 border-crusoe-500/30 bg-gradient-to-br from-crusoe-50/90 via-white to-crusoe-100/60 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-800/90 p-6 sm:p-8 shadow-xl">
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                <div className="space-y-2.5 text-center lg:text-left">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-crusoe-600/10 dark:bg-crusoe-500/20 px-3 py-1 text-xs font-bold text-crusoe-800 dark:text-crusoe-300 border border-crusoe-500/30">
+                    <Search className="h-3.5 w-3.5" />
+                    <span>Portal de Consulta y Seguimiento Web</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-950 dark:text-white">
+                    ¿Ya tienes un traslado programado? Consulta en tiempo real
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 max-w-2xl leading-relaxed">
+                    Puedes consultar el estado de tu viaje en cualquier momento desde nuestra web ingresando tu <strong>número de celular / WhatsApp</strong> o mediante tu <strong>código de reserva (FTX-...)</strong> para ver el estado de tu voucher, vehículo asignado y detalles de tu llegada.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full lg:w-auto">
+                  <Link href="/mis-reservas" className="w-full sm:w-auto">
+                    <Button size="lg" className="w-full text-xs sm:text-sm font-bold shadow-md shadow-crusoe-600/20 flex items-center justify-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      <span>Consultar con mi Celular</span>
+                    </Button>
+                  </Link>
+                  <Link href="/reserva" className="w-full sm:w-auto">
+                    <Button size="lg" variant="outline" className="w-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2">
+                      <span>Nueva Reserva</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
