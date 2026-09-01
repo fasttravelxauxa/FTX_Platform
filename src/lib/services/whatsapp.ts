@@ -81,7 +81,7 @@ export class WhatsAppService {
         `\n_(Su Boleta o Factura Electrónica será adjuntada por este medio)_`;
     }
 
-    const text = `*FAST TRAVEL XAUXA - RESERVA CONFIRMADA*\n\nEstimado(a) *${reservation.customer?.full_name || 'Pasajero(a)'}*,\nSu reserva con código *${reservation.code}* ha sido *CONFIRMADA* formalmente.\n\n*Modalidad:* ${modalityText}\n*Fecha y Hora:* ${dateFormatted}\n*Origen:* ${reservation.origin}\n*Destino:* ${reservation.destination}\n*Saldo Restante:* S/ ${reservation.balance_amount.toFixed(2)} (se abona al abordar la unidad)${invoiceText}\n\nGracias por elegir Fast Travel Xauxa. Coordinación oficial únicamente por este canal de WhatsApp.`;
+    const text = `*FAST TRAVEL XAUXA - RESERVA CONFIRMADA*\n\nEstimado(a) *${reservation.customer?.full_name || 'Pasajero(a)'}*,\nSu reserva con código *${reservation.code}* ha sido *CONFIRMADA* formalmente.\n\n*Modalidad:* ${modalityText}\n*Fecha y Hora:* ${dateFormatted}\n*Origen:* ${reservation.origin}\n*Destino:* ${reservation.destination}\n*Saldo Restante:* S/ ${reservation.balance_amount.toFixed(2)} (se abona al abordar la unidad)${invoiceText}\n\n*Ver detalles de su reserva:* https://fast-travel-xauxa.vercel.app/reserva/${reservation.code}\n\nGracias por elegir Fast Travel Xauxa. Coordinación oficial únicamente por este canal de WhatsApp.`;
 
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
   }
@@ -115,7 +115,7 @@ export class WhatsAppService {
       `- Plin: 929 667 586 (JORGE ANTONIO TRUCIOS MEZA)\n` +
       `- BCP: 40002021972079 (CCI: 00240010202197207901)\n\n` +
       `Para asegurar su cupo en la SUV del año, por favor realice el abono antes de la hora programada y adjunte su comprobante aquí:\n` +
-      `https://ftx-platform.vercel.app/reserva/${reservation.code}\n\n` +
+      `https://fast-travel-xauxa.vercel.app/reserva/${reservation.code}\n\n` +
       `Quedamos a su disposición para coordinar su viaje.`;
 
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
@@ -126,7 +126,7 @@ export class WhatsAppService {
    */
   public static getAdminRejectionLink(reservation: Reservation, customerPhone: string, reason: string): string {
     const cleanPhone = customerPhone.replace(/[^0-9]/g, '');
-    const text = `*FAST TRAVEL XAUXA - ATENCIÓN CON SU RESERVA ${reservation.code}*\n\nEstimado(a) *${reservation.customer?.full_name || 'Pasajero(a)'}*,\nRevisamos el comprobante remitido para la reserva *${reservation.code}* y no pudimos procesarlo debido al siguiente motivo:\n- *${reason}*\n\nPor favor vuelva a adjuntar un comprobante válido en la plataforma o responda a este mensaje para brindarle asistencia inmediata.`;
+    const text = `*FAST TRAVEL XAUXA - ATENCIÓN CON SU RESERVA ${reservation.code}*\n\nEstimado(a) *${reservation.customer?.full_name || 'Pasajero(a)'}*,\nRevisamos el comprobante remitido para la reserva *${reservation.code}* y no pudimos procesarlo debido al siguiente motivo:\n- *${reason}*\n\nPor favor vuelva a adjuntar un comprobante válido en:\nhttps://fast-travel-xauxa.vercel.app/reserva/${reservation.code}\n\nO responda a este mensaje para brindarle asistencia inmediata.`;
 
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
   }

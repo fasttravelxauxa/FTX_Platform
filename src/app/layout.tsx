@@ -17,7 +17,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://ftx-platform.vercel.app'),
+  metadataBase: new URL('https://fast-travel-xauxa.vercel.app'),
   title: {
     default: 'Fast Travel Xauxa | Transporte Ejecutivo y Turístico Oficial',
     template: '%s | Fast Travel Xauxa',
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Fast Travel Xauxa | Transporte Ejecutivo y Turístico Oficial',
     description: 'Plataforma oficial de reservas para traslados ejecutivos y turísticos en el Valle del Mantaro. Puntualidad garantizada, confort en unidades SUV modernas y facturación electrónica.',
-    url: 'https://ftx-platform.vercel.app',
+    url: 'https://fast-travel-xauxa.vercel.app',
     siteName: 'Fast Travel Xauxa',
     images: [
       {

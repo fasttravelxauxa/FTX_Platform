@@ -2,7 +2,8 @@ import { Service } from './types';
 
 export const BUSINESS_CONFIG = {
   appName: 'Fast Travel Xauxa',
-  domain: 'www.fasttravelxauxa.com',
+  domain: 'fast-travel-xauxa.vercel.app',
+  siteUrl: 'https://fast-travel-xauxa.vercel.app',
   operatorName: 'Empresa de Transportes y Turismo Jomyl',
   currencySymbol: 'S/',
   currencyCode: 'PEN',
