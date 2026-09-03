@@ -12,12 +12,14 @@ export const BUSINESS_CONFIG = {
   airportToleranceMinutes: 30, // 30 min de tolerancia tras aterrizaje
   maxSharedPassengers: 4, // Máximo 4 pasajeros en compartido
   minSharedPassengersForDeparture: 3, // Mínimo 3 asientos para confirmar salida del transporte compartido
-  whatsappNumber: '+51940378999', // Número principal de RESERVAS E INFORMES (coordinación oficial)
+  whatsappNumber: '+51940378999', // Central Oficial de Reservas e Informes
   whatsappFormatted: '+51 940 378 999',
   whatsappCallDisclaimer: 'Reservas e Informes: +51 940 378 999 (Solo mensajes de WhatsApp)',
-  personalYapeNumber: '+51929667586', // Número personal y de Yape (NO para reservas)
-  personalYapeFormatted: '+51 929 667 586',
-  personalDisclaimer: 'Este es el número personal y de Yape (+51 929 667 586). Solo responde mensajes si es prioritario o de suma urgencia; de lo contrario no se responderá. Para reservas e informes use el canal oficial +51 940 378 999.',
+  urgentPaymentNumber: '+51929667586', // Línea de Pagos Yape/Plin y Atención de Urgencias
+  urgentPaymentFormatted: '+51 929 667 586',
+  personalYapeNumber: '+51929667586',
+  personalYapeFormatted: '929 667 586',
+  urgentDisclaimer: 'Esta línea (+51 929 667 586) es de uso exclusivo para recepción de pagos Yape/Plin e incidencias urgentes en servicio. Para reservas e informes comuníquese al 940 378 999.',
   invoicingDisclaimer: 'Emitimos Boletas y Facturas Electrónicas. Ingresa tus datos tributarios en la reserva y te enviamos tu comprobante fiscal vía WhatsApp.',
   sharedServiceNotice: 'Tu asiento queda 100% reservado y asegurado. La confirmación de la salida del vehículo se activa al completarse un mínimo de 3 asientos para tu horario programado. Si no se alcanza el cupo, coordinaremos la reprogramación o devolución completa sin penalización.',
   vehicleInitial: {
@@ -52,7 +54,7 @@ export const PAYMENT_METHODS_INFO = {
     phone: '929 667 586',
     owner: 'JORGE TRU.',
     qrImage: '/images/payment/yape-qr.png',
-    notice: 'Número personal y de Yape. Solo responde mensajes si es prioritario o importante; en otro caso no se responderá. Reservas e informes al 940 378 999.',
+    notice: 'Línea de pagos Yape. Para consultas e informes generales comunicarse al 940 378 999.',
     active: true,
   },
   plin: {
@@ -60,7 +62,7 @@ export const PAYMENT_METHODS_INFO = {
     phone: '929 667 586',
     owner: 'JORGE ANTONIO TRUCIOS MEZA',
     qrImage: '/images/payment/plin-qr.png',
-    notice: 'Número personal y de Plin. Solo responde mensajes si es prioritario o importante; en otro caso no se responderá. Reservas e informes al 940 378 999.',
+    notice: 'Línea de pagos Plin. Para consultas e informes generales comunicarse al 940 378 999.',
     active: true,
   },
   bcp: {

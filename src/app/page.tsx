@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -18,6 +20,7 @@ import {
   Search,
   Phone,
   Calendar,
+  ShieldAlert,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -112,6 +115,75 @@ export default function HomePage() {
               <div className="lg:col-span-6 relative">
                 <DestinationCarousel />
               </div> 
+            </div>
+          </div>
+        </section>
+
+        {/* CANALES OFICIALES DE ATENCIÓN DIRECTA */}
+        <section id="contacto" className="py-8 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              
+              {/* CANAL 1: CENTRAL OFICIAL DE RESERVAS E INFORMES (940 378 999) */}
+              <div className="relative rounded-3xl border-2 border-emerald-500/50 bg-gradient-to-br from-emerald-50/80 via-white to-emerald-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/40 p-6 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shrink-0">
+                    <Phone className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">
+                      <span>Central Principal Oficial</span>
+                    </div>
+                    <h3 className="text-lg font-black text-slate-950 dark:text-white mt-1">
+                      Reservas e Informes: 940 378 999
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-sm">
+                      Atención para reservas, cotizaciones, itinerarios de vuelo y consultas de flota ejecutiva.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href="https://wa.me/51940378999?text=Hola%20Fast%20Travel%20Xauxa%2C%20quisiera%20solicitar%20informaci%C3%B3n%20y%20hacer%20una%20reserva."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 text-xs font-bold shadow-md shadow-emerald-600/20 transition-all shrink-0"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Escribir al 940 378 999</span>
+                </a>
+              </div>
+
+              {/* CANAL 2: PAGOS Y ATENCIÓN PRIORITARIA (929 667 586) CON MODAL AL CLIC */}
+              <div className="relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 p-6 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 shadow-inner shrink-0">
+                    <ShieldAlert className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/80 px-2.5 py-0.5 rounded-full border border-amber-400/40">
+                      <span>Pagos Yape / Incidencias Urgentes</span>
+                    </div>
+                    <h3 className="text-lg font-black text-slate-950 dark:text-white mt-1">
+                      Línea de Pagos / Urgencias: 929 667 586
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-sm">
+                      Recepción de comprobantes Yape/Plin y atención prioritaria para pasajeros con viajes en curso.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      window.dispatchEvent(new CustomEvent('open-urgent-contact-modal'));
+                    }
+                  }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-500/60 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-950 dark:text-amber-200 px-5 py-3 text-xs font-bold transition-all shrink-0 cursor-pointer"
+                >
+                  <span>Contactar al 929 667 586</span>
+                </button>
+              </div>
+
             </div>
           </div>
         </section>

@@ -79,6 +79,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { UrgentContactModal } from '@/components/UrgentContactModal';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -96,6 +98,7 @@ export default function RootLayout({
         `}</Script>
       </head>
       <body className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased selection:bg-crusoe-600 selection:text-white transition-colors duration-200">
+        <UrgentContactModal />
         {children}
       </body>
     </html>

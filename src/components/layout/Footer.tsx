@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { Car, MessageSquare, ShieldCheck, MapPin, Clock, FileCheck } from 'lucide-react';
@@ -78,9 +80,9 @@ export const Footer: React.FC = () => {
 
           {/* Contact & WhatsApp */}
           <div className="flex flex-col gap-3">
-            <h4 className="text-sm font-bold tracking-wider text-crusoe-400 uppercase">Reservas e Informes</h4>
+            <h4 className="text-sm font-bold tracking-wider text-crusoe-400 uppercase">Canales de Atención</h4>
             <p className="text-xs text-crusoe-200">
-              Canal oficial de coordinación para reservas, consultas de vuelo e informes:
+              Central oficial para reservas, itinerarios y cotizaciones:
             </p>
             <a
               href={WhatsAppService.getCustomerSupportLink()}
@@ -92,11 +94,24 @@ export const Footer: React.FC = () => {
                 <MessageSquare className="h-4 w-4" />
                 <span>WhatsApp {BUSINESS_CONFIG.whatsappFormatted}</span>
               </div>
-              <span className="text-[10px] text-crusoe-950 font-semibold">(Reservas e Informes — Solo mensajes)</span>
+              <span className="text-[10px] text-crusoe-950 font-semibold">(Reservas e Informes)</span>
             </a>
-            <p className="text-[10px] text-crusoe-400 leading-relaxed mt-1">
-              <strong>Yape / Plin:</strong> {BUSINESS_CONFIG.personalYapeFormatted} (solo para pagos de adelanto)
-            </p>
+
+            <div className="mt-1 pt-2 border-t border-crusoe-900">
+              <span className="text-[11px] font-bold text-crusoe-300 block">Línea de Pagos / Urgencias:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('open-urgent-contact-modal'));
+                  }
+                }}
+                className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 hover:underline cursor-pointer"
+              >
+                <span>Yape / Plin: {BUSINESS_CONFIG.urgentPaymentFormatted || '929 667 586'}</span>
+                <span className="text-[10px] text-slate-300 font-normal">(ver aviso)</span>
+              </button>
+            </div>
           </div>
         </div>
 

@@ -1216,7 +1216,7 @@ function BookingWizardForm() {
                     Titular: JORGE TRU.
                   </span>
                   <div className="mx-auto max-w-md p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 font-medium">
-                    ⚠️ <strong>Exclusivo para pagos:</strong> El número 929 667 586 es personal y solo responde mensajes prioritarios. Para reservas e informes contacte al <strong>+51 940 378 999</strong>.
+                    ℹ️ <strong>Línea exclusiva para recepción de pagos:</strong> Para reservas, cotizaciones e informes contacte a la Central Oficial: <strong>+51 940 378 999</strong>.
                   </div>
 
                   {PAYMENT_METHODS_INFO.yape.qrImage && (
@@ -1246,7 +1246,7 @@ function BookingWizardForm() {
                     Titular: JORGE ANTONIO TRUCIOS MEZA
                   </span>
                   <div className="mx-auto max-w-md p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 font-medium">
-                    ⚠️ <strong>Exclusivo para pagos:</strong> El número 929 667 586 es personal y solo responde mensajes prioritarios. Para reservas e informes contacte al <strong>+51 940 378 999</strong>.
+                    ℹ️ <strong>Línea exclusiva para recepción de pagos:</strong> Para reservas, cotizaciones e informes contacte a la Central Oficial: <strong>+51 940 378 999</strong>.
                   </div>
 
                   {PAYMENT_METHODS_INFO.plin.qrImage && (
