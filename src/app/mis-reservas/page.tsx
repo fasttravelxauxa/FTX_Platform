@@ -124,7 +124,7 @@ export default function MyBookingsPage() {
                 inputMode="numeric"
                 value={inputPhone}
                 onChange={(e) => setInputPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                placeholder="Ej. 929667586"
+                placeholder="Ej. 940378999"
                 maxLength={9}
                 className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-10 pr-4 py-3.5 text-sm font-semibold text-slate-950 dark:text-white focus:border-crusoe-600 focus:outline-none shadow-sm"
               />

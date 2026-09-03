@@ -855,7 +855,7 @@ function BookingWizardForm() {
                       setCustomerPhone(e.target.value.replace(/[^0-9]/g, ''));
                       clearFieldError('customerPhone');
                     }}
-                    placeholder="929667586"
+                    placeholder="940378999"
                     className={`w-full rounded-xl border ${
                       fieldErrors.customerPhone ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
                     } bg-white dark:bg-slate-800 pl-12 pr-4 py-3 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm`}
@@ -1215,6 +1215,9 @@ function BookingWizardForm() {
                   <span className="text-xs text-slate-700 dark:text-slate-300 block font-bold">
                     Titular: JORGE TRU.
                   </span>
+                  <div className="mx-auto max-w-md p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 font-medium">
+                    ⚠️ <strong>Exclusivo para pagos:</strong> El número 929 667 586 es personal y solo responde mensajes prioritarios. Para reservas e informes contacte al <strong>+51 940 378 999</strong>.
+                  </div>
 
                   {PAYMENT_METHODS_INFO.yape.qrImage && (
                     <div className="pt-1 flex justify-center">
@@ -1242,6 +1245,9 @@ function BookingWizardForm() {
                   <span className="text-xs text-slate-700 dark:text-slate-300 block font-bold">
                     Titular: JORGE ANTONIO TRUCIOS MEZA
                   </span>
+                  <div className="mx-auto max-w-md p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 font-medium">
+                    ⚠️ <strong>Exclusivo para pagos:</strong> El número 929 667 586 es personal y solo responde mensajes prioritarios. Para reservas e informes contacte al <strong>+51 940 378 999</strong>.
+                  </div>
 
                   {PAYMENT_METHODS_INFO.plin.qrImage && (
                     <div className="pt-1 flex justify-center">
@@ -1439,7 +1445,7 @@ function BookingWizardForm() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <a
-              href={`https://wa.me/51929667586?text=${encodeURIComponent(
+              href={`https://wa.me/${BUSINESS_CONFIG.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
                 `Hola Fast Travel Xauxa, acabo de registrar mi reserva con código *${createdReservation.code}* a nombre de *${createdReservation.customer?.full_name}* para la fecha *${new Date(createdReservation.scheduled_at).toLocaleString('es-PE')}*. Destino: *${createdReservation.destination}*.`
               )}`}
               target="_blank"

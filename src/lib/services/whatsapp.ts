@@ -111,8 +111,8 @@ export class WhatsAppService {
       `*Adelanto Requerido (20%):* *S/ ${reservation.deposit_amount.toFixed(2)}*\n` +
       `*Saldo al Abordar (80%):* S/ ${reservation.balance_amount.toFixed(2)}\n\n` +
       `*Cuentas Oficiales para el Adelanto:*\n` +
-      `- Yape: 929 667 586 (JORGE TRU.)\n` +
-      `- Plin: 929 667 586 (JORGE ANTONIO TRUCIOS MEZA)\n` +
+      `- Yape: ${BUSINESS_CONFIG.personalYapeFormatted} (JORGE TRU.)\n` +
+      `- Plin: ${BUSINESS_CONFIG.personalYapeFormatted} (JORGE ANTONIO TRUCIOS MEZA)\n` +
       `- BCP: 40002021972079 (CCI: 00240010202197207901)\n\n` +
       `Para asegurar su cupo en la SUV del año, por favor realice el abono antes de la hora programada y adjunte su comprobante aquí:\n` +
       `https://fast-travel-xauxa.vercel.app/reserva/${reservation.code}\n\n` +

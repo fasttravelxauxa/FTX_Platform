@@ -408,6 +408,10 @@ export default function ReservationDetailPage() {
                       </div>
                     </div>
 
+                    <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[11px] text-amber-800 dark:text-amber-300">
+                      ℹ️ <strong>Importante:</strong> El número 929 667 586 es personal y exclusivo para recepción de Yape/Plin. No se responderán mensajes salvo urgencias prioritarias. Para atención oficial contacte al <strong>+51 940 378 999</strong>.
+                    </div>
+
                     <form onSubmit={handleUploadVoucher} className="space-y-4 pt-2">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>

@@ -78,9 +78,9 @@ export const Footer: React.FC = () => {
 
           {/* Contact & WhatsApp */}
           <div className="flex flex-col gap-3">
-            <h4 className="text-sm font-bold tracking-wider text-crusoe-400 uppercase">Coordinación por WhatsApp</h4>
+            <h4 className="text-sm font-bold tracking-wider text-crusoe-400 uppercase">Reservas e Informes</h4>
             <p className="text-xs text-crusoe-200">
-              Atención exclusiva por mensajes para coordinaciones y consultas de vuelo:
+              Canal oficial de coordinación para reservas, consultas de vuelo e informes:
             </p>
             <a
               href={WhatsAppService.getCustomerSupportLink()}
@@ -92,8 +92,11 @@ export const Footer: React.FC = () => {
                 <MessageSquare className="h-4 w-4" />
                 <span>WhatsApp {BUSINESS_CONFIG.whatsappFormatted}</span>
               </div>
-              <span className="text-[10px] text-crusoe-950 font-semibold">(Solo Mensajes — No llamadas)</span>
+              <span className="text-[10px] text-crusoe-950 font-semibold">(Reservas e Informes — Solo mensajes)</span>
             </a>
+            <p className="text-[10px] text-crusoe-400 leading-relaxed mt-1">
+              <strong>Yape / Plin:</strong> {BUSINESS_CONFIG.personalYapeFormatted} (solo para pagos de adelanto)
+            </p>
           </div>
         </div>
 

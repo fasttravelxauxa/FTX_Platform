@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { RepositoryService } from '@/lib/services/repository';
 import { Reservation } from '@/lib/types';
 import { BUSINESS_CONFIG } from '@/lib/constants';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ReceptionPosterPage() {
   const params = useParams();
@@ -17,14 +18,30 @@ export default function ReceptionPosterPage() {
   const [reservation, setReservation] = useState<Reservation | null>(null);
 
   useEffect(() => {
-    if (code) {
-      RepositoryService.getReservationByCode(code).then((res) => {
+    const checkAuthAndLoad = async () => {
+      try {
+        const supabase = createClient();
+        if (supabase) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            router.push('/admin/login');
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Error verificando usuario admin en cartel:', err);
+      }
+
+      if (code) {
+        const res = await RepositoryService.getReservationByCode(code);
         if (res) {
           setReservation(res);
         }
-      });
-    }
-  }, [code]);
+      }
+    };
+
+    checkAuthAndLoad();
+  }, [code, router]);
 
   const handlePrint = () => {
     window.print();
