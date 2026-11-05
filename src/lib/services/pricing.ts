@@ -10,21 +10,38 @@ import {
 
 export class PricingService {
   /**
-   * Determina si la fecha programada cuenta como reserva anticipada
-   * (al menos 24 horas antes del traslado).
+   * Determina si la fecha programada cuenta como reserva anticipada.
+   * Se considera anticipada si el usuario reserva con al menos 1 día de anticipación
+   * (de un día para otro o fecha posterior, en el huso horario de Perú UTC-5).
    */
   public static isAdvanceBooking(scheduledAt?: string): boolean {
     if (!scheduledAt) return false;
-    const scheduledDate = new Date(scheduledAt);
-    const now = new Date();
-    const hoursUntil = (scheduledDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-    return hoursUntil >= PRIVATE_PRICING.advanceHoursRequired;
+    try {
+      // Extraer la fecha programada en formato YYYY-MM-DD
+      const schedDateStr = scheduledAt.slice(0, 10);
+
+      // Obtener la fecha actual en hora oficial de Perú (America/Lima)
+      const now = new Date();
+      const peruDateStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Lima',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(now);
+
+      // Si la fecha programada es posterior a hoy (es decir mañana o después), es anticipada
+      return schedDateStr > peruDateStr;
+    } catch {
+      return false;
+    }
   }
 
   /**
    * Calcula una cotización formal para una reserva.
-   * Aplica lógica diferenciada para compartido (escalón por cantidad)
-   * y privado (anticipación + zona centro/afueras + recojo interior).
+   * Aplica lógica diferenciada para:
+   * - Compartido: escalón por cantidad de asientos (1 asiento S/ 20, 2+ asientos S/ 15 c/u).
+   * - Privado: anticipación (1 día antes = S/ 65 centro) + recargo si va a afueras/periferia (+S/ 10).
+   * - Recojo: puerta de salida (S/ 0) o interior del aeropuerto (+S/ 6 por parqueo).
    */
   public static calculateQuote(params: {
     serviceCode: string;
@@ -34,7 +51,8 @@ export class PricingService {
     passengersCount: number;
     hoursCount?: number;
     scheduledAt?: string;
-    huancayoDropoffType?: 'plaza' | 'custom_address';
+    huancayoZone?: 'centro' | 'afueras';
+    huancayoDropoffType?: 'plaza' | 'custom_address'; // compatibilidad
     pickupOptionCode?: 'puerta-salida' | 'interior-aeropuerto';
   }): PriceQuote {
     const service = SERVICES_CATALOG.find((s) => s.code === params.serviceCode);
@@ -55,23 +73,30 @@ export class PricingService {
       case 'privado-aeropuerto': {
         if (destCode === 'huancayo') {
           const isAdvance = PricingService.isAdvanceBooking(params.scheduledAt);
+          const isAfueras = params.huancayoZone === 'afueras';
 
           if (isAdvance) {
-            // Precio anticipado: S/ 65 centro, S/ 75 afueras
-            if (params.huancayoDropoffType === 'custom_address') {
+            // Reserva anticipada (de un día para otro o más)
+            if (isAfueras) {
               subtotal = PRIVATE_PRICING.advancePriceOutskirts;
-              details.push(`Traslado Privado Exclusivo a Huancayo (Dirección particular): S/ ${subtotal.toFixed(2)}`);
-              details.push('✓ Precio preferencial por reserva anticipada (24h+)');
+              details.push(`Traslado Privado Exclusivo a Huancayo (Afueras/Periferia): S/ ${subtotal.toFixed(2)}`);
+              details.push('✓ Tarifa anticipada aplicada con recargo de afueras (Chilca, Sapallanga, Huancán, etc.)');
             } else {
               subtotal = PRIVATE_PRICING.advancePriceCenter;
-              details.push(`Traslado Privado Exclusivo a Huancayo Centro: S/ ${subtotal.toFixed(2)}`);
-              details.push('✓ Precio preferencial por reserva anticipada (24h+)');
+              details.push(`Traslado Privado Exclusivo a Huancayo Centro / Zona Urbana: S/ ${subtotal.toFixed(2)}`);
+              details.push('✓ Tarifa preferencial por reserva con anticipación (al menos 1 día antes)');
             }
           } else {
-            // Precio regular sin anticipación
-            subtotal = PRIVATE_PRICING.regularPrice;
-            details.push(`Traslado Privado Exclusivo a Huancayo: S/ ${subtotal.toFixed(2)}`);
-            details.push('ℹ Reserva con 24h+ de anticipación para tarifa preferencial desde S/ 65');
+            // Reserva para el mismo día (sin anticipación)
+            if (isAfueras) {
+              subtotal = PRIVATE_PRICING.regularPrice + PRIVATE_PRICING.outskirtsSurcharge;
+              details.push(`Traslado Privado Exclusivo a Huancayo (Afueras/Periferia - Mismo día): S/ ${subtotal.toFixed(2)}`);
+              details.push('ℹ Reserva con al menos 1 día de anticipación para acceder a tarifa de S/ 75');
+            } else {
+              subtotal = PRIVATE_PRICING.regularPrice;
+              details.push(`Traslado Privado Exclusivo a Huancayo (Mismo día): S/ ${subtotal.toFixed(2)}`);
+              details.push('ℹ Reserva con al menos 1 día de anticipación para acceder a tarifa preferencial de S/ 65');
+            }
           }
         } else {
           // Destinos fuera de Huancayo (Tarma, etc.) — precio fijo del catálogo

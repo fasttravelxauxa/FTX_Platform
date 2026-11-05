@@ -80,11 +80,11 @@ function BookingWizardForm() {
   // Pickup option inside airport
   const [pickupOptionCode, setPickupOptionCode] = useState<'puerta-salida' | 'interior-aeropuerto'>('puerta-salida');
 
-  // Destination City Code, Huancayo dropoff mode & Exact Address
+  // Destination City Code, Huancayo dropoff zone & Exact Address
   const [destinationCityCode, setDestinationCityCode] = useState<string>('huancayo');
-  const [huancayoDropoffType, setHuancayoDropoffType] = useState<'plaza' | 'custom_address'>('custom_address');
+  const [huancayoZone, setHuancayoZone] = useState<'centro' | 'afueras'>('centro');
   const [exactAddress, setExactAddress] = useState<string>('');
-  const [destination, setDestination] = useState<string>('Huancayo (Plaza Constitución / Domicilio)');
+  const [destination, setDestination] = useState<string>('Huancayo (Centro/Urbano)');
 
   const [passengersCount, setPassengersCount] = useState<number>(1);
   const [hoursCount, setHoursCount] = useState<number>(2);
@@ -95,9 +95,8 @@ function BookingWizardForm() {
   const [customerDni, setCustomerDni] = useState<string>('');
   const [customerTitle, setCustomerTitle] = useState<string>('Sr.');
 
-  // Flight Info
+  // Flight Info (Solo empresa/aerolínea)
   const [airline, setAirline] = useState<string>('LATAM');
-  const [flightNumber, setFlightNumber] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [luggageNotes, setLuggageNotes] = useState<string>('');
 
@@ -159,7 +158,7 @@ function BookingWizardForm() {
     }
   }, [serviceCode, scheduledDate, scheduledTime]);
 
-  // Update full destination string whenever destination city or exact address changes
+  // Update full destination string whenever destination city, zone or exact address changes
   useEffect(() => {
     if (serviceCode === 'compartido-aeropuerto') {
       setDestination('Plaza Constitución (Centro de Huancayo)');
@@ -170,15 +169,12 @@ function BookingWizardForm() {
     const cityName = destRoute ? destRoute.name.split(' (')[0] : 'Huancayo';
 
     if (destinationCityCode === 'huancayo') {
-      if (huancayoDropoffType === 'plaza') {
-        setDestination('Plaza Constitución (Centro de Huancayo)');
-      } else {
-        setDestination(exactAddress.trim() ? `Huancayo — ${exactAddress.trim()}` : 'Huancayo (Dirección Particular)');
-      }
+      const zoneTag = huancayoZone === 'afueras' ? 'Afueras / Periferia' : 'Centro / Urbano';
+      setDestination(exactAddress.trim() ? `Huancayo (${zoneTag}) — ${exactAddress.trim()}` : `Huancayo (${zoneTag})`);
     } else {
       setDestination(exactAddress.trim() ? `${cityName} — ${exactAddress.trim()}` : cityName);
     }
-  }, [serviceCode, destinationCityCode, huancayoDropoffType, exactAddress]);
+  }, [serviceCode, destinationCityCode, huancayoZone, exactAddress]);
 
   // Update origin based on pickup option
   useEffect(() => {
@@ -211,14 +207,14 @@ function BookingWizardForm() {
         passengersCount,
         hoursCount,
         scheduledAt: buildScheduledAt(),
-        huancayoDropoffType,
+        huancayoZone,
         pickupOptionCode,
       });
       setQuote(q);
     } catch {
       // Incomplete calculation safe fallback
     }
-  }, [serviceCode, origin, destination, destinationCityCode, passengersCount, hoursCount, scheduledDate, scheduledTime, huancayoDropoffType, pickupOptionCode]);
+  }, [serviceCode, origin, destination, destinationCityCode, passengersCount, hoursCount, scheduledDate, scheduledTime, huancayoZone, pickupOptionCode]);
 
   const handleVoucherUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -252,14 +248,9 @@ function BookingWizardForm() {
       if (serviceCode === 'privado-aeropuerto') {
         if (!destinationCityCode) {
           errors.destinationCityCode = 'Seleccione una ciudad de destino.';
-        } else if (destinationCityCode === 'huancayo') {
-          if (huancayoDropoffType === 'custom_address' && !exactAddress.trim()) {
-            errors.exactAddress = 'Ingrese la dirección exacta de su hotel o domicilio en Huancayo.';
-          }
-        } else {
-          if (!exactAddress.trim()) {
-            errors.exactAddress = 'Ingrese la dirección o punto de llegada en el destino seleccionado.';
-          }
+        }
+        if (!exactAddress.trim()) {
+          errors.exactAddress = 'Ingrese la dirección o punto de referencia de llegada.';
         }
       }
     } else if (currentStep === 2) {
@@ -391,7 +382,7 @@ function BookingWizardForm() {
         destination,
         scheduled_at: scheduledAt,
         flight_airline: airline || 'Particular',
-        flight_number: flightNumber || undefined,
+        flight_number: undefined,
         status: voucherFile ? 'PAYMENT_SUBMITTED' : 'PENDING_PAYMENT',
         passengers_count: passengersCount,
         subtotal: quote?.subtotal || 65,
@@ -534,15 +525,15 @@ function BookingWizardForm() {
                   {srv.code === 'privado-aeropuerto' && (
                     <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-600 dark:text-slate-400">Huancayo Centro (24h+ anticip.):</span>
+                        <span className="text-slate-600 dark:text-slate-400">Huancayo Centro (1 día antes):</span>
                         <span className="font-bold text-crusoe-800 dark:text-crusoe-300">S/ {PRIVATE_PRICING.advancePriceCenter.toFixed(2)}</span>
                       </div>
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-600 dark:text-slate-400">Huancayo Afueras (24h+ anticip.):</span>
-                        <span className="font-bold text-crusoe-800 dark:text-crusoe-300">S/ {PRIVATE_PRICING.advancePriceOutskirts.toFixed(2)}</span>
+                        <span className="text-slate-600 dark:text-slate-400">Afueras (Chilca, Sapallanga, etc.):</span>
+                        <span className="font-bold text-amber-800 dark:text-amber-300">+S/ 10 (S/ {PRIVATE_PRICING.advancePriceOutskirts.toFixed(2)})</span>
                       </div>
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-600 dark:text-slate-400">Sin anticipación:</span>
+                        <span className="text-slate-600 dark:text-slate-400">Mismo día (sin anticipación):</span>
                         <span className="font-bold text-slate-700 dark:text-slate-300">S/ {PRIVATE_PRICING.regularPrice.toFixed(2)}</span>
                       </div>
                     </div>
@@ -616,71 +607,91 @@ function BookingWizardForm() {
                 </p>
               )}
 
-              {/* Opciones de Parada para Huancayo */}
+              {/* Selector de Zona para Huancayo */}
               {destinationCityCode === 'huancayo' && (
                 <div className="rounded-2xl border border-crusoe-200 dark:border-crusoe-800 bg-crusoe-50/50 dark:bg-crusoe-950/40 p-4 space-y-3">
-                  <span className="text-xs font-bold text-crusoe-950 dark:text-crusoe-200 block">
-                    Punto de Llegada en Huancayo:
-                  </span>
+                  <div>
+                    <span className="text-xs font-bold text-crusoe-950 dark:text-crusoe-200 block">
+                      Zona de Llegada en Huancayo:
+                    </span>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                      El recargo de S/ 10.00 aplica únicamente si su traslado va más allá del centro urbano hacia distritos periféricos:
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div
-                      onClick={() => setHuancayoDropoffType('custom_address')}
-                      className={`cursor-pointer rounded-xl border p-3 transition-all ${
-                        huancayoDropoffType === 'custom_address'
-                          ? 'border-crusoe-600 bg-white dark:bg-slate-900 shadow-sm font-bold text-crusoe-900 dark:text-crusoe-300'
-                          : 'border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                      onClick={() => setHuancayoZone('centro')}
+                      className={`cursor-pointer rounded-xl border p-3.5 transition-all ${
+                        huancayoZone === 'centro'
+                          ? 'border-crusoe-600 bg-white dark:bg-slate-900 shadow-sm ring-2 ring-crusoe-600/30 font-bold text-crusoe-900 dark:text-crusoe-300'
+                          : 'border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400'
                       }`}
                     >
-                      <span className="text-xs block font-bold">Dirección Exacta de Hotel / Domicilio</span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">Traslado puerta a puerta • S/ {PRIVATE_PRICING.advancePriceOutskirts.toFixed(2)} con anticipación</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold block">Huancayo Centro / Zona Urbana</span>
+                        <span className="text-[11px] font-bold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100 dark:bg-crusoe-900 px-2 py-0.5 rounded">
+                          S/ {PRIVATE_PRICING.advancePriceCenter.toFixed(2)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal leading-relaxed">
+                        Plaza Constitución, El Tambo, San Carlos, San Antonio y cualquier hotel o domicilio dentro del centro.
+                      </p>
                     </div>
 
                     <div
-                      onClick={() => setHuancayoDropoffType('plaza')}
-                      className={`cursor-pointer rounded-xl border p-3 transition-all ${
-                        huancayoDropoffType === 'plaza'
-                          ? 'border-crusoe-600 bg-white dark:bg-slate-900 shadow-sm font-bold text-crusoe-900 dark:text-crusoe-300'
-                          : 'border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                      onClick={() => setHuancayoZone('afueras')}
+                      className={`cursor-pointer rounded-xl border p-3.5 transition-all ${
+                        huancayoZone === 'afueras'
+                          ? 'border-crusoe-600 bg-white dark:bg-slate-900 shadow-sm ring-2 ring-crusoe-600/30 font-bold text-crusoe-900 dark:text-crusoe-300'
+                          : 'border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400'
                       }`}
                     >
-                      <span className="text-xs block font-bold">Plaza Constitución (Huancayo Centro)</span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">Punto central • S/ {PRIVATE_PRICING.advancePriceCenter.toFixed(2)} con anticipación</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold block">Afueras / Distritos Periféricos</span>
+                        <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900 px-2 py-0.5 rounded">
+                          +S/ 10.00 (S/ {PRIVATE_PRICING.advancePriceOutskirts.toFixed(2)})
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal leading-relaxed">
+                        Chilca, Sapallanga, Huancán, Pilcomayo, Cajas, San Jerónimo, Huayucachi, Sicaya, etc.
+                      </p>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Campo de Dirección Exacta */}
-              {(destinationCityCode !== 'huancayo' || huancayoDropoffType === 'custom_address') && (
-                <div id="field-exactAddress" className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 p-4 space-y-2">
-                  <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
-                    <Building className="h-4 w-4 text-crusoe-600" />
-                    Dirección Exacta de Destino o Referencia *
-                  </label>
-                  <input
-                    type="text"
-                    value={exactAddress}
-                    onChange={(e) => {
-                      setExactAddress(e.target.value);
-                      clearFieldError('exactAddress');
-                    }}
-                    placeholder="Ej. Hotel de Turistas Huancayo / Jr. Ancash N° 123 (Ref. Frente a parque)"
-                    className={`w-full rounded-xl border ${
-                      fieldErrors.exactAddress ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
-                    } bg-white dark:bg-slate-800 p-3 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm`}
-                  />
-                  {fieldErrors.exactAddress ? (
-                    <p className="flex items-center gap-1 text-xs font-bold text-rose-600 dark:text-rose-400">
-                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                      {fieldErrors.exactAddress}
-                    </p>
-                  ) : (
-                    <span className="text-[11px] text-slate-600 dark:text-slate-400 block">
-                      En servicio privado exclusivo su conductor lo llevará directamente a la puerta de la dirección indicada.
-                    </span>
-                  )}
-                </div>
-              )}
+              <div id="field-exactAddress" className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 p-4 space-y-2">
+                <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
+                  <Building className="h-4 w-4 text-crusoe-600" />
+                  Dirección Exacta de Destino o Referencia *
+                </label>
+                <input
+                  type="text"
+                  value={exactAddress}
+                  onChange={(e) => {
+                    setExactAddress(e.target.value);
+                    clearFieldError('exactAddress');
+                  }}
+                  placeholder="Ej. Hotel de Turistas / Jr. Ancash 123 / Av. Ferrocarril (Ref. Frente a parque)"
+                  className={`w-full rounded-xl border ${
+                    fieldErrors.exactAddress ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
+                  } bg-white dark:bg-slate-800 p-3 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm`}
+                />
+                {fieldErrors.exactAddress ? (
+                  <p className="flex items-center gap-1 text-xs font-bold text-rose-600 dark:text-rose-400">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    {fieldErrors.exactAddress}
+                  </p>
+                ) : (
+                  <span className="text-[11px] text-slate-600 dark:text-slate-400 block">
+                    {destinationCityCode === 'huancayo' && huancayoZone === 'afueras'
+                      ? 'Indique la dirección exacta o punto de referencia en el distrito periférico para su traslado directo.'
+                      : 'Indique el nombre de su hotel, dirección domiciliaria o punto céntrico para dejarlo en la misma puerta.'}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
@@ -867,9 +878,9 @@ function BookingWizardForm() {
               )}
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">
-                Aerolínea (Opcional)
+                Aerolínea / Empresa con la que viaja
               </label>
               <select
                 value={airline}
@@ -882,19 +893,9 @@ function BookingWizardForm() {
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">
-                Número de Vuelo (Opcional)
-              </label>
-              <input
-                type="text"
-                value={flightNumber}
-                onChange={(e) => setFlightNumber(e.target.value)}
-                placeholder="Ej. LA 2105"
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
-              />
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+                Monitoreamos los itinerarios de tu aerolínea con 30 minutos de tolerancia tras el aterrizaje verificado.
+              </span>
             </div>
           </div>
 

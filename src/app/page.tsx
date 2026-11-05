@@ -338,7 +338,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-xl font-bold text-slate-950 dark:text-white">Servicio Privado Exclusivo</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                    Servicio exclusivo para ti y tus acompañantes. Aire acondicionado, asientos amplios y confortables. Tarifa preferencial con reserva anticipada (24h+): S/ 65 Centro de Huancayo o S/ 75 a domicilio/hotel.
+                    Servicio exclusivo para ti y tus acompañantes. Aire acondicionado, asientos amplios y confortables. Tarifa preferencial reservando con anticipación (al menos 1 día antes): S/ 65 Centro de Huancayo (incluye hoteles y domicilios céntricos) o S/ 75 afueras (Chilca, Sapallanga, etc.).
                   </p>
                   <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 text-xs text-slate-900 dark:text-slate-100">
                     <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
@@ -347,7 +347,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
-                      <span>S/ 65 Centro • S/ 75 Domicilio/Hotel (reserva 24h+)</span>
+                      <span>S/ 65 Centro Urbano • S/ 75 Afueras (reserva 1 día antes)</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />

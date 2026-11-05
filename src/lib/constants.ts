@@ -117,15 +117,42 @@ export const SHARED_PRICING = {
 };
 
 export const PRIVATE_PRICING = {
-  /** Precio anticipado (reserva con 24h+ de anticipación) — Huancayo Centro */
+  /** Precio anticipado (reserva al menos 1 día antes) — Huancayo Centro / El Tambo / San Carlos */
   advancePriceCenter: 65.00,
-  /** Precio anticipado — Huancayo Afueras (+S/ 10) */
+  /** Precio anticipado — Huancayo Afueras / Periferia (Chilca, Sapallanga, Huancán, Pilcomayo, etc. +S/ 10) */
   advancePriceOutskirts: 75.00,
-  /** Precio sin anticipación (reserva el mismo día o con menos de 24h) */
+  /** Precio sin anticipación (reserva para el mismo día del viaje) */
   regularPrice: 80.00,
-  /** Horas mínimas de anticipación para precio preferencial */
-  advanceHoursRequired: 24,
+  /** Recargo por traslado a afueras o distritos periféricos */
+  outskirtsSurcharge: 10.00,
+  /** Días mínimos de anticipación para precio preferencial (1 = de un día para otro) */
+  advanceDaysRequired: 1,
 };
+
+export interface HuancayoZone {
+  code: 'centro' | 'afueras';
+  name: string;
+  subtitle: string;
+  description: string;
+  surcharge: number;
+}
+
+export const HUANCAYO_ZONES: HuancayoZone[] = [
+  {
+    code: 'centro',
+    name: 'Huancayo Centro / Zona Urbana',
+    subtitle: 'Plaza Constitución, El Tambo, San Carlos, San Antonio y hoteles/domicilios céntricos',
+    description: 'Aplica a cualquier dirección dentro del casco urbano central de Huancayo.',
+    surcharge: 0,
+  },
+  {
+    code: 'afueras',
+    name: 'Afueras / Distritos Periféricos (+S/ 10.00)',
+    subtitle: 'Chilca, Sapallanga, Huancán, Pilcomayo, Cajas, San Jerónimo, Huayucachi, Sicaya, etc.',
+    description: 'Aplica cuando el traslado va más allá del centro hacia distritos alejados o periféricos.',
+    surcharge: 10.00,
+  },
+];
 
 export const PROMOTIONS = {
   /** Descuento del 10% para pasajeros recurrentes */
