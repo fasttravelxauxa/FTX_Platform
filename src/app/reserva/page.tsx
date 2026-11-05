@@ -27,24 +27,35 @@ import {
   CreditCard,
   Building,
   Check,
+  Gift,
+  Star,
+  Sparkles,
+  PlaneLanding,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { SERVICES_CATALOG, AIRLINES, DESTINATIONS_CATALOG, PAYMENT_METHODS_INFO, BUSINESS_CONFIG } from '@/lib/constants';
+import {
+  SERVICES_CATALOG,
+  AIRLINES,
+  DESTINATIONS_CATALOG,
+  PAYMENT_METHODS_INFO,
+  BUSINESS_CONFIG,
+  PICKUP_OPTIONS,
+  SHARED_PRICING,
+  PRIVATE_PRICING,
+  PROMOTIONS,
+} from '@/lib/constants';
 import { PricingService } from '@/lib/services/pricing';
 import { WhatsAppService } from '@/lib/services/whatsapp';
 import { RepositoryService, savePassengerIdentity, generateUUID } from '@/lib/services/repository';
 import { Reservation, PriceQuote, PaymentMethod, InvoiceType } from '@/lib/types';
 
 const STEP_TITLES: { [key: number]: string } = {
-  1: 'Modalidad y Destino',
-  2: 'Fecha y Vuelo',
-  3: 'Pasajero y Equipaje',
-  4: 'Comprobante Fiscal',
-  5: 'Cotización y Pago',
-  6: 'Confirmación',
+  1: 'Servicio, Destino y Recojo',
+  2: 'Itinerario y Pasajero',
+  3: 'Cotización, Pago y Confirmación',
 };
 
 function BookingWizardForm() {
@@ -52,7 +63,7 @@ function BookingWizardForm() {
   const searchParams = useSearchParams();
   const initialService = searchParams.get('servicio') || 'privado-aeropuerto';
 
-  // Wizard state (Fluid 6 steps)
+  // Wizard state (3 steps + confirmation)
   const [step, setStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -65,6 +76,9 @@ function BookingWizardForm() {
   );
   const [scheduledTime, setScheduledTime] = useState<string>('09:30');
   const [origin, setOrigin] = useState<string>('Aeropuerto de Jauja (JAU)');
+
+  // Pickup option inside airport
+  const [pickupOptionCode, setPickupOptionCode] = useState<'puerta-salida' | 'interior-aeropuerto'>('puerta-salida');
 
   // Destination City Code, Huancayo dropoff mode & Exact Address
   const [destinationCityCode, setDestinationCityCode] = useState<string>('huancayo');
@@ -166,6 +180,26 @@ function BookingWizardForm() {
     }
   }, [serviceCode, destinationCityCode, huancayoDropoffType, exactAddress]);
 
+  // Update origin based on pickup option
+  useEffect(() => {
+    const pickupOpt = PICKUP_OPTIONS.find((p) => p.code === pickupOptionCode);
+    if (pickupOpt) {
+      setOrigin(pickupOpt.code === 'interior-aeropuerto'
+        ? 'Aeropuerto de Jauja (JAU) — Zona Interior'
+        : 'Aeropuerto de Jauja (JAU) — Puerta de Salida');
+    }
+  }, [pickupOptionCode]);
+
+  // Build scheduledAt ISO string for pricing
+  const buildScheduledAt = () => {
+    if (!scheduledDate || !scheduledTime) return undefined;
+    try {
+      return new Date(`${scheduledDate}T${scheduledTime}:00-05:00`).toISOString();
+    } catch {
+      return undefined;
+    }
+  };
+
   // Recalculate quote whenever relevant fields change
   useEffect(() => {
     try {
@@ -176,12 +210,15 @@ function BookingWizardForm() {
         destinationCode: destinationCityCode,
         passengersCount,
         hoursCount,
+        scheduledAt: buildScheduledAt(),
+        huancayoDropoffType,
+        pickupOptionCode,
       });
       setQuote(q);
     } catch {
       // Incomplete calculation safe fallback
     }
-  }, [serviceCode, origin, destination, destinationCityCode, passengersCount, hoursCount]);
+  }, [serviceCode, origin, destination, destinationCityCode, passengersCount, hoursCount, scheduledDate, scheduledTime, huancayoDropoffType, pickupOptionCode]);
 
   const handleVoucherUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -232,7 +269,6 @@ function BookingWizardForm() {
       if (!scheduledTime) {
         errors.scheduledTime = 'Seleccione la hora de llegada o salida.';
       }
-    } else if (currentStep === 3) {
       if (!customerName.trim()) {
         errors.customerName = 'Ingrese sus nombres y apellidos completos.';
       }
@@ -243,7 +279,7 @@ function BookingWizardForm() {
       if (customerDni.trim() && customerDni.replace(/[^0-9]/g, '').length < 8) {
         errors.customerDni = 'El DNI debe tener al menos 8 dígitos.';
       }
-    } else if (currentStep === 4) {
+      // Validate invoice fields if applicable
       if (invoiceType === 'factura') {
         const cleanRuc = invoiceRuc.replace(/[^0-9]/g, '');
         if (cleanRuc.length !== 11) {
@@ -358,11 +394,11 @@ function BookingWizardForm() {
         flight_number: flightNumber || undefined,
         status: voucherFile ? 'PAYMENT_SUBMITTED' : 'PENDING_PAYMENT',
         passengers_count: passengersCount,
-        subtotal: quote?.subtotal || 80,
+        subtotal: quote?.subtotal || 65,
         surcharges: quote?.surcharges || 0,
-        total_amount: quote?.total || 80,
-        deposit_amount: quote?.depositRequired || 16,
-        balance_amount: quote?.balanceRemaining || 64,
+        total_amount: quote?.total || 65,
+        deposit_amount: quote?.depositRequired || 13,
+        balance_amount: quote?.balanceRemaining || 52,
         invoice_details: {
           type: invoiceType,
           ruc: invoiceRuc || undefined,
@@ -380,7 +416,7 @@ function BookingWizardForm() {
               {
                 id: paymentId,
                 reservation_id: reservationId,
-                amount: quote?.depositRequired || 16,
+                amount: quote?.depositRequired || 13,
                 payment_method: paymentMethod,
                 status: 'SUBMITTED',
                 created_at: new Date().toISOString(),
@@ -409,7 +445,7 @@ function BookingWizardForm() {
         newRes.code = saveResult.code;
       }
       setCreatedReservation(newRes);
-      setStep(6);
+      setStep(4);
 
       confetti({
         particleCount: 100,
@@ -426,11 +462,11 @@ function BookingWizardForm() {
   return (
     <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8 shadow-xl text-slate-900 dark:text-slate-100 transition-colors">
       {/* Progress Bar Header */}
-      {step < 6 && (
+      {step < 4 && (
         <div className="mb-6 border-b border-slate-100 dark:border-slate-800 pb-5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-crusoe-700 dark:text-crusoe-400">
-              Paso {step} de 5
+              Paso {step} de 3
             </span>
             <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
               {STEP_TITLES[step]}
@@ -440,7 +476,7 @@ function BookingWizardForm() {
           <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
             <div
               className="bg-crusoe-600 h-2 rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${(step / 5) * 100}%` }}
+              style={{ width: `${(step / 3) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -453,7 +489,9 @@ function BookingWizardForm() {
         </div>
       )}
 
-      {/* STEP 1: Modalidad y Revelación de Destinos */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* STEP 1: Servicio, Destino y Punto de Recojo                   */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
       {step === 1 && (
         <div className="space-y-6">
           <div>
@@ -491,6 +529,36 @@ function BookingWizardForm() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-700 dark:text-slate-300 mt-2.5 leading-relaxed">{srv.description}</p>
+
+                  {/* Precios inline según modalidad */}
+                  {srv.code === 'privado-aeropuerto' && (
+                    <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-600 dark:text-slate-400">Huancayo Centro (24h+ anticip.):</span>
+                        <span className="font-bold text-crusoe-800 dark:text-crusoe-300">S/ {PRIVATE_PRICING.advancePriceCenter.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-600 dark:text-slate-400">Huancayo Afueras (24h+ anticip.):</span>
+                        <span className="font-bold text-crusoe-800 dark:text-crusoe-300">S/ {PRIVATE_PRICING.advancePriceOutskirts.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-600 dark:text-slate-400">Sin anticipación:</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300">S/ {PRIVATE_PRICING.regularPrice.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+                  {srv.code === 'compartido-aeropuerto' && (
+                    <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-600 dark:text-slate-400">1 asiento (climatización premium):</span>
+                        <span className="font-bold text-crusoe-800 dark:text-crusoe-300">S/ {SHARED_PRICING.singleSeatPrice.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-600 dark:text-slate-400">2 a 4 asientos c/u:</span>
+                        <span className="font-bold text-crusoe-800 dark:text-crusoe-300">S/ {SHARED_PRICING.multiSeatPrice.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -511,7 +579,7 @@ function BookingWizardForm() {
                   Destino del Servicio Privado Exclusivo
                 </span>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  Seleccione la ciudad o circuito turístico para su traslado:
+                  Seleccione la ciudad para su traslado:
                 </p>
               </div>
 
@@ -533,7 +601,7 @@ function BookingWizardForm() {
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-950 dark:text-white text-sm">{dest.name}</span>
                       <span className="text-xs font-bold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100 dark:bg-crusoe-900/80 px-2 py-0.5 rounded">
-                        S/ {dest.privatePriceSuv.toFixed(2)}
+                        {dest.code === 'huancayo' ? `Desde S/ ${PRIVATE_PRICING.advancePriceCenter.toFixed(2)}` : `S/ ${dest.privatePriceSuv.toFixed(2)}`}
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1.5">{dest.description}</p>
@@ -564,7 +632,7 @@ function BookingWizardForm() {
                       }`}
                     >
                       <span className="text-xs block font-bold">Dirección Exacta de Hotel / Domicilio</span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">Traslado puerta a puerta</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">Traslado puerta a puerta • S/ {PRIVATE_PRICING.advancePriceOutskirts.toFixed(2)} con anticipación</span>
                     </div>
 
                     <div
@@ -576,7 +644,7 @@ function BookingWizardForm() {
                       }`}
                     >
                       <span className="text-xs block font-bold">Plaza Constitución (Huancayo Centro)</span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">Punto central de la ciudad</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">Punto central • S/ {PRIVATE_PRICING.advancePriceCenter.toFixed(2)} con anticipación</span>
                     </div>
                   </div>
                 </div>
@@ -624,13 +692,35 @@ function BookingWizardForm() {
                   <span className="font-bold text-crusoe-900 dark:text-crusoe-300 text-sm">
                     Ruta Compartida Oficial: Aeropuerto Jauja ➔ Plaza Constitución
                   </span>
+                </div>
+                <div className="flex flex-wrap gap-3 pt-1">
                   <span className="font-bold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100 dark:bg-crusoe-900 px-2.5 py-1 rounded">
-                    S/ 20.00 / asiento
+                    1 asiento: S/ {SHARED_PRICING.singleSeatPrice.toFixed(2)} (climatización premium)
+                  </span>
+                  <span className="font-bold text-crusoe-800 dark:text-crusoe-300 bg-crusoe-100 dark:bg-crusoe-900 px-2.5 py-1 rounded">
+                    2-4 asientos: S/ {SHARED_PRICING.multiSeatPrice.toFixed(2)} c/u
                   </span>
                 </div>
                 <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[11px]">
                   En la modalidad compartida, la parada final única establecida es en la <strong>Plaza Constitución (Centro de Huancayo)</strong>. Máximo 4 pasajeros por unidad SUV.
                 </p>
+              </div>
+
+              {/* Cantidad de asientos para compartido */}
+              <div>
+                <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">
+                  Cantidad de Asientos a Reservar
+                </label>
+                <select
+                  value={passengersCount}
+                  onChange={(e) => setPassengersCount(Number(e.target.value))}
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
+                >
+                  <option value={1}>1 Asiento — S/ {SHARED_PRICING.singleSeatPrice.toFixed(2)} (con climatización premium)</option>
+                  <option value={2}>2 Asientos — S/ {(SHARED_PRICING.multiSeatPrice * 2).toFixed(2)} total (S/ {SHARED_PRICING.multiSeatPrice.toFixed(2)} c/u)</option>
+                  <option value={3}>3 Asientos — S/ {(SHARED_PRICING.multiSeatPrice * 3).toFixed(2)} total (S/ {SHARED_PRICING.multiSeatPrice.toFixed(2)} c/u)</option>
+                  <option value={4}>4 Asientos — S/ {(SHARED_PRICING.multiSeatPrice * 4).toFixed(2)} total (Capacidad Máxima SUV)</option>
+                </select>
               </div>
 
               {/* Aviso de confirmación compartida */}
@@ -661,6 +751,44 @@ function BookingWizardForm() {
             </div>
           )}
 
+          {/* PUNTO DE RECOJO EN AEROPUERTO */}
+          <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <PlaneLanding className="h-5 w-5 text-crusoe-600" />
+              <span className="text-xs font-bold text-crusoe-800 dark:text-crusoe-400 uppercase tracking-wider">
+                Punto de Recojo en el Aeropuerto
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {PICKUP_OPTIONS.map((opt) => (
+                <div
+                  key={opt.code}
+                  onClick={() => setPickupOptionCode(opt.code)}
+                  className={`cursor-pointer rounded-2xl border-2 p-4 transition-all ${
+                    pickupOptionCode === opt.code
+                      ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950/80 shadow-sm ring-2 ring-crusoe-600/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-950 dark:text-white text-sm">{opt.name}</span>
+                    {opt.surcharge > 0 ? (
+                      <span className="text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/80 px-2 py-0.5 rounded">
+                        +S/ {opt.surcharge.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/80 px-2 py-0.5 rounded">
+                        Sin costo
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1.5">{opt.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button
               size="lg"
@@ -668,26 +796,29 @@ function BookingWizardForm() {
               onClick={() => handleNextStep(1)}
               className="w-full sm:w-auto"
             >
-              <span>Siguiente: Fecha y Vuelo</span>
+              <span>Siguiente: Itinerario y Pasajero</span>
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* STEP 2: Fecha, Hora y Vuelo */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* STEP 2: Itinerario, Pasajero, Equipaje y Facturación          */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
       {step === 2 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
               <CalendarIcon className="h-6 w-6 text-crusoe-600" />
-              2. Itinerario y Vuelo
+              2. Itinerario, Vuelo y Datos del Pasajero
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
               Monitoreamos los itinerarios aéreos para esperarlo puntualmente a su llegada.
             </p>
           </div>
 
+          {/* Fecha y Hora */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div id="field-scheduledDate">
               <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">
@@ -767,33 +898,13 @@ function BookingWizardForm() {
             </div>
           </div>
 
-          <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(1)}>
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Atrás
-            </Button>
-            <Button onClick={() => handleNextStep(2)}>
-              <span>Siguiente: Datos del Pasajero</span>
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-        </div>
-      )}
+          {/* Datos del Pasajero Titular */}
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5 text-crusoe-600" />
+              <span className="text-sm font-bold text-slate-950 dark:text-white">Datos del Pasajero Titular</span>
+            </div>
 
-      {/* STEP 3: Pasajero, Contacto y Equipaje */}
-      {step === 3 && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
-              <User className="h-6 w-6 text-crusoe-600" />
-              3. Datos del Pasajero Titular
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Ingrese datos completos y precisos para una coordinación formal y segura de su viaje.
-            </p>
-          </div>
-
-          <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">
@@ -910,210 +1021,181 @@ function BookingWizardForm() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">
-                  Cantidad de Pasajeros
-                </label>
-                <select
-                  value={passengersCount}
-                  onChange={(e) => setPassengersCount(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
-                >
-                  <option value={1}>1 Pasajero / Asiento</option>
-                  <option value={2}>2 Pasajeros / Asientos</option>
-                  <option value={3}>3 Pasajeros / Asientos</option>
-                  <option value={4}>4 Pasajeros (Capacidad Máxima SUV)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(2)}>
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Atrás
-            </Button>
-            <Button onClick={() => handleNextStep(3)}>
-              <span>Siguiente: Comprobante Fiscal</span>
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 4: Comprobante Fiscal */}
-      {step === 4 && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
-              <FileCheck className="h-6 w-6 text-crusoe-600" />
-              4. Comprobante Fiscal (Boleta / Factura)
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Emitimos comprobantes electrónicos oficiales para sustento de gastos.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { type: 'ninguno', label: 'Sin Comprobante' },
-              { type: 'boleta', label: 'Boleta Electrónica' },
-              { type: 'factura', label: 'Factura Electrónica' },
-            ].map((item) => (
-              <button
-                key={item.type}
-                type="button"
-                onClick={() => {
-                  setInvoiceType(item.type as InvoiceType);
-                  setFieldErrors({});
-                }}
-                className={`rounded-2xl border-2 p-3.5 text-center text-xs font-bold transition-all ${
-                  invoiceType === item.type
-                    ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950 text-crusoe-950 dark:text-crusoe-200 shadow-sm ring-2 ring-crusoe-600/30'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          {invoiceType === 'boleta' && (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 space-y-3">
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">
-                Datos para Boleta Electrónica
-              </span>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div id="field-invoiceDni">
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    DNI del Titular
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={8}
-                    value={invoiceDni || customerDni}
-                    onChange={(e) => {
-                      setInvoiceDni(e.target.value.replace(/[^0-9]/g, ''));
-                      clearFieldError('invoiceDni');
-                    }}
-                    placeholder="8 dígitos"
-                    className={`w-full rounded-xl border ${
-                      fieldErrors.invoiceDni ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
-                    } bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white font-medium`}
-                  />
-                  {fieldErrors.invoiceDni && (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
-                      <AlertCircle className="h-3 w-3 shrink-0" />
-                      {fieldErrors.invoiceDni}
-                    </p>
-                  )}
-                </div>
+              {/* Cantidad de pasajeros para privado y otros servicios */}
+              {serviceCode !== 'compartido-aeropuerto' && (
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Nombre Completo
+                  <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-1.5">
+                    Cantidad de Pasajeros
                   </label>
-                  <input
-                    type="text"
-                    value={invoiceName || customerName}
-                    onChange={(e) => setInvoiceName(e.target.value)}
-                    placeholder="Nombre en la boleta"
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white font-medium"
-                  />
+                  <select
+                    value={passengersCount}
+                    onChange={(e) => setPassengersCount(Number(e.target.value))}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-sm text-slate-950 dark:text-white font-medium focus:border-crusoe-600 shadow-sm"
+                  >
+                    <option value={1}>1 Pasajero</option>
+                    <option value={2}>2 Pasajeros</option>
+                    <option value={3}>3 Pasajeros</option>
+                    <option value={4}>4 Pasajeros (Capacidad Máxima SUV)</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Comprobante Fiscal (inline colapsado) */}
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-crusoe-600" />
+              <span className="text-sm font-bold text-slate-950 dark:text-white">Comprobante Fiscal (Opcional)</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { type: 'ninguno', label: 'Sin Comprobante' },
+                { type: 'boleta', label: 'Boleta Electrónica' },
+                { type: 'factura', label: 'Factura Electrónica' },
+              ].map((item) => (
+                <button
+                  key={item.type}
+                  type="button"
+                  onClick={() => {
+                    setInvoiceType(item.type as InvoiceType);
+                    setFieldErrors({});
+                  }}
+                  className={`rounded-2xl border-2 p-3.5 text-center text-xs font-bold transition-all ${
+                    invoiceType === item.type
+                      ? 'border-crusoe-600 bg-crusoe-50/90 dark:bg-crusoe-950 text-crusoe-950 dark:text-crusoe-200 shadow-sm ring-2 ring-crusoe-600/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            {invoiceType === 'boleta' && (
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 space-y-3">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">Datos para Boleta Electrónica</span>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div id="field-invoiceDni">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">DNI del Titular</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={8}
+                      value={invoiceDni || customerDni}
+                      onChange={(e) => {
+                        setInvoiceDni(e.target.value.replace(/[^0-9]/g, ''));
+                        clearFieldError('invoiceDni');
+                      }}
+                      placeholder="8 dígitos"
+                      className={`w-full rounded-xl border ${
+                        fieldErrors.invoiceDni ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
+                      } bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white font-medium`}
+                    />
+                    {fieldErrors.invoiceDni && (
+                      <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                        <AlertCircle className="h-3 w-3 shrink-0" />
+                        {fieldErrors.invoiceDni}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre Completo</label>
+                    <input
+                      type="text"
+                      value={invoiceName || customerName}
+                      onChange={(e) => setInvoiceName(e.target.value)}
+                      placeholder="Nombre en la boleta"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white font-medium"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {invoiceType === 'factura' && (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 space-y-3">
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">
-                Datos para Factura Electrónica (Empresa)
-              </span>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div id="field-invoiceRuc">
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    RUC (11 dígitos) *
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={11}
-                    value={invoiceRuc}
-                    onChange={(e) => {
-                      setInvoiceRuc(e.target.value.replace(/[^0-9]/g, ''));
-                      clearFieldError('invoiceRuc');
-                    }}
-                    placeholder="20601234567"
-                    className={`w-full rounded-xl border ${
-                      fieldErrors.invoiceRuc ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
-                    } bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white font-medium`}
-                  />
-                  {fieldErrors.invoiceRuc && (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
-                      <AlertCircle className="h-3 w-3 shrink-0" />
-                      {fieldErrors.invoiceRuc}
-                    </p>
-                  )}
-                </div>
+            {invoiceType === 'factura' && (
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 space-y-3">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">Datos para Factura Electrónica (Empresa)</span>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div id="field-invoiceRuc">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">RUC (11 dígitos) *</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={11}
+                      value={invoiceRuc}
+                      onChange={(e) => {
+                        setInvoiceRuc(e.target.value.replace(/[^0-9]/g, ''));
+                        clearFieldError('invoiceRuc');
+                      }}
+                      placeholder="20601234567"
+                      className={`w-full rounded-xl border ${
+                        fieldErrors.invoiceRuc ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
+                      } bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white font-medium`}
+                    />
+                    {fieldErrors.invoiceRuc && (
+                      <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                        <AlertCircle className="h-3 w-3 shrink-0" />
+                        {fieldErrors.invoiceRuc}
+                      </p>
+                    )}
+                  </div>
 
-                <div id="field-invoiceCompanyName">
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Razón Social *
-                  </label>
-                  <input
-                    type="text"
-                    value={invoiceCompanyName}
-                    onChange={(e) => {
-                      setInvoiceCompanyName(e.target.value);
-                      clearFieldError('invoiceCompanyName');
-                    }}
-                    placeholder="Empresa S.A.C."
-                    className={`w-full rounded-xl border ${
-                      fieldErrors.invoiceCompanyName ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
-                    } bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white font-medium`}
-                  />
-                  {fieldErrors.invoiceCompanyName && (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
-                      <AlertCircle className="h-3 w-3 shrink-0" />
-                      {fieldErrors.invoiceCompanyName}
-                    </p>
-                  )}
-                </div>
+                  <div id="field-invoiceCompanyName">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Razón Social *</label>
+                    <input
+                      type="text"
+                      value={invoiceCompanyName}
+                      onChange={(e) => {
+                        setInvoiceCompanyName(e.target.value);
+                        clearFieldError('invoiceCompanyName');
+                      }}
+                      placeholder="Empresa S.A.C."
+                      className={`w-full rounded-xl border ${
+                        fieldErrors.invoiceCompanyName ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
+                      } bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white font-medium`}
+                    />
+                    {fieldErrors.invoiceCompanyName && (
+                      <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                        <AlertCircle className="h-3 w-3 shrink-0" />
+                        {fieldErrors.invoiceCompanyName}
+                      </p>
+                    )}
+                  </div>
 
-                <div id="field-invoiceAddress" className="sm:col-span-2">
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Dirección Fiscal *
-                  </label>
-                  <input
-                    type="text"
-                    value={invoiceAddress}
-                    onChange={(e) => {
-                      setInvoiceAddress(e.target.value);
-                      clearFieldError('invoiceAddress');
-                    }}
-                    placeholder="Av. Principal 123, Huancayo"
-                    className={`w-full rounded-xl border ${
-                      fieldErrors.invoiceAddress ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
-                    } bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white font-medium`}
-                  />
-                  {fieldErrors.invoiceAddress && (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
-                      <AlertCircle className="h-3 w-3 shrink-0" />
-                      {fieldErrors.invoiceAddress}
-                    </p>
-                  )}
+                  <div id="field-invoiceAddress" className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Dirección Fiscal *</label>
+                    <input
+                      type="text"
+                      value={invoiceAddress}
+                      onChange={(e) => {
+                        setInvoiceAddress(e.target.value);
+                        clearFieldError('invoiceAddress');
+                      }}
+                      placeholder="Av. Principal 123, Huancayo"
+                      className={`w-full rounded-xl border ${
+                        fieldErrors.invoiceAddress ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-700'
+                      } bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-950 dark:text-white font-medium`}
+                    />
+                    {fieldErrors.invoiceAddress && (
+                      <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                        <AlertCircle className="h-3 w-3 shrink-0" />
+                        {fieldErrors.invoiceAddress}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(3)}>
+            <Button variant="outline" onClick={() => setStep(1)}>
               <ArrowLeft className="h-4 w-4 mr-1" />
               Atrás
             </Button>
-            <Button onClick={() => handleNextStep(4)}>
+            <Button onClick={() => handleNextStep(2)}>
               <span>Siguiente: Cotización y Pago</span>
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
@@ -1121,13 +1203,15 @@ function BookingWizardForm() {
         </div>
       )}
 
-      {/* STEP 5: Cotización, Términos y Pago del Adelanto */}
-      {step === 5 && (
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* STEP 3: Cotización, Ofertas, Términos y Pago del Adelanto     */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {step === 3 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
               <CreditCard className="h-6 w-6 text-crusoe-600" />
-              5. Resumen de Cotización y Adelanto
+              3. Resumen de Cotización y Adelanto
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
               Revise el desglose de su viaje. Puede asegurar su cupo con el 20% de adelanto mediante Yape, Plin o Transferencia BCP, o formalizar ahora y transferir antes de su horario programado.
@@ -1147,13 +1231,30 @@ function BookingWizardForm() {
               <span className="font-bold text-slate-950 dark:text-white">{destination}</span>
             </div>
             <div className="flex justify-between text-xs text-slate-700 dark:text-slate-300">
+              <span>Recojo:</span>
+              <span className="font-bold text-slate-950 dark:text-white">
+                {PICKUP_OPTIONS.find((p) => p.code === pickupOptionCode)?.name || 'Puerta de Salida'}
+                {pickupOptionCode === 'interior-aeropuerto' && ' (+S/ 6.00)'}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs text-slate-700 dark:text-slate-300">
               <span>Pasajeros:</span>
               <span className="font-bold text-slate-950 dark:text-white">{passengersCount} persona(s)</span>
             </div>
+
+            {/* Detalles de pricing */}
+            {quote && quote.details.length > 0 && (
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-2 space-y-1">
+                {quote.details.map((detail, i) => (
+                  <p key={i} className="text-[11px] text-slate-600 dark:text-slate-400">{detail}</p>
+                ))}
+              </div>
+            )}
+
             <div className="flex justify-between text-sm font-bold text-slate-950 dark:text-white border-t border-slate-200 dark:border-slate-700 pt-3">
               <span>Monto Total del Traslado:</span>
               <span className="text-base text-crusoe-800 dark:text-crusoe-400 font-extrabold">
-                S/ {quote?.total.toFixed(2) || '80.00'}
+                S/ {quote?.total.toFixed(2) || '65.00'}
               </span>
             </div>
 
@@ -1163,7 +1264,7 @@ function BookingWizardForm() {
                   Adelanto (20%)
                 </span>
                 <span className="text-lg font-extrabold text-crusoe-950 dark:text-crusoe-200">
-                  S/ {quote?.depositRequired.toFixed(2) || '16.00'}
+                  S/ {quote?.depositRequired.toFixed(2) || '13.00'}
                 </span>
               </div>
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-center">
@@ -1171,10 +1272,46 @@ function BookingWizardForm() {
                   Saldo al Abordar (80%)
                 </span>
                 <span className="text-lg font-extrabold text-slate-950 dark:text-white">
-                  S/ {quote?.balanceRemaining.toFixed(2) || '64.00'}
+                  S/ {quote?.balanceRemaining.toFixed(2) || '52.00'}
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* BANNER DE OFERTAS Y PROGRAMA DE LEALTAD */}
+          <div className="rounded-2xl border-2 border-crusoe-500/30 bg-gradient-to-br from-crusoe-50/90 via-white to-amber-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-crusoe-950/30 p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-crusoe-600" />
+              <span className="text-sm font-black text-crusoe-900 dark:text-crusoe-300">Ofertas y Beneficios Fast Travel Xauxa</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Oferta 1: Descuento Recurrente */}
+              <div className="rounded-xl border border-crusoe-300 dark:border-crusoe-800 bg-white dark:bg-slate-800/80 p-3.5 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-amber-500" />
+                  <span className="text-xs font-bold text-crusoe-900 dark:text-crusoe-200">Pasajero Recurrente</span>
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  Si ya viajaste con nosotros antes, obtén un <strong className="text-crusoe-700 dark:text-crusoe-400">{PROMOTIONS.recurringDiscountPercent}% de descuento</strong> en tu próximo traslado. Menciónalo al coordinar.
+                </p>
+              </div>
+
+              {/* Oferta 2: 5to Viaje al 50% */}
+              <div className="rounded-xl border border-crusoe-300 dark:border-crusoe-800 bg-white dark:bg-slate-800/80 p-3.5 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                  <span className="text-xs font-bold text-crusoe-900 dark:text-crusoe-200">5° Viaje al {PROMOTIONS.loyaltyDiscountPercent}%</span>
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  Acumula <strong className="text-crusoe-700 dark:text-crusoe-400">{PROMOTIONS.loyaltyTripThreshold} viajes</strong> y el quinto tiene <strong className="text-crusoe-700 dark:text-crusoe-400">{PROMOTIONS.loyaltyDiscountPercent}% de descuento</strong>.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              * Los viajes acumulados tienen una vigencia de {PROMOTIONS.loyaltyWindowMonths} meses desde el primer viaje realizado. Los descuentos se aplican al coordinar con nuestro equipo por WhatsApp y son validados internamente. Promociones no acumulables entre sí.
+            </p>
           </div>
 
           {/* Selector de Método de Pago */}
@@ -1349,7 +1486,7 @@ function BookingWizardForm() {
                   <span>Reserva con pago posterior</span>
                 </div>
                 <p className="text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed font-medium">
-                  Puede realizar su reserva sin comprobante inmediato. Tenga presente que <strong>si no se efectúa el adelanto (S/ {quote?.depositRequired.toFixed(2) || '16.00'}) antes de la hora programada de su traslado</strong>, la reserva no podrá ser atendida y se cancelará en el sistema.
+                  Puede realizar su reserva sin comprobante inmediato. Tenga presente que <strong>si no se efectúa el adelanto (S/ {quote?.depositRequired.toFixed(2) || '13.00'}) antes de la hora programada de su traslado</strong>, la reserva no podrá ser atendida y se cancelará en el sistema.
                 </p>
               </div>
             )}
@@ -1387,7 +1524,7 @@ function BookingWizardForm() {
           </div>
 
           <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" onClick={() => setStep(4)}>
+            <Button variant="outline" onClick={() => setStep(2)}>
               <ArrowLeft className="h-4 w-4 mr-1" />
               Atrás
             </Button>
@@ -1399,8 +1536,10 @@ function BookingWizardForm() {
         </div>
       )}
 
-      {/* STEP 6: Confirmación Final */}
-      {step === 6 && createdReservation && (
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* STEP 4: Confirmación Final                                     */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {step === 4 && createdReservation && (
         <div className="space-y-6 text-center py-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-crusoe-100 dark:bg-crusoe-900/60 text-crusoe-700 dark:text-crusoe-300 mx-auto shadow-inner">
             <CheckCircle2 className="h-10 w-10" />

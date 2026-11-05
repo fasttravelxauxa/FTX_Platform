@@ -205,8 +205,8 @@ export default function ReservationDetailPage() {
                     <div>
                       <span className="font-bold block text-slate-950 dark:text-white">Modalidad Contratada:</span>
                       <span className="font-extrabold text-crusoe-800 dark:text-crusoe-400">
-                        {reservation.service_id === 'a2222222-2222-2222-2222-222222222222'
-                          ? `Servicio Compartido • ${reservation.passengers_count || 1} Asiento(s) (S/ 20.00 c/u)`
+                        {reservation.service_id === 'a2222222-2222-2222-2222-222222222222' || reservation.service?.code === 'compartido-aeropuerto'
+                          ? `Servicio Compartido • ${reservation.passengers_count || 1} Asiento(s)`
                           : 'Servicio Privado Exclusivo SUV (Camioneta Completa)'}
                       </span>
                     </div>
