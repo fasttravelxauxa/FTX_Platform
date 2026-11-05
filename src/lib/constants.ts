@@ -85,12 +85,64 @@ export interface DestinationRoute {
   image?: string;
 }
 
+export interface PickupOption {
+  code: 'puerta-salida' | 'interior-aeropuerto';
+  name: string;
+  description: string;
+  surcharge: number;
+}
+
+export const PICKUP_OPTIONS: PickupOption[] = [
+  {
+    code: 'puerta-salida',
+    name: 'Puerta de Salida del Aeropuerto',
+    description: 'Sin costo adicional. Lo esperamos en la puerta de salida con cartel de bienvenida.',
+    surcharge: 0,
+  },
+  {
+    code: 'interior-aeropuerto',
+    name: 'Recojo en Zona Interior del Aeropuerto',
+    description: 'Ingresamos por usted al interior del aeropuerto. Incluye tarifa de parqueo.',
+    surcharge: 6.00,
+  },
+];
+
+export const SHARED_PRICING = {
+  /** Precio por asiento cuando se reserva 1 solo asiento (incluye climatización premium) */
+  singleSeatPrice: 20.00,
+  /** Precio por asiento cuando se reservan 2, 3 o 4 asientos */
+  multiSeatPrice: 15.00,
+  /** Umbral: a partir de 2 asientos se aplica el precio reducido */
+  multiSeatThreshold: 2,
+};
+
+export const PRIVATE_PRICING = {
+  /** Precio anticipado (reserva con 24h+ de anticipación) — Huancayo Centro */
+  advancePriceCenter: 65.00,
+  /** Precio anticipado — Huancayo Afueras (+S/ 10) */
+  advancePriceOutskirts: 75.00,
+  /** Precio sin anticipación (reserva el mismo día o con menos de 24h) */
+  regularPrice: 80.00,
+  /** Horas mínimas de anticipación para precio preferencial */
+  advanceHoursRequired: 24,
+};
+
+export const PROMOTIONS = {
+  /** Descuento del 10% para pasajeros recurrentes */
+  recurringDiscountPercent: 10,
+  /** El 5to viaje acumulado tiene 50% de descuento */
+  loyaltyTripThreshold: 5,
+  loyaltyDiscountPercent: 50,
+  /** Vigencia de acumulación de viajes: 3 meses */
+  loyaltyWindowMonths: 3,
+};
+
 export const DESTINATIONS_CATALOG: DestinationRoute[] = [
   {
     code: 'huancayo',
     name: 'Huancayo (Plaza Constitución / Domicilio u Hotel)',
-    sharedPricePerSeat: 20.00,
-    privatePriceSuv: 80.00,
+    sharedPricePerSeat: SHARED_PRICING.singleSeatPrice,
+    privatePriceSuv: PRIVATE_PRICING.advancePriceCenter,
     description: 'Servicio directo Valle del Mantaro. Compartido: Parada final Plaza Constitución. Privado: Parada en Plaza Constitución o en la puerta de su hotel o domicilio.',
     image: '/images/destinos/plaza_constitucion.jpg',
   },
@@ -102,30 +154,6 @@ export const DESTINATIONS_CATALOG: DestinationRoute[] = [
     description: 'Servicio directo Aeropuerto Jauja ➔ Tarma. Servicio privado exclusivo a su hotel o dirección.',
     image: '/images/destinos/tarma.jpg',
   },
-  {
-    code: 'la-merced',
-    name: 'La Merced (Chanchamayo - Selva Central)',
-    sharedPricePerSeat: 60.00,
-    privatePriceSuv: 240.00,
-    description: 'Servicio directo Aeropuerto Jauja ➔ La Merced / Selva Central. Confort, climatización y seguridad.',
-    image: '/images/destinos/la_merced.jpg',
-  },
-  {
-    code: 'la-oroya',
-    name: 'La Oroya (Cruce Central)',
-    sharedPricePerSeat: 40.00,
-    privatePriceSuv: 160.00,
-    description: 'Servicio directo Aeropuerto Jauja ➔ La Oroya. Traslado corporativo y ejecutivo.',
-    image: '/images/destinos/la_oroya.jpg',
-  },
-  {
-    code: 'otro',
-    name: 'Otro Destino / Excursión a Medida',
-    sharedPricePerSeat: 50.00,
-    privatePriceSuv: 180.00,
-    description: 'Rutas personalizadas por horas o circuitos turísticos en el Valle del Mantaro con conductor profesional.',
-    image: '/images/destinos/Huancayo.webp',
-  },
 ];
 
 export const SERVICES_CATALOG: Service[] = [
@@ -134,7 +162,7 @@ export const SERVICES_CATALOG: Service[] = [
     code: 'privado-aeropuerto',
     name: 'Servicio Privado Exclusivo',
     description: 'Servicio 100% exclusivo, climatizado con aire acondicionado, asientos amplios y confortables en SUV del año. Opción de parada final en Plaza Constitución o traslado directo a la dirección exacta de su hotel o domicilio.',
-    base_price: 80.00,
+    base_price: 65.00,
     price_unit: 'fixed',
     active: true,
     icon: 'Car',
@@ -143,8 +171,8 @@ export const SERVICES_CATALOG: Service[] = [
     id: 'a2222222-2222-2222-2222-222222222222',
     code: 'compartido-aeropuerto',
     name: 'Servicio Compartido por Asiento',
-    description: 'Servicio compartido por asiento en SUV del año. Parada final establecida en Plaza Constitución (Centro de Huancayo). Máximo 4 pasajeros por unidad.',
-    base_price: 20.00,
+    description: 'Viaja cómodo y climatizado en SUV del año. 1 asiento a S/ 20 con climatización premium incluida. 2 a 4 asientos desde S/ 15 c/u. Parada final: Plaza Constitución (Centro de Huancayo). Máximo 4 pasajeros.',
+    base_price: 15.00,
     price_unit: 'fixed',
     active: true,
     icon: 'Users',
