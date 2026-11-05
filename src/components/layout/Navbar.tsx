@@ -98,6 +98,12 @@ export const Navbar: React.FC = () => {
             Destinos
           </Link>
           <Link
+            href="/#ofertas"
+            className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-crusoe-700 dark:text-crusoe-400 hover:text-crusoe-600 transition-colors whitespace-nowrap"
+          >
+            <span className="bg-crusoe-100 dark:bg-crusoe-950 px-2 py-0.5 rounded-full text-[11px]">Ofertas</span>
+          </Link>
+          <Link
             href="/mis-reservas"
             className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-crusoe-600 dark:hover:text-crusoe-400 transition-colors whitespace-nowrap"
           >
@@ -158,6 +164,14 @@ export const Navbar: React.FC = () => {
               className="rounded-xl px-3.5 py-2.5 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
             >
               Destinos
+            </Link>
+            <Link
+              href="/#ofertas"
+              onClick={() => setIsOpen(false)}
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold text-crusoe-800 dark:text-crusoe-300 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors flex items-center justify-between"
+            >
+              <span>Ofertas y Beneficios</span>
+              <span className="bg-crusoe-100 dark:bg-crusoe-900 px-2 py-0.5 rounded-full text-xs font-bold text-crusoe-800 dark:text-crusoe-300">Nuevas</span>
             </Link>
             <Link
               href="/mis-reservas"

@@ -37,22 +37,6 @@ const DESTINATION_SLIDES: DestinationSlide[] = [
     image: '/images/destinos/tarma.jpg',
     routeInfo: 'Traslado ejecutivo directo desde el Aeropuerto',
   },
-  {
-    id: 'la-merced',
-    title: 'La Merced y Chanchamayo',
-    subtitle: 'Puerta de Ingreso a la Selva Central',
-    tag: 'Climatización y Máximo Confort',
-    image: '/images/destinos/la_merced.jpg',
-    routeInfo: 'Viaje seguro por carretera central en SUV del año',
-  },
-  {
-    id: 'la-oroya',
-    title: 'La Oroya',
-    subtitle: 'Conexión y Cruce Central del Perú',
-    tag: 'Servicio Corporativo',
-    image: '/images/destinos/la_oroya.jpg',
-    routeInfo: 'Puntualidad garantizada y facturación electrónica',
-  },
 ];
 
 export function DestinationCarousel() {

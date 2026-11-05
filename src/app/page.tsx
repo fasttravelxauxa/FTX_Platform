@@ -21,11 +21,14 @@ import {
   Phone,
   Calendar,
   ShieldAlert,
+  Gift,
+  Star,
+  PlaneLanding,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
-import { SERVICES_CATALOG, BUSINESS_CONFIG, DESTINATIONS_CATALOG } from '@/lib/constants';
+import { SERVICES_CATALOG, BUSINESS_CONFIG, DESTINATIONS_CATALOG, PROMOTIONS, PICKUP_OPTIONS } from '@/lib/constants';
 import { WelcomeModal } from '@/components/WelcomeModal';
 import { DestinationCarousel } from '@/components/DestinationCarousel';
 
@@ -236,7 +239,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-base font-bold text-slate-950 dark:text-white">Elige tu Modalidad</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                  Selecciona traslado privado exclusivo (camioneta SUV completa a tu destino) o compartido por asiento (S/ 20.00).
+                  Selecciona traslado privado exclusivo (desde S/ 65 Huancayo con reserva anticipada) o compartido por asiento (S/ 20 individual climatizado / S/ 15 grupal desde 2 asientos).
                 </p>
               </div>
 
@@ -330,12 +333,12 @@ export default function HomePage() {
                       <Car className="h-6 w-6" />
                     </div>
                     <span className="rounded-full bg-crusoe-100 dark:bg-crusoe-950 px-3 py-1 text-xs font-bold text-crusoe-800 dark:text-crusoe-300">
-                      Exclusivo y Climatizado
+                      Desde S/ 65.00
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-slate-950 dark:text-white">Servicio Privado Exclusivo</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                    Servicio exclusivo para ti y tus acompañantes. Aire acondicionado, asientos amplios y confortables. Opción de parada en Plaza Constitución o traslado directo a tu domicilio u hotel.
+                    Servicio exclusivo para ti y tus acompañantes. Aire acondicionado, asientos amplios y confortables. Tarifa preferencial con reserva anticipada (24h+): S/ 65 Centro de Huancayo o S/ 75 a domicilio/hotel.
                   </p>
                   <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 text-xs text-slate-900 dark:text-slate-100">
                     <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
@@ -344,11 +347,11 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
-                      <span>Traslado a Hotel / Domicilio o Plaza Constitución</span>
+                      <span>S/ 65 Centro • S/ 75 Domicilio/Hotel (reserva 24h+)</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
-                      <span>Recepción con Cartel de Bienvenida</span>
+                      <span>Recepción en puerta de salida (o interior +S/ 6)</span>
                     </div>
                   </div>
                 </div>
@@ -367,25 +370,25 @@ export default function HomePage() {
                       <Users className="h-6 w-6" />
                     </div>
                     <span className="rounded-full bg-amber-100 dark:bg-amber-950 px-3 py-1 text-xs font-bold text-amber-900 dark:text-amber-300">
-                      Por Asiento
+                      Desde S/ 15.00 / asiento
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-slate-950 dark:text-white">Servicio Compartido</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                    Traslado en SUV del año compartida (máximo 4 pasajeros). Parada final establecida en Plaza Constitución (Centro de Huancayo).
+                    Traslado en SUV del año climatizada (máx. 4 pasajeros). 1 asiento a S/ 20 con climatización premium incluida. A partir de 2 asientos a solo S/ 15 c/u. Parada final: Plaza Constitución.
                   </p>
                   <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 text-xs text-slate-900 dark:text-slate-100">
                     <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
-                      <span>Parada final única: Plaza Constitución</span>
+                      <span>1 Asiento: S/ 20.00 (climatización premium)</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
-                      <span>Máximo 4 pasajeros por unidad</span>
+                      <span>2 a 4 Asientos: S/ 15.00 c/u</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="h-3.5 w-3.5 text-crusoe-600" />
-                      <span>Asiento asegurado con 20% de adelanto</span>
+                      <span>Parada final: Plaza Constitución (Centro Huancayo)</span>
                     </div>
                   </div>
                 </div>
@@ -440,6 +443,95 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* PROMOTIONS & LOYALTY SECTION */}
+        <section id="ofertas" className="py-16 bg-gradient-to-b from-white to-crusoe-50/50 dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-10">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-crusoe-100 dark:bg-crusoe-950/80 px-3.5 py-1 text-xs font-bold text-crusoe-800 dark:text-crusoe-300 border border-crusoe-300 dark:border-crusoe-800 mb-2">
+                <Gift className="h-4 w-4 text-crusoe-600" />
+                <span>Beneficios y Descuentos Exclusivos</span>
+              </div>
+              <h2 className="text-3xl font-extrabold text-slate-950 dark:text-white sm:text-4xl">
+                Viaja Más, Paga Menos con Fast Travel Xauxa
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                Premiamos tu preferencia y fidelidad con tarifas especiales y descuentos acumulables.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {/* Promo 1: Pasajero Recurrente */}
+              <div className="rounded-3xl border-2 border-crusoe-500/30 bg-white dark:bg-slate-900 p-6 shadow-md hover:shadow-xl transition-all flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-crusoe-100 dark:bg-crusoe-950 text-crusoe-700 dark:text-crusoe-300">
+                    <Star className="h-6 w-6 text-amber-500 fill-amber-500" />
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-crusoe-800 dark:text-crusoe-400">
+                    Tarifa Preferencial
+                  </span>
+                  <h3 className="text-xl font-bold text-slate-950 dark:text-white">
+                    {PROMOTIONS.recurringDiscountPercent}% Descuento Recurrente
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Si ya has viajado con nosotros, obtén un <strong>{PROMOTIONS.recurringDiscountPercent}% de descuento</strong> en tu próximo servicio. Solo indícalo al momento de coordinar por WhatsApp.
+                  </p>
+                </div>
+                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
+                  <span className="text-[11px] font-semibold text-crusoe-700 dark:text-crusoe-400">
+                    ✓ Aplicable a privado y compartido
+                  </span>
+                </div>
+              </div>
+
+              {/* Promo 2: 5to Viaje al 50% */}
+              <div className="rounded-3xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-50/50 via-white to-amber-100/30 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/20 p-6 shadow-md hover:shadow-xl transition-all flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+                    <Sparkles className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">
+                    Programa de Fidelidad
+                  </span>
+                  <h3 className="text-xl font-bold text-slate-950 dark:text-white">
+                    5° Viaje al {PROMOTIONS.loyaltyDiscountPercent}% de Descuento
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Junta {PROMOTIONS.loyaltyTripThreshold} viajes con nosotros y tu quinto traslado se cobra a <strong>mitad de precio ({PROMOTIONS.loyaltyDiscountPercent}% OFF)</strong>.
+                  </p>
+                </div>
+                <div className="pt-4 mt-4 border-t border-amber-200/60 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight">
+                    * Los viajes que junten serán dentro de los {PROMOTIONS.loyaltyWindowMonths} meses.
+                  </span>
+                </div>
+              </div>
+
+              {/* Promo 3: Recojo Aeropuerto Flexible */}
+              <div className="rounded-3xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-md hover:shadow-xl transition-all flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-crusoe-100 dark:bg-crusoe-950 text-crusoe-700 dark:text-crusoe-300">
+                    <PlaneLanding className="h-6 w-6" />
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-crusoe-800 dark:text-crusoe-400">
+                    Punto de Espera
+                  </span>
+                  <h3 className="text-xl font-bold text-slate-950 dark:text-white">
+                    Recepción a tu Medida
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    El recojo regular es en la <strong>puerta de salida del aeropuerto (sin costo adicional)</strong>. Si prefieres que ingresemos por ti a la zona interior, solo se abona un adicional de <strong>S/ 6.00 por concepto de parqueo</strong>.
+                  </p>
+                </div>
+                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
+                  <span className="text-[11px] font-semibold text-crusoe-700 dark:text-crusoe-400">
+                    ✓ Eliges tu opción al reservar
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* DESTINOS SECTION */}
         <section id="destinos" className="py-20 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -453,11 +545,11 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
               {DESTINATIONS_CATALOG.map((dest) => (
                 <div key={dest.code} className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-slate-50 dark:bg-slate-800/60 flex flex-col justify-between group hover:shadow-md transition-shadow">
                   {dest.image && (
-                    <div className="h-44 overflow-hidden relative">
+                    <div className="h-48 overflow-hidden relative">
                       <img src={dest.image} alt={dest.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
                       <div className="absolute bottom-2.5 left-3 right-3">
